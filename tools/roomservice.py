@@ -221,7 +221,7 @@ def fetch_dependencies(repo_path, fallback_branch = None):
 
     if len(syncable_repos) > 0:
         print('Syncing dependencies')
-        os.system('repo sync %s' % ' '.join(syncable_repos))
+        os.system('repo sync --force-sync %s' % ' '.join(syncable_repos))
 
     for deprepo in syncable_repos:
         fetch_dependencies(deprepo)
@@ -246,7 +246,7 @@ else:
     add_to_manifest([adding])
 
     print("Syncing repository to retrieve project.")
-    os.system('repo sync %s' % repo_path)
+    os.system('repo sync --force-sync %s' % repo_path)
     print("Repository synced!")
 
     fetch_dependencies(repo_path)
