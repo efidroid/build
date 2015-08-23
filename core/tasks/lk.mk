@@ -1,7 +1,7 @@
 LK_DIR := $(TOPDIR)lk/common
 LK_OUT := $(TARGET_OUT)/lk
 LK_ENV := BOOTLOADER_OUT=$(PWD)/$(LK_OUT) ARCH=arm SUBARCH=arm TOOLCHAIN_PREFIX=$(GCC_EABI)
-LK_ENV += EDK2_BIN=$(EDK2_BIN) EDK2_API_INC=$(PWD)/$(TOPDIR)uefi/LittleKernelPkg/Include/LittleKernelApi.h
+LK_ENV += EDK2_BIN=$(EDK2_BIN) EDK2_API_INC=$(PWD)/$(TOPDIR)uefi/LittleKernelPkg/Include
 
 ifneq ($(LK_SOURCE),)
 LK_DIR := $(LK_SOURCE)
@@ -15,7 +15,7 @@ $(if $(LK_TARGET),, \
 endef
 
 .PHONY: lk
-lk: edk2
+lk:
 	${call logi,LK: compile}
 	mkdir -p $(LK_OUT)
 	$(call lk_check)
