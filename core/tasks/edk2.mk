@@ -48,7 +48,7 @@ edk2: lk
 	MAKEFLAGS= $(MAKE) -C $(EDK2_OUT)/BaseTools
 	cd $(EDK2_OUT) && \
 		source edksetup.sh && \
-		$(EDK2_ENV) build -v -n4 -a ARM -t GCC49 -p LittleKernelPkg/LittleKernelPkg.dsc \
+		$(EDK2_ENV) build -n4 -a ARM -t GCC49 -p LittleKernelPkg/LittleKernelPkg.dsc \
 			-DFIRMWARE_VER=$(EDK2_VERSION) \
 			-DFIRMWARE_VENDOR=EFIDroid \
 			-DDRAM_BASE=$(DRAM_BASE) \
