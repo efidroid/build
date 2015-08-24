@@ -52,7 +52,7 @@ edk2: lk
 			-DFIRMWARE_VER=$(EDK2_VERSION) \
 			-DFIRMWARE_VENDOR=EFIDroid \
 			-DDRAM_BASE=$(DRAM_BASE) \
-			-DDRAM_SIZE=$(DRAM_SIZE)
+			-DDRAM_SIZE=$(DRAM_SIZE) ${COLORIZE}
 
 edk2_sideload: edk2 host_mkbootimg
 	$(HOST_OUT)/mkbootimg/mkbootimg \

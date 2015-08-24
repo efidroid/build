@@ -6,6 +6,18 @@ ifneq ($(BUILD_WITH_COLORS),0)
     CL_MAG="\033[1;35m"
     CL_CYN="\033[1;36m"
     CL_RST="\033[0m"
+
+    COLORIZE = \
+        2> >(\
+        while read line; do \
+	        if [[ "$$line" =~ "error:" ]];then \
+                echo -e "\e[01;31m$$line\e[0m" >&2; \
+            else \
+                echo -e "\e[01;32m$$line\e[0m" >&2; \
+            fi;\
+        done)
+else
+    COLORIZE = 
 endif
 
 # enable GCC colors by default (if supported)
