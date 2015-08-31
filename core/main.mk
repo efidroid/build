@@ -10,7 +10,7 @@ ifneq ($(BUILD_WITH_COLORS),0)
     COLORIZE = \
         2> >(\
         while read line; do \
-	        if [[ "$$line" =~ "error:" ]];then \
+	        if [[ "$$line" =~ "error" ]];then \
                 echo -e "\e[01;31m$$line\e[0m" >&2; \
             else \
                 echo -e "\e[01;32m$$line\e[0m" >&2; \
