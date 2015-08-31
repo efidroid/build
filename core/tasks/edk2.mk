@@ -51,6 +51,12 @@ edk2:
 	# force rebuild of LK
 	touch $(TOPDIR)uefi/lkmodules/uefiapi/edk2bin.c
 
+.PHONY: edk2_shell
+edk2_shell:
+	cd $(EDK2_OUT) && \
+		source edksetup.sh && \
+		$(EDK2_ENV) bash
+
 .PHONY: edk2_clean
 edk2_clean:
 	${call logi,EDK2: clean}
