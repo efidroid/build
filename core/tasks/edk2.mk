@@ -3,8 +3,6 @@ EDK2_OUT := $(PWD)/$(TARGET_OUT)/edk2
 EDK2_ENV := GCC49_ARM_PREFIX=$(GCC_LINUX_GNUEABI) MAKEFLAGS=
 EDK2_BIN := $(EDK2_OUT)/Build/LittleKernelPkg/DEBUG_GCC49/FV/LITTLEKERNELPKG_EFI.fd
 EDK2_EFIDROID_OUT := $(EDK2_OUT)/Build/EFIDROID
-EDK2_LIBLK := $(EDK2_EFIDROID_OUT)/liblk.o
-EDK2_LIBLK_SYMS := $(EDK2_LIBLK).syms
 EDK2_FDF_INC := $(EDK2_EFIDROID_OUT)/LittleKernelPkg.fdf.inc
 
 FILTER_OUT = $(foreach v,$(2),$(if $(findstring $(1),$(v)),,$(v)))
@@ -13,8 +11,11 @@ FILTER_OUT = $(foreach v,$(2),$(if $(findstring $(1),$(v)),,$(v)))
 DRAM_BASE ?= $(EDK2_BASE)
 DRAM_SIZE ?= 0x01000000 # 16MB
 
+# LK + LKSIZE + FRAMEBUFFER(8MB for now)
+EDK2_BASE ?= $(shell printf "0x%x" $$(($(LK_BASE) + 0x400000 + 0x800000)))
+
 .PHONY: edk2
-edk2: lk
+edk2:
 	${call logi,EDK2: compile}
 	
 	# check variables
@@ -22,20 +23,10 @@ edk2: lk
 	$(if $(DRAM_BASE),,$(eval $(call loge,DRAM_BASE is not set)))
 	$(if $(DRAM_SIZE),,$(eval $(call loge,DRAM_SIZE is not set)))
 	
+	# setup build directory
 	mkdir -p $(EDK2_OUT)
 	mkdir -p $(EDK2_EFIDROID_OUT)
 	$(TOPDIR)build/tools/edk2_update "$(EDK2_DIR)" "$(EDK2_OUT)" "$(PWD)/$(TOPDIR)/uefi/LittleKernelPkg"
-	
-	# create list of objects for liblk
-	$(eval LIBLKOBJS = $(shell find $(LK_OUT) -name *.o))
-	$(eval LIBLKOBJS = $(call FILTER_OUT,$(LK_OUT)/build-$(LK_TARGET)/app,$(LIBLKOBJS)))
-	$(eval LIBLKOBJS = $(call FILTER_OUT,$(LK_OUT)/build-$(LK_TARGET)/arch,$(LIBLKOBJS)))
-	$(eval LIBLKOBJS = $(call FILTER_OUT,$(LK_OUT)/build-$(LK_TARGET)/lib/heap,$(LIBLKOBJS)))
-	$(eval LIBLKOBJS = $(call FILTER_OUT,$(LK_OUT)/build-$(LK_TARGET)/kernel,$(LIBLKOBJS)))
-	# prefix all symbols (except aeabi ones) with 'lk_'
-	$(GCC_EABI)ld -r $(LIBLKOBJS) -o $(EDK2_LIBLK)
-	$(GCC_EABI)nm -g $(EDK2_LIBLK) | grep -v __aeabi | xargs -I{} sh -c 'x="{}"; sym=$${x##* };echo $$sym lk_$$sym' > $(EDK2_LIBLK_SYMS)
-	$(GCC_EABI)objcopy --redefine-syms $(EDK2_LIBLK_SYMS) $(EDK2_LIBLK)
 	
 	# generate FDF include file
 	echo -e "DEFINE FD_BASE = $(EDK2_BASE)\n" > $(EDK2_FDF_INC)
@@ -43,9 +34,12 @@ edk2: lk
 	# get EDK git revision
 	$(eval EDK2_VERSION := $(shell cd $(EDK2_DIR) && git rev-parse --verify --short HEAD))
 	
-	# force rebuild because edk2 can't detect changes to liblk.o
-	touch $(EDK2_OUT)/LittleKernelPkg/Library/LittleKernelLib/empty.c
+	# (re)compile BaseTools
 	MAKEFLAGS= $(MAKE) -C $(EDK2_OUT)/BaseTools
+	
+	# compile EDKII
+	# Note: using 4 threads here as this seems to be a generic value
+	# and the build system ignores this makefile's settings
 	cd $(EDK2_OUT) && \
 		source edksetup.sh && \
 		$(EDK2_ENV) build -n4 -a ARM -t GCC49 -p LittleKernelPkg/LittleKernelPkg.dsc \
@@ -53,13 +47,9 @@ edk2: lk
 			-DFIRMWARE_VENDOR=EFIDroid \
 			-DDRAM_BASE=$(DRAM_BASE) \
 			-DDRAM_SIZE=$(DRAM_SIZE) ${COLORIZE}
-
-edk2_sideload: edk2 host_mkbootimg
-	$(HOST_OUT)/mkbootimg/mkbootimg \
-		--kernel $(EDK2_BIN) \
-		--ramdisk /dev/null \
-		--base $$(printf "0x%x" $$(($(EDK2_BASE) - 0x8000))) \
-		-o $(TARGET_OUT)/edk2_sideload.img
+	
+	# force rebuild of LK
+	touch $(TOPDIR)uefi/lkmodules/uefiapi/edk2bin.c
 
 .PHONY: edk2_clean
 edk2_clean:
