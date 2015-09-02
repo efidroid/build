@@ -26,7 +26,7 @@ edk2:
 	# setup build directory
 	mkdir -p $(EDK2_OUT)
 	mkdir -p $(EDK2_EFIDROID_OUT)
-	$(TOPDIR)build/tools/edk2_update "$(EDK2_DIR)" "$(EDK2_OUT)" "$(PWD)/$(TOPDIR)/uefi/LittleKernelPkg"
+	$(TOPDIR)build/tools/edk2_update "$(EDK2_DIR)" "$(EDK2_OUT)"
 	
 	# generate FDF include file
 	echo -e "DEFINE FD_BASE = $(EDK2_BASE)\n" > $(EDK2_FDF_INC)

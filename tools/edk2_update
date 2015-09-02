@@ -1,8 +1,7 @@
-#!/bin/sh
+#!/bin/bash
 
 export SOURCE="$1"
 export BUILD="$2"
-export LKPKG="$3"
 
 set -e
 
@@ -22,5 +21,7 @@ cp -Rp ${SOURCE}/BaseTools/* ${BUILD}/BaseTools/
 mkdir -p ${BUILD}/Conf
 cp -Rp ${SOURCE}/Conf/* ${BUILD}/Conf/
 
-# link LittleKernelPkg
-ln -s ${LKPKG} ${BUILD}/LittleKernelPkg
+# symlink our packages
+for d in ${PWD}/uefi/edk2packages/*; do
+	ln -s ${d} ${BUILD}/${d##*/}
+done
