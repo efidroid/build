@@ -68,13 +68,13 @@ lk_nouefi_sideload: lk_nouefi host_mkbootimg
 
 .PHONY: lk_nouefi_clean
 lk_nouefi_clean:
-	${call logi,LK(no UEFI): clean}
+	${call logi,LK\(no UEFI\): clean}
 	$(call lk_check)
 	$(LK_ENV_NOUEFI) $(MAKE) -C lk $(LK_TARGET) clean
 
 .PHONY: lk_nouefi_distclean
 lk_nouefi_distclean:
-	${call logi,LK(no UEFI): distclean}
+	${call logi,LK\(no UEFI\): distclean}
 	rm -Rf $(LK_OUT)-nouefi/*
 
 $(call add-clean-step,lk_nouefi_clean)
