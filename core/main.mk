@@ -222,7 +222,13 @@ else
         # check if device config exists
         DEVICE_CONFIG = $(wildcard device/$(DEVICEID)/config.mk)
         ifeq ("","$(DEVICE_CONFIG)")
-            $(call loge,device $(DEVICEID) doesn't exist)
+            $(shell $(TOPDIR)build/tools/roomservice.py $(DEVICEID) >&2)
+
+            # try again
+            DEVICE_CONFIG = $(wildcard device/$(DEVICEID)/config.mk)
+            ifeq ("","$(DEVICE_CONFIG)")
+                $(call loge,device $(DEVICEID) doesn't exist)
+            endif
         endif
 
         # include device config
