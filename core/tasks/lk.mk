@@ -53,7 +53,7 @@ $(call add-distclean-step,lk_distclean)
 ############## NOUEFI BUILD FOR TESTING ##############
 .PHONY: lk_nouefi
 lk_nouefi:
-	${call logi,LK(no UEFI): compile}
+	${call logi,LK\(no UEFI\): compile}
 	mkdir -p $(LK_OUT)-nouefi
 	$(call lk_check)
 	
