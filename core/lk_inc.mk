@@ -16,4 +16,4 @@ ifeq ($(WITH_KERNEL_UEFIAPI),1)
 endif
 
 # optionally include device specific makefile
--include $(EFIDROID_DEVICE_INCLUDE)
+-include $(EFIDROID_DEVICE_DIR)/lk_inc.mk
