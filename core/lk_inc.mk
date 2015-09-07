@@ -1,9 +1,19 @@
-# add our modules
-MODULES += \
-	$(EFIDROID_TOP)/uefi/lkmodules/uefiapi
+# disable all debug features by default
+DEFINES := $(filter-out WITH_DEBUG_DCC=1,$(DEFINES))
+DEFINES := $(filter-out WITH_DEBUG_UART=1,$(DEFINES))
+DEFINES := $(filter-out WITH_DEBUG_FBCON=1,$(DEFINES))
+DEFINES := $(filter-out WITH_DEBUG_JTAG=1,$(DEFINES))
 
-# enable the UEFIAPI
-WITH_KERNEL_UEFIAPI := 1
-DEFINES += WITH_KERNEL_UEFIAPI=1
+ifeq ($(WITH_KERNEL_UEFIAPI),1)
+	# add our modules
+	MODULES += \
+		$(EFIDROID_TOP)/uefi/lkmodules/uefiapi
 
-DEFINES += LCD_DENSITY=$(LCD_DENSITY)
+	# enable the UEFIAPI
+	DEFINES += WITH_KERNEL_UEFIAPI=1
+
+	DEFINES += LCD_DENSITY=$(LCD_DENSITY)
+endif
+
+# optionally include device specific makefile
+-include $(EFIDROID_DEVICE_INCLUDE)
