@@ -16,6 +16,12 @@ endif
 define lk_check
 $(if $(LK_TARGET),, \
 	$(eval $(call loge,LK_TARGET is not set)) \
+) \
+$(if $(LCD_DENSITY),, \
+	$(eval $(call loge,LCD_DENSITY is not set)) \
+) \
+$(if $(wildcard $(LK_DIR)),, \
+	$(eval $(call loge,LK wasn't found at $(LK_DIR))) \
 )
 endef
 
