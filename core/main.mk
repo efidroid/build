@@ -133,7 +133,8 @@ HOST_OUT := $(OUT)/host
 # GCC
 GCC_DIR := $(PWD)/$(TOPDIR)prebuilts/gcc/$(HOSTTYPE)
 GCC_TARGET_DIR := $(GCC_DIR)/arm
-GCC_LINUX_GNUEABI := $(GCC_TARGET_DIR)/arm-linux-gnueabihf-4.9/bin/arm-linux-gnueabihf-
+GCC_LINUX_GNUEABI := $(GCC_TARGET_DIR)/arm-linux-gnueabi-4.9/bin/arm-linux-gnueabi-
+GCC_LINUX_GNUEABIHF := $(GCC_TARGET_DIR)/arm-linux-gnueabihf-4.9/bin/arm-linux-gnueabihf-
 GCC_EABI := $(GCC_TARGET_DIR)/arm-eabi-4.8/bin/arm-eabi-
 
 # This is the default target.  It must be the first declared target.
