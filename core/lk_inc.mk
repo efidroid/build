@@ -17,3 +17,5 @@ endif
 
 # optionally include device specific makefile
 -include $(EFIDROID_DEVICE_DIR)/lk_inc.mk
+
+DEFINES += EFIDROID_SAFEBOOT=1
