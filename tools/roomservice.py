@@ -83,9 +83,9 @@ if not depsonly:
 local_manifests = r'.repo/local_manifests'
 if not os.path.exists(local_manifests): os.makedirs(local_manifests)
 
-def exists_in_tree(lm, repository):
+def exists_in_tree(lm, repository, revision):
     for child in lm.getchildren():
-        if child.attrib['name'].endswith(repository):
+        if child.attrib['name'].endswith(repository) and child.attrib['revision']==revision:
             return True
     return False
 
@@ -169,7 +169,8 @@ def add_to_manifest(repositories, fallback_branch = None):
     for repository in repositories:
         repo_name = repository['repository']
         repo_target = repository['target_path']
-        if exists_in_tree(lm, repo_name):
+        repo_revision = repository.get('revision', 'master')
+        if exists_in_tree(lm, repo_name, repo_revision):
             print('efidroid/%s already exists' % (repo_name))
             continue
 
