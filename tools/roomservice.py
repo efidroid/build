@@ -241,7 +241,7 @@ if depsonly:
 else:
     print("Found device: %s" % device)
 
-    repo_path = "device/%s" % (device)    
+    repo_path = "device/%s" % (device)
     adding = {'repository':'device','target_path':repo_path, 'branch':device}
     add_to_manifest([adding])
 
