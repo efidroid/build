@@ -9,7 +9,7 @@ string(REGEX REPLACE "[\r\n\t ]" ";" PROJECT_DEPS "${PROJECT_DEPS}")
 foreach(dep ${PROJECT_DEPS})
 	# set sourcedir variable
 	string(TOUPPER "${dep}" dep_srcvar)
-	set("${dep_srcvar}_SRC" "${EFIDROID_TOP}/external/${EFIDROID_PROJECT_TYPE}/${dep}")
+	set("${dep_srcvar}_SRC" "${EFIDROID_TOP}/projects/${dep}")
 endforeach(dep)
 
 function(importlib proj name)

@@ -192,8 +192,8 @@ else
         $(eval name := $(lastword $(subst /, ,$(3))))
         $(eval target := $(1)_$(name))
         $(eval project_outdir := $(2)/$(name))
-        $(eval project_expath := $(1)/$(name))
-        $(eval project_source := $(PWD)/$(TOPDIR)external/$(project_expath))
+        $(eval project_expath := $(name))
+        $(eval project_source := $(PWD)/$(TOPDIR)projects/$(project_expath))
         $(eval projectconfig_dir := $(PWD)/$(TOPDIR)build/projectconfig/$(name))
         $(eval project_deps_file_build := $(projectconfig_dir)/dependencies)
         $(eval project_deps_file_project := $(project_source)/dependencies)
@@ -295,7 +295,7 @@ else
     $(shell mkdir -p ${HOST_OUT})
 
     # define host targets
-    $(foreach p,$(wildcard $(TOPDIR)external/host/*),$(eval $(call add_cmake_target,host,$(HOST_OUT),$(p))))
+    $(foreach p,$(wildcard $(TOPDIR)projects/*),$(eval $(call add_cmake_target,host,$(HOST_OUT),$(p))))
 
     # check if device is set
     ifneq ($(DEVICEID),)
@@ -331,7 +331,7 @@ else
         $(shell mkdir -p ${TARGET_OUT})
 
         # define device targets
-        $(foreach p,$(wildcard $(TOPDIR)external/target/*),$(eval $(call add_cmake_target,target,$(TARGET_OUT),$(p))))
+        $(foreach p,$(wildcard $(TOPDIR)projects/*),$(eval $(call add_cmake_target,target,$(TARGET_OUT),$(p))))
 
         # include EDK2 first
         include $(BUILD_SYSTEM)/tasks/edk2.mk
