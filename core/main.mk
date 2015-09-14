@@ -133,9 +133,15 @@ HOST_OUT := $(OUT)/host
 # GCC
 GCC_DIR := $(PWD)/$(TOPDIR)prebuilts/gcc/$(HOSTTYPE)
 GCC_TARGET_DIR := $(GCC_DIR)/arm
-GCC_LINUX_GNUEABI := $(GCC_TARGET_DIR)/arm-linux-gnueabi-4.9/bin/arm-linux-gnueabi-
-GCC_LINUX_GNUEABIHF := $(GCC_TARGET_DIR)/arm-linux-gnueabihf-4.9/bin/arm-linux-gnueabihf-
+GCC_LINUX_GNUEABI_PATH := $(GCC_TARGET_DIR)/arm-linux-gnueabi-4.9/bin
+GCC_LINUX_GNUEABI := $(GCC_LINUX_GNUEABI_PATH)/arm-linux-gnueabi-
+GCC_LINUX_GNUEABIHF_PATH := $(GCC_TARGET_DIR)/arm-linux-gnueabihf-4.9/bin
+GCC_LINUX_GNUEABIHF := $(GCC_LINUX_GNUEABIHF_PATH)/arm-linux-gnueabihf-
 GCC_EABI := $(GCC_TARGET_DIR)/arm-eabi-4.8/bin/arm-eabi-
+
+# add compilers to PATH
+PATH := $(PWD)/$(GCC_LINUX_GNUEABI_PATH):$(PATH)
+PATH := $(PWD)/$(GCC_LINUX_GNUEABIHF_PATH):$(PATH)
 
 # This is the default target.  It must be the first declared target.
 .PHONY: all
@@ -183,23 +189,97 @@ else
 
     # add_cmake_target(type, outdir, sourcedir)
     define add_cmake_target
-    $(strip \
         $(eval name := $(lastword $(subst /, ,$(3))))
         $(eval target := $(1)_$(name))
+        $(eval project_outdir := $(2)/$(name))
+        $(eval project_expath := $(1)/$(name))
+        $(eval project_source := $(PWD)/$(TOPDIR)external/$(project_expath))
+        $(eval projectconfig_dir := $(PWD)/$(TOPDIR)build/projectconfig/$(name))
+        $(eval project_deps_file_build := $(projectconfig_dir)/dependencies)
+        $(eval project_deps_file_project := $(project_source)/dependencies)
+        $(eval project_deps := )
+        $(eval foundmakesystem :=)
 
-        $(eval cmakeargs := )
-        $(if $(filter $(1),target), \
-            $(eval cmakeargs := -DCMAKE_C_COMPILER=$(PWD)/$(GCC_LINUX_GNUEABI)gcc) \
-            $(eval cmakeargs += -DCMAKE_CXX_COMPILER=$(PWD)/$(GCC_LINUX_GNUEABI)g++) \
+        # get efidroid defined project deps
+        $(if $(wildcard $(project_deps_file_build)), \
+            $(eval project_deps += $(shell cat $(project_deps_file_build))) \
         )
 
-        $(eval .PHONY: $(target))
-        $(eval $(target):
-			@$${call logi,Compiling $(1)/$(name) ...}
-			@mkdir -p $(2)/$(name)
-			@cd $(2)/$(name) && cmake $(cmakeargs) $(PWD)/$(TOPDIR)external/$(1)/$(name) && $$(MAKE)
+        # get project's deps
+        $(if $(wildcard $(project_deps_file_project)), \
+            $(eval project_deps += $(shell cat $(project_deps_file_project))) \
         )
-    )
+        $(eval project_deps_make := $(addprefix $(1)_,$(project_deps)))
+
+        # build cmake args
+        $(eval cmakeargs := -DCMAKE_TOOLCHAIN_FILE=$(PWD)/$(BUILD_SYSTEM)/toolchain.cmake)
+        $(eval cmakeargs += -DEFIDROID_TOP=$(PWD)/$(TOPDIR))
+        $(eval cmakeargs += -DEFIDROID_PROJECT_SRC=$(project_source))
+        $(eval cmakeargs += -DEFIDROID_PROJECT_DEPS="$(project_deps)")
+        $(eval cmakeargs += -DEFIDROID_PROJECT_TYPE=$(1))
+
+        $(if $(filter $(1),target), $(eval 
+            $(eval cmakeargs += -DCMAKE_C_COMPILER=$(GCC_LINUX_GNUEABI)gcc)
+            $(eval cmakeargs += -DCMAKE_CXX_COMPILER=$(GCC_LINUX_GNUEABI)g++)
+            $(eval cmakeargs += -DEFIDROID_LIB_DIR=$(PWD)/$(TARGET_OUT))
+        ),$(eval
+            $(eval cmakeargs += -DEFIDROID_LIB_DIR=$(PWD)/$(HOST_OUT))
+        ))
+
+        # CMake
+        $(if $(foundmakesystem),,$(if $(wildcard $(project_source)/CMakeLists.txt), $(eval
+            $(eval foundmakesystem := 1)
+            .PHONY: $(target)
+            $(target): $(project_deps_make)
+	            @$${call logi,Compiling $(project_expath) ...}
+	            @mkdir -p $(project_outdir)
+	            @cd $(project_outdir) && cmake $(cmakeargs) $(project_source) && $$(MAKE)
+        )))
+
+        # configure
+        $(if $(foundmakesystem),,$(if $(wildcard $(project_source)/configure), $(eval
+            $(eval foundmakesystem := 1)
+            $(project_outdir)/Makefile:
+	            @$${call logi,Configuring $(project_expath) ...}
+	            @mkdir -p $(project_outdir)
+	            @cd $(project_outdir) && LDFLAGS=-static $(project_source)/configure --host arm-linux-gnueabi
+
+            .PHONY: $(target) $(project_deps_make)
+            $(target): $(project_outdir)/Makefile $(project_deps)
+	            @$${call logi,Compiling $(project_expath) ...}
+	            @cd $(project_outdir) && $$(MAKE)
+        )))
+
+        # efidroid cmake
+        $(if $(foundmakesystem),,$(if $(wildcard $(projectconfig_dir)/CMakeLists.txt), $(eval
+            $(eval foundmakesystem := 1)
+            .PHONY: $(target)
+            $(target): $(project_deps_make)
+	            @$${call logi,Compiling $(project_expath) ...}
+	            @mkdir -p $(project_outdir)
+	            @cd $(project_outdir) && cmake $(cmakeargs) $(projectconfig_dir) && $$(MAKE)
+        )))
+
+        # unknown
+        $(if $(foundmakesystem),,$(call loge,Unknown make system in $(project_expath)!))
+
+        # create clean targets
+        # clean
+        .PHONY: $(target)_clean
+        $(target)_clean:
+	        @$${call logi,Cleaning $(project_expath) ...}
+	        @cd $(project_outdir) && $$(MAKE) clean
+	        @if [ -f $(project_outdir)/Makefile ]; then cd $(project_outdir) && $$(MAKE) clean; fi
+
+        # distclean
+        .PHONY: $(target)_distclean
+        $(target)_distclean:
+	        @$${call logi,Dist-Cleaning $(project_expath) ...}
+	        @rm -Rf $(project_outdir)/*
+
+        # register clean steps
+        $(call add-clean-step,$(target)_clean)
+        $(call add-clean-step,$(target)_distclean)
     endef
 
     # load_task(path)
@@ -215,7 +295,7 @@ else
     $(shell mkdir -p ${HOST_OUT})
 
     # define host targets
-    $(foreach p,$(wildcard $(TOPDIR)external/host/*),$(call add_cmake_target,host,$(HOST_OUT),$(p)))
+    $(foreach p,$(wildcard $(TOPDIR)external/host/*),$(eval $(call add_cmake_target,host,$(HOST_OUT),$(p))))
 
     # check if device is set
     ifneq ($(DEVICEID),)
@@ -251,7 +331,7 @@ else
         $(shell mkdir -p ${TARGET_OUT})
 
         # define device targets
-        $(foreach p,$(wildcard $(TOPDIR)external/target/*),$(call add_cmake_target,target,$(TARGET_OUT),$(p)))
+        $(foreach p,$(wildcard $(TOPDIR)external/target/*),$(eval $(call add_cmake_target,target,$(TARGET_OUT),$(p))))
 
         # include EDK2 first
         include $(BUILD_SYSTEM)/tasks/edk2.mk
