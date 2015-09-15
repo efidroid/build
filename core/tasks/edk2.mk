@@ -15,7 +15,7 @@ DRAM_SIZE ?= 0x01000000 # 16MB
 EDK2_BASE ?= $(shell printf "0x%x" $$(($(LK_BASE) + 0x400000 + 0x800000)))
 
 .PHONY: edk2
-edk2:
+edk2: target_multiboot
 	${call logi,EDK2: compile}
 	
 	# check variables
@@ -30,12 +30,16 @@ edk2:
 	
 	# generate FDF include file
 	echo -e "DEFINE FD_BASE = $(EDK2_BASE)\n" > $(EDK2_FDF_INC)
+	echo -e "DEFINE EFIDROID_MULTIBOOT_BIN = Build/EFIDROID/multiboot_bin\n" >> $(EDK2_FDF_INC)
 	
 	# get EDK git revision
 	$(eval EDK2_VERSION := $(shell cd $(EDK2_DIR) && git rev-parse --verify --short HEAD))
 	
 	# (re)compile BaseTools
 	MAKEFLAGS= $(MAKE) -C $(EDK2_OUT)/BaseTools
+	
+	# copy multiboot binary to workspace
+	cp $(TARGET_MULTIBOOT_OUT)/init $(EDK2_EFIDROID_OUT)/multiboot_bin
 	
 	# compile EDKII
 	# Note: using 4 threads here as this seems to be a generic value
