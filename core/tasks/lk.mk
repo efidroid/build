@@ -16,6 +16,9 @@ endif
 
 # lk_check()
 define lk_check
+$(if $(LK_BASE),, \
+	$(eval $(call loge,LK_BASE is not set)) \
+) \
 $(if $(LK_TARGET),, \
 	$(eval $(call loge,LK_TARGET is not set)) \
 ) \
