@@ -117,6 +117,9 @@ define add-distclean-step
     $(eval DISTCLEANSTEPS += $(1))
 endef
 
+define uppercase
+$(shell var="$(1)"; echo $${var^^})
+endef
 
 # Absolute path of the present working direcotry.
 # This overrides the shell variable $PWD, which does not necessarily points to
@@ -198,6 +201,7 @@ else
         $(eval project_deps_file_build := $(projectconfig_dir)/dependencies)
         $(eval project_deps_file_project := $(project_source)/dependencies)
         $(eval project_deps := )
+        $(eval project_var_prefix := $(call uppercase,$(1))_$(call uppercase,$(name)))
         $(eval foundmakesystem :=)
 
         # get efidroid defined project deps
@@ -262,6 +266,10 @@ else
 
         # unknown
         $(if $(foundmakesystem),,$(call loge,Unknown make system in $(project_expath)!))
+
+        # set global project variables
+        $(eval $(project_var_prefix)_OUT := $(project_outdir))
+        $(eval $(project_var_prefix)_SRC := $(project_source))
 
         # create clean targets
         # clean
