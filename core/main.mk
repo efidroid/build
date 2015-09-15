@@ -267,19 +267,19 @@ else
         # clean
         .PHONY: $(target)_clean
         $(target)_clean:
-	        @$${call logi,Cleaning $(project_expath) ...}
+	        @$${call logi,Cleaning $(target) ...}
 	        @cd $(project_outdir) && $$(MAKE) clean
 	        @if [ -f $(project_outdir)/Makefile ]; then cd $(project_outdir) && $$(MAKE) clean; fi
 
         # distclean
         .PHONY: $(target)_distclean
         $(target)_distclean:
-	        @$${call logi,Dist-Cleaning $(project_expath) ...}
+	        @$${call logi,Dist-Cleaning $(target) ...}
 	        @rm -Rf $(project_outdir)/*
 
         # register clean steps
         $(call add-clean-step,$(target)_clean)
-        $(call add-clean-step,$(target)_distclean)
+        $(call add-distclean-step,$(target)_distclean)
     endef
 
     # load_task(path)
