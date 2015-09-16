@@ -231,38 +231,42 @@ else
         ))
 
         # CMake
-        $(if $(foundmakesystem),,$(if $(wildcard $(project_source)/CMakeLists.txt), $(eval
+        $(if $(foundmakesystem),,$(if $(wildcard $(project_source)/CMakeLists.txt),
             $(eval foundmakesystem := 1)
-            .PHONY: $(target)
+            $(eval .PHONY: $(target)
             $(target): $(project_deps_make)
 	            @$${call logi,Compiling $(project_expath) ...}
 	            @mkdir -p $(project_outdir)
 	            @cd $(project_outdir) && cmake $(cmakeargs) $(project_source) && $$(MAKE)
-        )))
+            )
+        ))
 
         # configure
-        $(if $(foundmakesystem),,$(if $(wildcard $(project_source)/configure), $(eval
+        $(if $(foundmakesystem),,$(if $(wildcard $(project_source)/configure),
             $(eval foundmakesystem := 1)
-            $(project_outdir)/Makefile:
+            $(eval $(project_outdir)/Makefile:
 	            @$${call logi,Configuring $(project_expath) ...}
 	            @mkdir -p $(project_outdir)
 	            @cd $(project_outdir) && LDFLAGS=-static $(project_source)/configure --host arm-linux-gnueabi
+            )
 
-            .PHONY: $(target) $(project_deps_make)
+            $(eval .PHONY: $(target) $(project_deps_make)
             $(target): $(project_outdir)/Makefile $(project_deps)
 	            @$${call logi,Compiling $(project_expath) ...}
 	            @cd $(project_outdir) && $$(MAKE)
-        )))
+            )
+        ))
 
         # efidroid cmake
-        $(if $(foundmakesystem),,$(if $(wildcard $(projectconfig_dir)/CMakeLists.txt), $(eval
+        $(if $(foundmakesystem),,$(if $(wildcard $(projectconfig_dir)/CMakeLists.txt),
             $(eval foundmakesystem := 1)
             .PHONY: $(target)
-            $(target): $(project_deps_make)
+            $(eval $(target): $(project_deps_make)
 	            @$${call logi,Compiling $(project_expath) ...}
 	            @mkdir -p $(project_outdir)
 	            @cd $(project_outdir) && cmake $(cmakeargs) $(projectconfig_dir) && $$(MAKE)
-        )))
+            )
+        ))
 
         # unknown
         $(if $(foundmakesystem),,$(call loge,Unknown make system in $(project_expath)!))
