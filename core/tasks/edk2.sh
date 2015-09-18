@@ -6,25 +6,15 @@ EDK2_EFIDROID_OUT="$EDK2_OUT/Build/EFIDROID"
 EDK2_FDF_INC="$EDK2_EFIDROID_OUT/LittleKernelPkg.fdf.inc"
 
 # default values
+if [ -z "$EDK2_BASE" ];then
+    # LK + LKSIZE + FRAMEBUFFER(8MB for now)
+    EDK2_BASE=$(printf "0x%x" $(($LK_BASE + 0x400000 + 0x800000)))
+fi
 if [ -z "$DRAM_BASE" ];then
     DRAM_BASE="$EDK2_BASE"
 fi
 if [ -z "$DRAM_SIZE" ];then
     DRAM_SIZE="0x01000000" # 16MB
-fi
-if [ -z "$EDK2_BASE" ];then
-    # LK + LKSIZE + FRAMEBUFFER(8MB for now)
-    EDK2_BASE=$(printf "0x%x" $(($LK_BASE + 0x400000 + 0x800000)))
-fi
-
-if [ -z "$EDK2_BASE" ];then
-    pr_fatal "EDK2_BASE is not set"
-fi
-if [ -z "$DRAM_BASE" ];then
-    pr_fatal "DRAM_BASE is not set"
-fi
-if [ -z "$DRAM_SIZE" ];then
-    pr_fatal "DRAM_SIZE is not set"
 fi
 
 # set global variables
