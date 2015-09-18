@@ -1,0 +1,43 @@
+#!/bin/bash
+
+set -e
+
+OUTDIR="$1"
+CONFIGINC="$2"
+SCRIPT="$3"
+MODULE_TYPE="$4"
+MODULE_NAME="$5"
+MODULE_OUT="$6"
+MODULE_DIR="$7"
+COMPILEFN="$8"
+
+mkdir -p "$MODULE_OUT"
+
+FEXT="${SCRIPT##*.}"
+if [ "$FEXT" == "sh" ];then
+    "$SHELL" -c "set -e && \
+                 source \"$CONFIGINC.sh\" && \
+                 source \"\$OUT/buildtime_variables.sh\" && \
+                 source \"\$TOP/build/core/compilescript_inc.sh\" && \
+                 export MODULE_TYPE=\"$MODULE_TYPE\" && \
+                 export MODULE_OUT=\"$MODULE_OUT\" && \
+                 export MODULE_NAME=\"$MODULE_NAME\" && \
+                 export MODULE_DIR=\"$MODULE_DIR\" && \
+                 source \"$SCRIPT\" && \
+                 \"$COMPILEFN\" \
+                "
+elif [ "$FEXT" == "py" ];then
+    python -c "execfile(\"$CONFIGINC.py\");\
+               execfile(OUT+\"/buildtime_variables.py\");\
+               execfile(TOP+\"/build/core/compilescript_inc.py\");\
+               globals()['MODULE_TYPE'] = '$MODULE_TYPE'; \
+               globals()['MODULE_OUT'] = '$MODULE_OUT'; \
+               globals()['MODULE_NAME'] = '$MODULE_NAME'; \
+               globals()['MODULE_DIR'] = '$MODULE_DIR'; \
+               execfile(\"$SCRIPT\");\
+               $COMPILEFN();
+              "
+else
+    echo "Invalid file extension"
+    exit 1
+fi
