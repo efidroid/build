@@ -1,0 +1,23 @@
+#!/bin/sh
+
+ARCH="$1"
+CC="$2"
+OUT_DIR="$3"
+CFLAGS="$4"
+
+# create out dir
+mkdir -p $OUT_DIR
+
+# generate eabi header
+echo "#include <sys/syscall.h>" | "$CC" ${CFLAGS} - -E -dM | \
+grep "define SYS" | cut -f2 -d" " \
+| ( echo "#define DEF_SYSCALL(NAME) {#NAME, SYS_ ## NAME}," ; \
+sed 's/SYS_//;s/\(.*\)/DEF_SYSCALL(&)/' ; echo "{NULL, -1}") \
+| "$CC" ${CFLAGS} - -E  | ( echo "#include <sys/syscall.h>" ; cat ) \
+| grep -v '# '| "$CC" ${CFLAGS} -E -P - | grep '{.*' \
+> "$OUT_DIR/syscall_$ARCH.h"
+
+# generate def header
+echo "#include <sys/syscall.h>" | "$CC" ${CFLAGS} - -E -dM \
+| grep "define SYS" | cut -f2 -d" " | \
+sed 's/SYS_//;s/\(.*\)/DEF_SYSCALL(&)/' > "$OUT_DIR/def_syscalls.h"
