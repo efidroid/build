@@ -7,6 +7,7 @@ import sys
 import glob
 import make_syntax
 import os
+import subprocess
 
 # compatibility imports
 try:
@@ -468,7 +469,9 @@ def main(argv):
 
         # check if device exists
         if cfg.devicename and not os.path.isfile('device/'+cfg.devicename+'/config.ini'):
-            raise Exception('Device does not exist')
+            subprocess.call([cfg.top+"/build/tools/roomservice.py", cfg.devicename])
+            if not os.path.isfile('device/'+cfg.devicename+'/config.ini'):
+                raise Exception('Device does not exist')
 
         cfg.devicenamenice = cfg.devicename.replace('/','-')
         cfg.variableinc = cfg.out+'/variables_'+cfg.devicenamenice+'.mk'
