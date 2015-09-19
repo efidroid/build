@@ -309,6 +309,19 @@ def parse_config(configfile, moduledir=None):
 
     cfg.make.newline()
 
+def parse_deps(configfile):
+    cfg.make.comment(configfile)
+
+    config = ConfigParser.RawConfigParser(allow_no_value=True)
+    config.optionxform = str
+    config.read(configfile)
+
+    for targetname in config.sections():
+        for (name, value) in config.items(targetname):
+            cfg.make.dependencies(targetname, name)
+
+    cfg.make.newline()
+
 def add_cmake_target(path, projecttype):
     cfg.make.comment(path)
 
@@ -460,16 +473,27 @@ def main(argv):
     # add modules
     for moduledir in glob.glob('modules/*'):
         dirname = os.path.basename(os.path.normpath(moduledir))
-        moduleconfigfile = 'build/moduleconfigs/'+dirname+'/EFIDroid.ini'
 
+        # always include moduleconfig if available
+        moduleconfigfile = 'build/moduleconfigs/'+dirname+'/EFIDroid.ini'
         if os.path.isfile(moduleconfigfile):
             parse_config(moduleconfigfile, moduledir);
 
-        if os.path.isfile(moduledir+'/CMakeLists.txt'):
+        # detect build system
+        moduleefidroidini = moduledir+'/EFIDroid.ini'
+        if os.path.isfile(moduleefidroidini):
+            parse_config(moduleefidroidini, moduledir);
+
+        elif os.path.isfile(moduledir+'/CMakeLists.txt'):
             add_cmake_target(moduledir, 'target')
             add_cmake_target(moduledir, 'host')
+
         elif not os.path.isfile(moduleconfigfile):
             raise Exception('Unknown make system in '+moduledir+'\nYou can manually specify it in '+moduleconfigfile)
+
+        moduledepsfile = moduledir+'/EFIDroidDependencies.ini'
+        if os.path.isfile(moduledepsfile):
+            parse_deps(moduledepsfile)
 
     # help target
     cfg.make.comment('HELP')
