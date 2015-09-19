@@ -287,7 +287,7 @@ def parse_config(configfile, moduledir=None):
                 cfg.make.dependencies('clean', targetname+'_clean')
 
                 # add distclean target
-                make_add_target(configfile, targetname+'_distclean', command+' DistClean', deps=[targetname+'_clean'],\
+                make_add_target(configfile, targetname+'_distclean', command+' DistClean',\
                                 description='Dist-Cleaning target \''+targetname+'\'')
                 cfg.make.dependencies('distclean', targetname+'_distclean')
 
@@ -319,7 +319,7 @@ def parse_config(configfile, moduledir=None):
 
                 # add clean target
                 make_add_target(configfile, targetname+'_clean', 'cd \"'+targetout+'\" && $(MAKE) clean',\
-                                deps=['FORCE'], description='Cleaning target \''+targetname+'\'')
+                                deps=['FORCE', targetout+'/Makefile'], description='Cleaning target \''+targetname+'\'')
                 cfg.make.dependencies('clean', targetname+'_clean')
 
                 # add distclean target
@@ -417,7 +417,7 @@ def add_cmake_target(path, projecttype, modulesrc=None, maketargets=None, disabl
     # add distclean rule
     make_add_target(path, targetname+'_distclean', [
         'rm -Rf \"'+outdir+'\"'
-    ], description='Dist-Cleaning target \''+targetname+'\'', deps=targetname+'_clean')
+    ], description='Dist-Cleaning target \''+targetname+'\'')
     cfg.make.dependencies('distclean', targetname+'_distclean')
 
     cfg.make.newline()
