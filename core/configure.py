@@ -243,20 +243,23 @@ def parse_config(configfile, moduledir=None):
                 command = 'build/tools/runscript "'+\
                            cfg.out+'" "'+cfg.configinclude_name+'" "'+targetdir+'/'+targetscriptfile+'"'+\
                            ' "'+targetcategory+'" "'+targetname+'" "'+targetout+'" "'+moduledir+'"'
+
+                # add build target
+                make_add_target(configfile, targetname, command+' '+targetcompilefn, deps=targetdeps,\
+                                description='Compiling target \''+targetname+'\'')
+
+                # add clean target
+                make_add_target(configfile, targetname+'_clean', command+' Clean',\
+                                description='Cleaning target \''+targetname+'\'')
+
+                # add distclean target
+                make_add_target(configfile, targetname+'_distclean', command+' DistClean', deps=targetdeps+[targetname+'_clean'],\
+                                description='Dist-Cleaning target \''+targetname+'\'')
+
             else:
                 raise Exception('Invalid target type \''+targettype+'\' in '+configfile)
 
-            # add build target
-            make_add_target(configfile, targetname, command+' '+targetcompilefn, deps=targetdeps,\
-                            description='Compiling target \''+targetname+'\'')
 
-            # add clean target
-            make_add_target(configfile, targetname+'_clean', command+' Clean',\
-                            description='Cleaning target \''+targetname+'\'')
-
-            # add distclean target
-            make_add_target(configfile, targetname+'_distclean', command+' DistClean', deps=targetdeps+[targetname+'_clean'],\
-                            description='Dist-Cleaning target \''+targetname+'\'')
 
             # set target variables            
             setvar(targetname_id+'_CONFIG_DIR', targetdir)
