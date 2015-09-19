@@ -238,6 +238,8 @@ def parse_config(configfile, moduledir=None):
             # add help entry
             if config.has_option(section, 'help'):
                 addhelp(targetname, config.get(section, 'help'))
+            else:
+                addhelp(targetname, '\''+targetcategory+'/'+targettype+'\' target')
 
             # add rule
             command = ''
