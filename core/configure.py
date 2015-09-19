@@ -179,21 +179,26 @@ def gen_toolchains():
         file_expanded = expandmodulevars(o.filename, o.target, 'host')
         if not inc_expanded==None and not file_expanded==None:
             f = fHost
+            f.write('if(NOT "${EFIDROID_TARGET}" STREQUAL "'+o.target+'")\n')
             f.write('add_library("'+name+'" '+linkage+' IMPORTED)\n')
             f.write('set_target_properties('+name+' PROPERTIES IMPORTED_LOCATION '+ expandvars(file_expanded)+')\n')
             if inc_expanded:
                 f.write('include_directories('+inc_expanded+')\n')
+            f.write('endif()\n\n')
             f.write('\n')
 
         inc_expanded = expandmodulevars(inlcudesstr, o.target, 'target')
         file_expanded = expandmodulevars(o.filename, o.target, 'target')
         if not inc_expanded==None and not file_expanded==None:
             f = fTarget
+            f.write('if(NOT "${EFIDROID_TARGET}" STREQUAL "'+o.target+'")\n')
             f.write('add_library("'+name+'" '+linkage+' IMPORTED)\n')
             f.write('set_target_properties('+name+' PROPERTIES IMPORTED_LOCATION '+ expandvars(file_expanded)+')\n')
             if inc_expanded:
                 f.write('include_directories('+inc_expanded+')\n')
+            f.write('endif()\n\n')
             f.write('\n')
+
 
     toolchain_write_footer(fHost)
     toolchain_write_footer(fTarget)
