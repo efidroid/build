@@ -217,6 +217,9 @@ def parse_config(configfile, moduledir=None):
             if not targetcategory=='target' and not targetcategory=='host':
                 raise Exception('Invalid category \''+targetcategory+'\' in '+configfile)
 
+            if targetforcecompile:
+                targetdeps += ['FORCE']
+
             # skip device targets if we're building in host-only mode
             if not cfg.devicename and targetcategory=='target':
                 continue
@@ -245,15 +248,15 @@ def parse_config(configfile, moduledir=None):
 
             # add build target
             make_add_target(configfile, targetname, command+' '+targetcompilefn, deps=targetdeps,\
-                            description='Compiling target \''+targetname+'\'', phony=targetforcecompile)
+                            description='Compiling target \''+targetname+'\'')
 
             # add clean target
             make_add_target(configfile, targetname+'_clean', command+' Clean', deps=targetdeps,\
-                            description='Cleaning target \''+targetname+'\'', phony=targetforcecompile)
+                            description='Cleaning target \''+targetname+'\'')
 
             # add distclean target
             make_add_target(configfile, targetname+'_distclean', command+' DistClean', deps=targetdeps+[targetname+'_clean'],\
-                            description='Dist-Cleaning target \''+targetname+'\'', phony=targetforcecompile)
+                            description='Dist-Cleaning target \''+targetname+'\'')
 
             # set target variables            
             setvar(targetname_id+'_CONFIG_DIR', targetdir)
@@ -394,6 +397,11 @@ def main(argv):
 
     # include file
     cfg.make.include(cfg.variableinc)
+    cfg.make.newline()
+
+    # add force target
+    cfg.make.comment('# Used to force goals to build.  Only use for conditionally defined goals.')
+    cfg.make.target('FORCE')
     cfg.make.newline()
 
     # add build config
