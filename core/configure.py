@@ -76,6 +76,17 @@ def expandvars(string):
 
     return string
 
+def expandmodulevars(string, module, projecttype):
+    module_out = getvar(projecttype.upper()+'_'+module.upper()+'_OUT')
+    module_src = getvar(projecttype.upper()+'_'+module.upper()+'_SRC')
+
+    if module_out and module_src:
+        string = string.replace('$(%s)' % 'MODULE_OUT', module_out)
+        string = string.replace('$(%s)' % 'MODULE_SRC', module_src)
+        return string
+
+    return None
+
 def evaluatevars():
     # replace variables
     processed = 1
@@ -107,24 +118,29 @@ def genvarinc():
         cfg.configinclude_py.write(name+'=\''+value+'\'\n')
 
 def getvar(name):
-    return cfg.variables[name]
+    if name in cfg.variables:
+        return cfg.variables[name]
+    return None
 
 def addhelp(name, text):
     cfg.helptext += bldwht.replace('\033', '\\e')+name+': '+txtrst.replace('\033', '\\e')+text.replace('\n', '\\n'+((len(name)+2)*' '))+'\\n'
 
-def define_target_vars(name, projecttype):
+def define_target_vars(name, projecttype, src):
     name_upper = name.upper()
 
     # set target variables            
     if projecttype=='target':
         setvar('TARGET_'+name_upper+'_OUT', getvar('TARGET_OUT')+'/'+name)
+        setvar('TARGET_'+name_upper+'_SRC', src)
     elif projecttype=='host':
         setvar('HOST_'+name_upper+'_OUT', getvar('HOST_OUT')+'/'+name)
+        setvar('HOST_'+name_upper+'_SRC', src)
 
-def register_library(name, projecttype, path, static=True):
+def register_library(target, name, filename, includes, static=True):
     o = Bunch()
-    o.projecttype = projecttype
-    o.path = path
+    o.target = target
+    o.filename = filename
+    o.includes = includes
     o.static = static
 
     cfg.libs[name] = o
@@ -151,20 +167,33 @@ def gen_toolchains():
     toolchain_write_header(fTarget)
 
     for name, o in cfg.libs.items():
-        f = None
-        if o.projecttype == 'host':
-            f = fHost
-        elif o.projecttype == 'target':
-            f = fTarget
-        else:
-            raise Exception('Invalid projecttype \''+o.projecttype+'\' for library \''+name+'\'!')
-
         linkage = 'STATIC'
         if not o.static:
             linkage = 'SHARED'
 
-        f.write('add_library("'+name+'" '+linkage+' IMPORTED)\n')
-        f.write('set_target_properties('+name+' PROPERTIES IMPORTED_LOCATION '+ expandvars(o.path)+')\n\n')
+        inlcudesstr = ''
+        for include in o.includes:
+            inlcudesstr += ' \"'+include+'\"'
+
+        inc_expanded = expandmodulevars(inlcudesstr, o.target, 'host')
+        file_expanded = expandmodulevars(o.filename, o.target, 'host')
+        if not inc_expanded==None and not file_expanded==None:
+            f = fHost
+            f.write('add_library("'+name+'" '+linkage+' IMPORTED)\n')
+            f.write('set_target_properties('+name+' PROPERTIES IMPORTED_LOCATION '+ expandvars(file_expanded)+')\n')
+            if inc_expanded:
+                f.write('include_directories('+inc_expanded+')\n')
+            f.write('\n')
+
+        inc_expanded = expandmodulevars(inlcudesstr, o.target, 'target')
+        file_expanded = expandmodulevars(o.filename, o.target, 'target')
+        if not inc_expanded==None and not file_expanded==None:
+            f = fTarget
+            f.write('add_library("'+name+'" '+linkage+' IMPORTED)\n')
+            f.write('set_target_properties('+name+' PROPERTIES IMPORTED_LOCATION '+ expandvars(file_expanded)+')\n')
+            if inc_expanded:
+                f.write('include_directories('+inc_expanded+')\n')
+            f.write('\n')
 
     toolchain_write_footer(fHost)
     toolchain_write_footer(fTarget)
@@ -292,17 +321,20 @@ def parse_config(configfile, moduledir=None):
             else:
                 raise Exception('Invalid target type \''+targettype+'\' in '+configfile)
 
-
-
             # set target variables            
             setvar(targetname_id+'_CONFIG_DIR', targetdir)
-            define_target_vars(targetname, targetcategory)
+            define_target_vars(targetname, targetcategory, moduledir)
 
-        elif section.startswith('libraries.'):
-            projecttype = section.split('.', 1)[1]
+        elif section.startswith('library.'):
+            libname = section.split('.', 1)[1]
+            filename = config.get(section, 'file')
+            target = config.get(section, 'target')
 
-            for (name, value) in config.items(section):
-                register_library(name, projecttype, value)
+            includes = []
+            if config.has_option(section, 'includes'):
+                includes += config.get(section, 'includes').split()
+
+            register_library(target, libname, filename, includes)
 
         else:
             raise Exception('Invalid section \''+section+'\' in '+configfile)
@@ -339,7 +371,7 @@ def add_cmake_target(path, projecttype):
     else:
         raise Exception('Invalid projecttype \''+projecttype+'\'')
 
-    define_target_vars(dirname, projecttype)
+    define_target_vars(dirname, projecttype, os.path.abspath(path))
 
     # add rule
     outdir = getvar(projecttype.upper()+'_'+dirname.upper()+'_OUT')
