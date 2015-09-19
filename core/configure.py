@@ -330,7 +330,7 @@ def add_cmake_target(path, projecttype):
     outdir = getvar(projecttype.upper()+'_'+dirname.upper()+'_OUT')
     make_add_target(path, targetname, [
         'mkdir -p \"'+outdir+'\"',
-        'cd \"'+outdir+'\" && cmake '+cmakeargs+' '+os.path.abspath(path)+' && $(MAKE) VERBOSE=1'
+        'cd \"'+outdir+'\" && cmake '+cmakeargs+' '+os.path.abspath(path)+' && $(MAKE)'
     ], description='Compiling target \''+targetname+'\'', deps=targetdeps)
     addhelp(targetname, 'CMake Target')
 
