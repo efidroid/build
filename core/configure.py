@@ -282,11 +282,11 @@ def parse_config(configfile, moduledir=None):
                                 description='Compiling target \''+targetname+'\'')
 
                 # add clean target
-                make_add_target(configfile, targetname+'_clean', command+' Clean',\
+                make_add_target(configfile, targetname+'_clean', command+' Clean', deps=['FORCE'],\
                                 description='Cleaning target \''+targetname+'\'')
 
                 # add distclean target
-                make_add_target(configfile, targetname+'_distclean', command+' DistClean', deps=targetdeps+[targetname+'_clean'],\
+                make_add_target(configfile, targetname+'_distclean', command+' DistClean', deps=[targetname+'_clean'],\
                                 description='Dist-Cleaning target \''+targetname+'\'')
 
                 # add help entry
@@ -317,11 +317,11 @@ def parse_config(configfile, moduledir=None):
 
                 # add clean target
                 make_add_target(configfile, targetname+'_clean', 'cd \"'+targetout+'\" && $(MAKE) clean',\
-                                description='Cleaning target \''+targetname+'\'')
+                                deps=['FORCE'], description='Cleaning target \''+targetname+'\'')
 
                 # add distclean target
                 make_add_target(configfile, targetname+'_distclean', 'cd \"'+targetout+'\" && $(MAKE) distclean', \
-                                deps=targetdeps+[targetname+'_clean'], description='Dist-Cleaning target \''+targetname+'\'')
+                                deps=[targetname+'_clean'], description='Dist-Cleaning target \''+targetname+'\'')
 
                 # add help entry
                 if config.has_option(section, 'help'):
@@ -370,7 +370,7 @@ def add_cmake_target(path, projecttype):
 
     dirname = os.path.basename(os.path.normpath(path))
     targetname = projecttype+'_'+dirname
-    targetdeps = [cfg.buildfname]
+    targetdeps = ['FORCE']
     cmakeargs = ''
 
     if projecttype == 'target':
@@ -395,7 +395,7 @@ def add_cmake_target(path, projecttype):
     # add clean rule
     make_add_target(path, targetname+'_clean', [
         'cd \"'+outdir+'\" && $(MAKE) clean'
-    ], description='Cleaning target \''+targetname+'\'', deps=targetdeps)
+    ], description='Cleaning target \''+targetname+'\'', deps=['FORCE'])
 
     # add distclean rule
     make_add_target(path, targetname+'_distclean', [
