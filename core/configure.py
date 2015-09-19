@@ -269,12 +269,6 @@ def parse_config(configfile, moduledir=None):
             elif targetcategory=='host':
                 targetout = getvar('HOST_OUT')+'/'+outdir
 
-            # add help entry
-            if config.has_option(section, 'help'):
-                addhelp(targetname, config.get(section, 'help'))
-            else:
-                addhelp(targetname, '\''+targetcategory+'/'+targettype+'\' target')
-
             # add rule
             command = ''
             if targettype == 'script':
@@ -294,6 +288,12 @@ def parse_config(configfile, moduledir=None):
                 # add distclean target
                 make_add_target(configfile, targetname+'_distclean', command+' DistClean', deps=targetdeps+[targetname+'_clean'],\
                                 description='Dist-Cleaning target \''+targetname+'\'')
+
+                # add help entry
+                if config.has_option(section, 'help'):
+                    addhelp(targetname, config.get(section, 'help'))
+                else:
+                    addhelp(targetname, '\''+targetcategory+'/'+targettype+'\' target')
 
             elif targettype == 'autoconf':
                 # add autogen target
@@ -322,6 +322,12 @@ def parse_config(configfile, moduledir=None):
                 # add distclean target
                 make_add_target(configfile, targetname+'_distclean', 'cd \"'+targetout+'\" && $(MAKE) distclean', \
                                 deps=targetdeps+[targetname+'_clean'], description='Dist-Cleaning target \''+targetname+'\'')
+
+                # add help entry
+                if config.has_option(section, 'help'):
+                    addhelp(targetname, config.get(section, 'help'))
+                else:
+                    addhelp(targetname, '\''+targetcategory+'/'+targettype+'\' target')
 
             else:
                 raise Exception('Invalid target type \''+targettype+'\' in '+configfile)
