@@ -196,6 +196,7 @@ def parse_config(configfile, moduledir=None):
             targetcategory = 'target'
             targetout = None
             outdir = targetname
+            maketargets = []
 
             if not moduledir:
                 moduledir = targetdir
@@ -212,6 +213,8 @@ def parse_config(configfile, moduledir=None):
                 targetcategory = config.get(section, 'category')
             if config.has_option(section, 'subtargets'):
                 subtargets = config.get(section, 'subtargets').split()
+            if config.has_option(section, 'maketargets'):
+                maketargets += config.get(section, 'maketargets').split()
 
             # validate category
             if not targetcategory=='target' and not targetcategory=='host':
@@ -255,6 +258,34 @@ def parse_config(configfile, moduledir=None):
                 # add distclean target
                 make_add_target(configfile, targetname+'_distclean', command+' DistClean', deps=targetdeps+[targetname+'_clean'],\
                                 description='Dist-Cleaning target \''+targetname+'\'')
+
+            elif targettype == 'autoconf':
+                # add autogen target
+                make_add_target(configfile, moduledir+'/configure', 'cd \"'+moduledir+'\" && ./autogen.sh', deps=moduledir+'/autogen.sh',\
+                                description='Autoconfiguring target \''+targetname+'\'')
+
+                # add configure target
+                hostflag = ''
+                if targetcategory=='target':
+                    hostflag = '--host '+getvar('GCC_LINUX_GNUEABIHF_NAME')
+                commands = [
+                    'mkdir -p \"'+targetout+'\"',
+                    'cd \"'+targetout+'\" && \"'+moduledir+'/configure\" '+hostflag
+                ]
+                make_add_target(configfile, targetout+'/Makefile', commands, deps=moduledir+'/configure',\
+                                description='Configuring target \''+targetname+'\'')
+
+                # add make target
+                make_add_target(configfile, targetname, 'cd \"'+targetout+'\" && $(MAKE) '+(' '.join(maketargets)), \
+                                deps=targetdeps+[targetout+'/Makefile'], description='Compiling target \''+targetname+'\'')
+
+                # add clean target
+                make_add_target(configfile, targetname+'_clean', 'cd \"'+targetout+'\" && $(MAKE) clean',\
+                                description='Cleaning target \''+targetname+'\'')
+
+                # add distclean target
+                make_add_target(configfile, targetname+'_distclean', 'cd \"'+targetout+'\" && $(MAKE) distclean', \
+                                deps=targetdeps+[targetname+'_clean'], description='Dist-Cleaning target \''+targetname+'\'')
 
             else:
                 raise Exception('Invalid target type \''+targettype+'\' in '+configfile)
@@ -410,6 +441,12 @@ def main(argv):
     # add build config
     parse_config('build/config.ini')
 
+    # we need the toolchain vars
+    evaluatevars()
+
+    # set PATH
+    cfg.make._line('export PATH := '+getvar('GCC_LINUX_GNUEABIHF_BIN')+':$(PATH)')
+
     # add device config
     if cfg.devicename:
         parse_config('device/'+cfg.devicename+'/config.ini')
@@ -417,9 +454,6 @@ def main(argv):
     # add build tasks
     for configfile in glob.glob('build/core/tasks/*.ini'):
         parse_config(configfile)
-
-    # cmake needs the toolchain
-    evaluatevars()
 
     # add modules
     for moduledir in glob.glob('modules/*'):
