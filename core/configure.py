@@ -251,7 +251,7 @@ def parse_config(configfile, moduledir=None):
                             description='Compiling target \''+targetname+'\'')
 
             # add clean target
-            make_add_target(configfile, targetname+'_clean', command+' Clean', deps=targetdeps,\
+            make_add_target(configfile, targetname+'_clean', command+' Clean',\
                             description='Cleaning target \''+targetname+'\'')
 
             # add distclean target
