@@ -22,35 +22,35 @@ setvar "EDK2_BIN" "$EDK2_BIN"
 setvar "EDK2_BASE" "$EDK2_BASE"
 
 Configure() {
-	# setup build directory
-	mkdir -p "$EDK2_OUT"
-	mkdir -p "$EDK2_EFIDROID_OUT"
-	"$TOP/build/tools/edk2_update" "$EDK2_DIR" "$EDK2_OUT"
-	
-	# generate FDF include file
-	echo -e "DEFINE FD_BASE = $EDK2_BASE\n" > "$EDK2_FDF_INC"
-	echo -e "DEFINE EFIDROID_MULTIBOOT_BIN = Build/EFIDROID/multiboot_bin\n" >> "$EDK2_FDF_INC"
-	
-	# get EDK git revision
+    # setup build directory
+    mkdir -p "$EDK2_OUT"
+    mkdir -p "$EDK2_EFIDROID_OUT"
+    "$TOP/build/tools/edk2_update" "$EDK2_DIR" "$EDK2_OUT"
+
+    # generate FDF include file
+    echo -e "DEFINE FD_BASE = $EDK2_BASE\n" > "$EDK2_FDF_INC"
+    echo -e "DEFINE EFIDROID_MULTIBOOT_BIN = Build/EFIDROID/multiboot_bin\n" >> "$EDK2_FDF_INC"
+
+    # get EDK git revision
     tmp=$(cd "$EDK2_DIR" && git rev-parse --verify --short HEAD)
-	setvar "EDK2_VERSION" "$tmp"
-	
-	# (re)compile BaseTools
-	MAKEFLAGS= "$EFIDROID_MAKE" -C "$EDK2_OUT/BaseTools"
+    setvar "EDK2_VERSION" "$tmp"
+
+    # (re)compile BaseTools
+    MAKEFLAGS= "$EFIDROID_MAKE" -C "$EDK2_OUT/BaseTools"
 }
 
 Compile() {
     # copy multiboot binary to workspace
-	cp "$TARGET_MULTIBOOT_OUT/init" "$EDK2_EFIDROID_OUT/multiboot_bin"
+    cp "$TARGET_MULTIBOOT_OUT/init" "$EDK2_EFIDROID_OUT/multiboot_bin"
 
     # get number of jobs
     MAKEPATH=$($MAKEFORWARD_PIPES)
     plussigns=$(timeout -k 1 1 cat "$MAKEPATH/3" ; exit 0)
     numjobs=$(($(echo -n $plussigns | wc -c) + 1))
-	
-	# compile EDKII
-	# Note: using 4 threads here as this seems to be a generic value
-	# and the build system ignores this makefile's settings
+
+    # compile EDKII
+    # Note: using 4 threads here as this seems to be a generic value
+    # and the build system ignores this makefile's settings
     "$SHELL" -c "\
 	    cd "$EDK2_OUT" && \
 		    source edksetup.sh && \
@@ -70,9 +70,9 @@ Compile() {
 
     # write back our jobs
     echo -n "$plussigns" > "$MAKEPATH/3"
-	
-	# force rebuild of LK
-	touch "$TOP/uefi/lkmodules/uefiapi/edk2bin.c"
+
+    # force rebuild of LK
+    touch "$TOP/uefi/lkmodules/uefiapi/edk2bin.c"
 }
 
 EDK2Shell() {
