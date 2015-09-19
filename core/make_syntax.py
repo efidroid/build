@@ -51,7 +51,10 @@ class Writer(object):
         self._line('include %s' % path)
 
     def default(self, deps):
-        self._line('default: %s' % ' '.join(as_list(deps)))
+        self.dependencies('default', deps)
+
+    def dependencies(self, name, deps):
+        self._line('%s: %s' % (name, ' '.join(as_list(deps))))
 
     def _line(self, text, indent=0):
         """Write 'text' word-wrapped at self.width characters."""
