@@ -284,10 +284,12 @@ def parse_config(configfile, moduledir=None):
                 # add clean target
                 make_add_target(configfile, targetname+'_clean', command+' Clean', deps=['FORCE'],\
                                 description='Cleaning target \''+targetname+'\'')
+                cfg.make.dependencies('clean', targetname+'_clean')
 
                 # add distclean target
                 make_add_target(configfile, targetname+'_distclean', command+' DistClean', deps=[targetname+'_clean'],\
                                 description='Dist-Cleaning target \''+targetname+'\'')
+                cfg.make.dependencies('distclean', targetname+'_distclean')
 
                 # add help entry
                 if config.has_option(section, 'help'):
@@ -318,10 +320,12 @@ def parse_config(configfile, moduledir=None):
                 # add clean target
                 make_add_target(configfile, targetname+'_clean', 'cd \"'+targetout+'\" && $(MAKE) clean',\
                                 deps=['FORCE'], description='Cleaning target \''+targetname+'\'')
+                cfg.make.dependencies('clean', targetname+'_clean')
 
                 # add distclean target
                 make_add_target(configfile, targetname+'_distclean', 'cd \"'+targetout+'\" && $(MAKE) distclean', \
                                 deps=[targetname+'_clean'], description='Dist-Cleaning target \''+targetname+'\'')
+                cfg.make.dependencies('distclean', targetname+'_distclean')
 
                 # add help entry
                 if config.has_option(section, 'help'):
@@ -408,11 +412,13 @@ def add_cmake_target(path, projecttype, modulesrc=None, maketargets=None, disabl
     make_add_target(path, targetname+'_clean', [
         'cd \"'+outdir+'\" && $(MAKE) clean'
     ], description='Cleaning target \''+targetname+'\'', deps=['FORCE'])
+    cfg.make.dependencies('clean', targetname+'_clean')
 
     # add distclean rule
     make_add_target(path, targetname+'_distclean', [
         'rm -Rf \"'+outdir+'\"'
     ], description='Dist-Cleaning target \''+targetname+'\'', deps=targetname+'_clean')
+    cfg.make.dependencies('distclean', targetname+'_distclean')
 
     cfg.make.newline()
 
@@ -550,7 +556,20 @@ def main(argv):
         if os.path.isfile(moduledepsfile):
             parse_deps(moduledepsfile)
 
+    # clean target
+    cfg.make.comment('CLEAN')
+    make_add_target(__file__, 'clean', phony=True)
+    cfg.make.newline()
+    addhelp('clean', 'Clean all projects')
+
+    # distclean target
+    cfg.make.comment('DIST')
+    make_add_target(__file__, 'distclean', 'rm -Rf \"'+cfg.out+'\"', phony=True)
+    cfg.make.newline()
+    addhelp('distclean', 'Remove the entire build directory (out)')
+
     # help target
+    addhelp('help', 'Show this help text')
     cfg.make.comment('HELP')
     make_add_target(__file__, 'help', 'echo -e \"'+cfg.helptext.replace('"', '\\"')+'\"', description='Generating Help')
     cfg.make.default(['help'])
