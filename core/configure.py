@@ -329,6 +329,10 @@ def parse_config(configfile, moduledir=None):
                 else:
                     addhelp(targetname, '\''+targetcategory+'/'+targettype+'\' target')
 
+            elif targettype == 'cmake':
+                add_cmake_target(os.path.dirname(configfile), targetcategory, moduledir, maketargets=maketargets, disableprefix=True)
+                cfg.make.dependencies(targetname, targetdeps)
+
             else:
                 raise Exception('Invalid target type \''+targettype+'\' in '+configfile)
 
@@ -365,11 +369,14 @@ def parse_deps(configfile):
 
     cfg.make.newline()
 
-def add_cmake_target(path, projecttype):
+def add_cmake_target(path, projecttype, modulesrc=None, maketargets=None, disableprefix=False):
     cfg.make.comment(path)
 
     dirname = os.path.basename(os.path.normpath(path))
-    targetname = projecttype+'_'+dirname
+    if disableprefix:
+        targetname = dirname
+    else:
+        targetname = projecttype+'_'+dirname
     targetdeps = ['FORCE']
     cmakeargs = ''
 
@@ -381,6 +388,11 @@ def add_cmake_target(path, projecttype):
         cmakeargs += ' -DCMAKE_TOOLCHAIN_FILE='+getvar('HOST_OUT')+'/toolchain.cmake'
     else:
         raise Exception('Invalid projecttype \''+projecttype+'\'')
+
+    cmakeargs += ' -DEFIDROID_TARGET='+dirname
+
+    if modulesrc:
+        cmakeargs += ' -DMODULE_SRC='+os.path.abspath(modulesrc)
 
     define_target_vars(dirname, projecttype, os.path.abspath(path))
 
