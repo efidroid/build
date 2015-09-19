@@ -334,7 +334,7 @@ def add_cmake_target(path, projecttype):
         'mkdir -p \"'+outdir+'\"',
         'cd \"'+outdir+'\" && cmake '+cmakeargs+' '+os.path.abspath(path)+' && $(MAKE)'
     ], description='Compiling target \''+targetname+'\'', deps=targetdeps)
-    addhelp(targetname, 'CMake Target')
+    addhelp(targetname, 'CMake target')
 
     # add clean rule
     make_add_target(path, targetname+'_clean', [
