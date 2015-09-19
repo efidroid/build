@@ -318,8 +318,6 @@ def make_add_target(source, name, commands=None, deps=None, phony=False, descrip
     if not isinstance(deps, list):
         deps = [deps]
 
-    deps += ['mastertarget']
-
     cfg.make.target(name, commands, deps, phony, description)
     cfg.targets[name] = source
 
@@ -431,25 +429,6 @@ def main(argv):
     make_add_target(__file__, 'help', 'echo -e \"'+cfg.helptext.replace('"', '\\"')+'\"', description='Generating Help')
     cfg.make.default(['help'])
     cfg.make.newline()
-
-    # makeforward
-    cfg.make.comment('MAKEFORWARD')
-    cfg.make.target(getvar('HOST_OUT')+'/makeforward', [
-        'mkdir -p '+getvar('HOST_OUT'),
-        'gcc -Wall -Wextra -Wshadow -Werror $< -o $@'
-    ], deps=[cfg.top+'/build/tools/makeforward.c'])
-    cfg.make.target('makeforward', deps=getvar('HOST_OUT')+'/makeforward')
-    cfg.make.newline()
-    cfg.make.comment('MAKEFORWARD_PIPES')
-    cfg.make.target(getvar('HOST_OUT')+'/makeforward_pipes', [
-        'mkdir -p '+getvar('HOST_OUT'),
-        'gcc -Wall -Wextra -Wshadow -Werror $< -o $@'
-    ], deps=[cfg.top+'/build/tools/makeforward_pipes.c'])
-    cfg.make.target('makeforward_pipes', deps=getvar('HOST_OUT')+'/makeforward_pipes')
-    cfg.make.newline()
-    # master target
-    cfg.make.comment('MASTER TARGET')
-    cfg.make.target('mastertarget', 'echo -n "" > out/buildtime_variables.sh && echo -n "" > out/buildtime_variables.py', deps=['makeforward', 'makeforward_pipes'], description='Running master target')
 
     # generate make file
     makefile = open(cfg.buildfname, "w")
