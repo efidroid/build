@@ -338,6 +338,11 @@ def parse_config(configfile, moduledir=None):
                 add_cmake_target(os.path.dirname(configfile), targetcategory, moduledir, maketargets=maketargets, disableprefix=True)
                 cfg.make.dependencies(targetname, targetdeps)
 
+            elif targettype == 'command':
+                command = expandvars(config.get(section, 'command'))
+                 # add make target
+                make_add_target(configfile, targetname, command, deps=targetdeps, description='Compiling target \''+targetname+'\'')
+
             else:
                 raise Exception('Invalid target type \''+targettype+'\' in '+configfile)
 
