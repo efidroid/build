@@ -117,6 +117,8 @@ def genvarinc():
         cfg.configinclude_sh.write('export '+name+'=\"'+value.replace('$', '\$')+'\"\n')
         # python
         cfg.configinclude_py.write(name+'=\''+value+'\'\n')
+        # cmake
+        cfg.configinclude_cmake.write('set('+name+' "'+value+'")\n')
 
 def getvar(name):
     if name in cfg.variables:
@@ -150,6 +152,9 @@ def toolchain_write_header(f):
     f.write('if(DEFINED CMAKE_TOOLCHAIN_READY)\n')
     f.write('\treturn()\n')
     f.write('endif()\n\n')
+
+    f.write('include("'+cfg.configinclude_name+'.cmake")\n\n')
+
 
 def toolchain_write_footer(f):
     f.write('# prevent multiple inclusion\n')
@@ -496,6 +501,7 @@ def main(argv):
 
     cfg.configinclude_sh = open(cfg.configinclude_name+'.sh', "w")
     cfg.configinclude_py = open(cfg.configinclude_name+'.py', "w")
+    cfg.configinclude_cmake = open(cfg.configinclude_name+'.cmake', "w")
     setvar('builddir', cfg.out)
     setvar('OUT', cfg.out)
     setvar('TOP', cfg.top)
@@ -601,6 +607,7 @@ def main(argv):
 
     cfg.configinclude_sh.close()
     cfg.configinclude_py.close()
+    cfg.configinclude_cmake.close()
 
 if __name__ == "__main__":
     try:
