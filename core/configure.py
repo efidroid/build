@@ -398,6 +398,8 @@ def add_cmake_target(path, projecttype, modulesrc=None, maketargets=None, disabl
     if projecttype == 'target':
         cmakeargs += ' -DCMAKE_C_COMPILER='+getvar('GCC_LINUX_GNUEABIHF')+'gcc'
         cmakeargs += ' -DCMAKE_CXX_COMPILER='+getvar('GCC_LINUX_GNUEABIHF')+'g++'
+        cmakeargs += ' -DCMAKE_LINKER='+getvar('GCC_LINUX_GNUEABIHF')+'ld'
+        cmakeargs += ' -DCMAKE_OBJCOPY='+getvar('GCC_LINUX_GNUEABIHF')+'objcopy'
         cmakeargs += ' -DCMAKE_TOOLCHAIN_FILE='+getvar('TARGET_OUT')+'/toolchain.cmake'
     elif projecttype == 'host':
         cmakeargs += ' -DCMAKE_TOOLCHAIN_FILE='+getvar('HOST_OUT')+'/toolchain.cmake'
