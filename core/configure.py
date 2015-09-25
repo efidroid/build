@@ -304,8 +304,16 @@ def parse_config(configfile, moduledir=None):
                     addhelp(targetname, '\''+targetcategory+'/'+targettype+'\' target')
 
             elif targettype == 'autoconf':
+                generator = None
+                if os.path.isfile(moduledir+'/autogen.sh'):
+                    generator = 'autogen.sh'
+                elif os.path.isfile(moduledir+'/makeconf.sh'):
+                    generator = 'makeconf.sh'
+                else:
+                    raise Exception('no generator found')
+
                 # add autogen target
-                make_add_target(configfile, moduledir+'/configure', 'cd \"'+moduledir+'\" && ./autogen.sh', deps=moduledir+'/autogen.sh',\
+                make_add_target(configfile, moduledir+'/configure', 'cd \"'+moduledir+'\" && ./'+generator, deps=moduledir+'/'+generator,\
                                 description='Autoconfiguring target \''+targetname+'\'')
 
                 # add configure target
