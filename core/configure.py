@@ -518,6 +518,7 @@ def main(argv):
     setvar('HOST_OUT', getvar('OUT')+'/host')
     setvar('MAKEFORWARD', getvar('HOST_OUT')+'/makeforward')
     setvar('MAKEFORWARD_PIPES', getvar('HOST_OUT')+'/makeforward_pipes')
+    setvar('DEVICE_DIR', cfg.top+'/device/'+cfg.devicename);
 
     # get host type
     kernel_name = os.uname()[0]
