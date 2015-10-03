@@ -27,6 +27,10 @@ if [ ! -d "$LK_DIR" ];then
     pr_fatal "LK wasn't found at $LK_DIR"
 fi
 
+if [ ! -z "$LK_DT_IMG" ];then
+    LK_MKBOOTIMG_ADDITIONAL_FLAGS="--dt $LK_DT_IMG"
+fi
+
 CompileLK() {
     mkdir -p "$LK_OUT"
     "$SHELL" -c "$LK_ENV \"$MAKEFORWARD\" \"$EFIDROID_MAKE\" -C \"$LK_DIR\" $LK_TARGET"
@@ -39,6 +43,7 @@ CompileLKSideload() {
 		--kernel "$LK_OUT/build-$LK_TARGET/lk.bin" \
 		--ramdisk /dev/null \
 		--base $(printf "0x%x" $(($LK_BASE - 0x8000))) \
+		$LK_MKBOOTIMG_ADDITIONAL_FLAGS \
 		-o "$TARGET_OUT/lk_sideload.img"
     set +x
 }
