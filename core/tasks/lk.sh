@@ -10,10 +10,12 @@ LK_ENV="$LK_ENV EDK2_BIN=$EDK2_BIN EDK2_BASE=$EDK2_BASE EDK2_API_INC=$TOP/uefi/e
 LK_ENV="$LK_ENV WITH_KERNEL_UEFIAPI=1"
 LK_ENV="$LK_ENV LCD_DENSITY=$LCD_DENSITY"
 
+# check if lk source exists
 if [ ! -z "$LK_SOURCE" ];then
     LK_DIR="$TOP/bootloader/$LK_SOURCE"
 fi
 
+# check required variables
 if [ -z "$LK_BASE" ];then
     pr_fatal "LK_BASE is not set"
 fi
@@ -25,6 +27,13 @@ if [ -z "$LCD_DENSITY" ];then
 fi
 if [ ! -d "$LK_DIR" ];then
     pr_fatal "LK wasn't found at $LK_DIR"
+fi
+
+# optional arguments
+LK_MKBOOTIMG_ADDITIONAL_FLAGS=""
+
+if [ ! -z "$LK_DT_IMG" ];then
+    LK_MKBOOTIMG_ADDITIONAL_FLAGS="$LK_MKBOOTIMG_ADDITIONAL_FLAGS --dt $LK_DT_IMG"
 fi
 
 CompileLK() {
@@ -39,6 +48,7 @@ CompileLKSideload() {
 		--kernel "$LK_OUT/build-$LK_TARGET/lk.bin" \
 		--ramdisk /dev/null \
 		--base $(printf "0x%x" $(($LK_BASE - 0x8000))) \
+		$LK_MKBOOTIMG_ADDITIONAL_FLAGS \
 		-o "$TARGET_OUT/lk_sideload.img"
     set +x
 }
