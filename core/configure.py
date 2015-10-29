@@ -456,12 +456,25 @@ def make_add_target(source, name, commands=None, deps=None, phony=False, descrip
     cfg.targets[name] = source
 
 def main(argv):
-    if len(argv)>=1:
+    if not len(argv)==2:
+        raise Exception('Invalid number of arguments')
+
+    # get devicename
+    if len(argv[0])>0:
         cfg.devicename = argv[0]
         pr_info('Configuring for %s' % cfg.devicename)
     else:
         cfg.devicename = None
         pr_info('Configuring for HOST')
+
+    # get build type
+    if len(argv[1])>0:
+        cfg.buildtype = argv[1]
+    else:
+        cfg.buildtype = 'RELEASE'
+    if not (cfg.buildtype=='DEBUG' or cfg.buildtype=='RELEASE'):
+        raise Exception('Invalid build type \''+cfg.buildtype+'\'')
+    pr_info('Buildtype: '+cfg.buildtype)
 
     # initialize make
     makeout = StringIO()
@@ -519,6 +532,7 @@ def main(argv):
     setvar('MAKEFORWARD', getvar('HOST_OUT')+'/makeforward')
     setvar('MAKEFORWARD_PIPES', getvar('HOST_OUT')+'/makeforward_pipes')
     setvar('DEVICE_DIR', cfg.top+'/device/'+cfg.devicename);
+    setvar('BUILDTYPE', cfg.buildtype)
 
     # get host type
     kernel_name = os.uname()[0]

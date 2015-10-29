@@ -1,7 +1,9 @@
+EDK2_BUILD_TYPE="$BUILDTYPE"
+
 EDK2_OUT="$MODULE_OUT"
 EDK2_DIR="$TOP/uefi/edk2"
 EDK2_ENV="GCC49_ARM_PREFIX=$GCC_LINUX_GNUEABIHF MAKEFLAGS="
-EDK2_BIN="$EDK2_OUT/Build/LittleKernelPkg/DEBUG_GCC49/FV/LITTLEKERNELPKG_EFI.fd"
+EDK2_BIN="$EDK2_OUT/Build/LittleKernelPkg/${EDK2_BUILD_TYPE}_GCC49/FV/LITTLEKERNELPKG_EFI.fd"
 EDK2_EFIDROID_OUT="$EDK2_OUT/Build/EFIDROID"
 EDK2_FDF_INC="$EDK2_EFIDROID_OUT/LittleKernelPkg.fdf.inc"
 
@@ -54,7 +56,7 @@ Compile() {
     "$SHELL" -c "\
 	    cd "$EDK2_OUT" && \
 		    source edksetup.sh && \
-		    $EDK2_ENV build -n$numjobs -a ARM -t GCC49 -p LittleKernelPkg/LittleKernelPkg.dsc \
+		    $EDK2_ENV build -n$numjobs -b $EDK2_BUILD_TYPE -a ARM -t GCC49 -p LittleKernelPkg/LittleKernelPkg.dsc \
 			    -DFIRMWARE_VER=$EDK2_VERSION \
 			    -DFIRMWARE_VENDOR=EFIDroid \
 			    -DDRAM_BASE=$DRAM_BASE \

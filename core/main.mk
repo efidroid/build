@@ -5,7 +5,7 @@ export GCC_COLORS ?= 1
 
 .PHONY: $(MAKECMDGOALS) all
 $(MAKECMDGOALS) all: makeforward makeforward_pipes
-	@python -B ./build/core/configure.py $(firstword $(DEVICEID))
+	@python -B ./build/core/configure.py "$(firstword $(DEVICEID))" "$(BUILDTYPE)"
 	
 	@echo -n "" > out/buildtime_variables.sh
 	@echo -n "" > out/buildtime_variables.py
