@@ -44,7 +44,8 @@ $(MAKECMDGOALS) all: makeforward makeforward_pipes
 		printf "(%s seconds)" $$secs; \
 	fi; \
 	echo -e " ####"; \
-	echo;
+	echo; \
+	exit $$ret;
 
 # MAKEFORWARD
 out/host/makeforward: build/tools/makeforward.c
