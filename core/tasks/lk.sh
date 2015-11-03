@@ -9,6 +9,7 @@ LK_ENV_NOUEFI="$LK_ENV BOOTLOADER_OUT=$LK_OUT"
 LK_ENV="$LK_ENV EDK2_BIN=$EDK2_BIN EDK2_BASE=$EDK2_BASE EDK2_API_INC=$TOP/uefi/edk2packages/LittleKernelPkg/Include"
 LK_ENV="$LK_ENV WITH_KERNEL_UEFIAPI=1"
 LK_ENV="$LK_ENV LCD_DENSITY=$LCD_DENSITY"
+LK_ENV="$LK_ENV DEVICE_NVVARS_PARTITION=\"$DEVICE_NVVARS_PARTITION_LK\""
 
 # check if lk source exists
 if [ ! -z "$LK_SOURCE" ];then
@@ -24,6 +25,9 @@ if [ -z "$LK_TARGET" ];then
 fi
 if [ -z "$LCD_DENSITY" ];then
     pr_fatal "LCD_DENSITY is not set"
+fi
+if [ -z "$DEVICE_NVVARS_PARTITION_LK" ];then
+    pr_fatal "DEVICE_NVVARS_PARTITION_LK is not set"
 fi
 if [ ! -d "$LK_DIR" ];then
     pr_fatal "LK wasn't found at $LK_DIR"

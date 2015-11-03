@@ -13,6 +13,7 @@ ifeq ($(WITH_KERNEL_UEFIAPI),1)
 	DEFINES += WITH_KERNEL_UEFIAPI=1
 
 	DEFINES += LCD_DENSITY=$(LCD_DENSITY)
+	CFLAGS += -DDEVICE_NVVARS_PARTITION=\"$(DEVICE_NVVARS_PARTITION)\"
 endif
 
 # optionally include device specific makefile

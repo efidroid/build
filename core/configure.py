@@ -8,6 +8,7 @@ import glob
 import make_syntax
 import os
 import subprocess
+from fstab import *
 
 # compatibility imports
 try:
@@ -516,6 +517,24 @@ def main(argv):
         setvar('DEVICEVENDOR', tmp[0])
         setvar('DEVICENAME', tmp[1])
         setvar('TARGET_OUT', cfg.out+'/target/'+cfg.devicename)
+
+        # parse fstab
+        setvar('DEVICE_FSTAB', cfg.top+'/device/'+cfg.devicename+'/fstab.multiboot')
+        if not os.path.isfile(getvar('DEVICE_FSTAB')):
+            raise Exception('fstab.multiboot does not exist')
+        fstab = FSTab(getvar('DEVICE_FSTAB'))
+
+        # get nvvars partition
+        nvvarspart = fstab.getNVVarsPartition();
+        if not nvvarspart:
+            raise Exception('fstab doesn\'t have a nvvars partition')
+        setvar('DEVICE_NVVARS_PARTITION', nvvarspart)
+
+        tmp = nvvarspart.split('/by-name/')
+        if len(tmp) !=2:
+            raise Exception('BUG: can\'t parse nvvars fstab partition')
+
+        setvar('DEVICE_NVVARS_PARTITION_LK', tmp[1])
     else:
         cfg.variableinc = cfg.out+'/variables_host.mk'
         cfg.configinclude_name = cfg.out+'/config_host'
