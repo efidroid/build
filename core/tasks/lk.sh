@@ -55,6 +55,17 @@ CompileLKSideload() {
 		$LK_MKBOOTIMG_ADDITIONAL_FLAGS \
 		-o "$TARGET_OUT/lk_sideload.img"
     set +x
+
+    pr_alert "Installing: $TARGET_OUT/lk_sideload_recovery.img"
+    set -x
+	"$HOST_MKBOOTIMG_OUT/mkbootimg" \
+		--kernel "$LK_OUT/build-$LK_TARGET/lk.bin" \
+		--ramdisk /dev/null \
+		--base $(printf "0x%x" $(($LK_BASE - 0x8000))) \
+        --cmdline "uefi.bootmode=recovery" \
+		$LK_MKBOOTIMG_ADDITIONAL_FLAGS \
+		-o "$TARGET_OUT/lk_sideload_recovery.img"
+    set +x
 }
 
 Clean() {
