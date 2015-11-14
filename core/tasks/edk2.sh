@@ -72,9 +72,6 @@ Compile() {
 
     # write back our jobs
     echo -n "$plussigns" > "$MAKEPATH/3"
-
-    # force rebuild of LK
-    touch "$TOP/uefi/lkmodules/uefiapi/edk2bin.c"
 }
 
 EDK2Shell() {
