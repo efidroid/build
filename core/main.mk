@@ -3,8 +3,6 @@ export EFIDROID_MAKE := $(MAKE)
 # enable GCC colors by default (if supported)
 export GCC_COLORS ?= 1
 
-mk_timer= \
-
 
 .PHONY: $(MAKECMDGOALS) all
 $(MAKECMDGOALS) all: makeforward makeforward_pipes
