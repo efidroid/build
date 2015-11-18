@@ -7,11 +7,12 @@ EDK2_BIN="$EDK2_OUT/Build/LittleKernelPkg/${EDK2_BUILD_TYPE}_GCC49/FV/LITTLEKERN
 EDK2_EFIDROID_OUT="$EDK2_OUT/Build/EFIDROID"
 EDK2_FDF_INC="$EDK2_EFIDROID_OUT/LittleKernelPkg.fdf.inc"
 
-# default values
+# check required variables
 if [ -z "$EDK2_BASE" ];then
-    # LK + LKSIZE + FRAMEBUFFER(8MB for now)
-    EDK2_BASE=$(printf "0x%x" $(($LK_BASE + 0x400000 + 0x800000)))
+    pr_fatal "EDK2_BASE is not set"
 fi
+
+# default values
 if [ -z "$DRAM_BASE" ];then
     DRAM_BASE="$EDK2_BASE"
 fi

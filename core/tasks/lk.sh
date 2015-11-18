@@ -1,7 +1,10 @@
 LK_DIR="$TOP/bootloader/lk/common/master"
 LK_OUT="$MODULE_OUT"
 LK_ENV="BOOTLOADER_OUT=$LK_OUT ARCH=arm SUBARCH=arm TOOLCHAIN_PREFIX=$GCC_EABI"
-LK_ENV="$LK_ENV MEMBASE=$LK_BASE"
+# optionally overwrite MEMBASE
+if [ -n "$LK_BASE" ];then
+    LK_ENV="$LK_ENV MEMBASE=$LK_BASE"
+fi
 LK_ENV="$LK_ENV LK_EXTERNAL_MAKEFILE=$TOP/build/core/lk_inc.mk EFIDROID_TOP=$TOP"
 LK_ENV="$LK_ENV EFIDROID_DEVICE_DIR=$TOP/device/$DEVICE"
 LK_ENV_NOUEFI="$LK_ENV BOOTLOADER_OUT=$LK_OUT"
@@ -18,8 +21,8 @@ if [ ! -z "$LK_SOURCE" ];then
 fi
 
 # check required variables
-if [ -z "$LK_BASE" ];then
-    pr_fatal "LK_BASE is not set"
+if [ -z "$BOOTIMG_BASE" ];then
+    pr_fatal "BOOTIMG_BASE is not set"
 fi
 if [ -z "$LK_TARGET" ];then
     pr_fatal "LK_TARGET is not set"
@@ -53,7 +56,7 @@ CompileLKSideload() {
 	"$HOST_MKBOOTIMG_OUT/mkbootimg" \
 		--kernel "$LK_OUT/build-$LK_TARGET/lk-edk2.bin" \
 		--ramdisk /dev/null \
-		--base $(printf "0x%x" $(($LK_BASE - 0x8000))) \
+		--base "$BOOTIMG_BASE" \
 		$LK_MKBOOTIMG_ADDITIONAL_FLAGS \
 		-o "$TARGET_OUT/lk_sideload.img"
     set +x
@@ -63,7 +66,7 @@ CompileLKSideload() {
 	"$HOST_MKBOOTIMG_OUT/mkbootimg" \
 		--kernel "$LK_OUT/build-$LK_TARGET/lk-edk2.bin" \
 		--ramdisk /dev/null \
-		--base $(printf "0x%x" $(($LK_BASE - 0x8000))) \
+		--base "$BOOTIMG_BASE" \
         --cmdline "uefi.bootmode=recovery" \
 		$LK_MKBOOTIMG_ADDITIONAL_FLAGS \
 		-o "$TARGET_OUT/lk_sideload_recovery.img"
@@ -89,7 +92,7 @@ CompileLKSideloadNoUEFI() {
 	"$HOST_MKBOOTIMG_OUT/mkbootimg" \
 		--kernel "$LK_OUT/build-$LK_TARGET/lk.bin" \
 		--ramdisk /dev/null \
-		--base $(printf "0x%x" $(($LK_BASE - 0x8000))) \
+		--base "$BOOTIMG_BASE" \
 		-o "$TARGET_OUT/lk_nouefi_sideload.img"
     set +x
 }
