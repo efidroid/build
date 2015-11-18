@@ -93,6 +93,7 @@ CompileLKSideloadNoUEFI() {
 		--kernel "$LK_OUT/build-$LK_TARGET/lk.bin" \
 		--ramdisk /dev/null \
 		--base "$BOOTIMG_BASE" \
+		$LK_MKBOOTIMG_ADDITIONAL_FLAGS \
 		-o "$TARGET_OUT/lk_nouefi_sideload.img"
     set +x
 }
