@@ -238,6 +238,7 @@ def parse_config(configfile, moduledir=None):
             targetout = None
             outdir = targetname
             maketargets = []
+            configureenv = ''
 
             if not moduledir:
                 moduledir = targetdir
@@ -256,6 +257,8 @@ def parse_config(configfile, moduledir=None):
                 subtargets = config.get(section, 'subtargets').split()
             if config.has_option(section, 'maketargets'):
                 maketargets += config.get(section, 'maketargets').split()
+            if config.has_option(section, 'configureenv'):
+                configureenv += config.get(section, 'configureenv')
 
             # validate category
             if not targetcategory=='target' and not targetcategory=='host':
@@ -310,6 +313,8 @@ def parse_config(configfile, moduledir=None):
                     generator = 'autogen.sh'
                 elif os.path.isfile(moduledir+'/makeconf.sh'):
                     generator = 'makeconf.sh'
+                elif os.path.isfile(moduledir+'/bootstrap'):
+                    generator = 'bootstrap'
                 else:
                     raise Exception('no generator found')
 
@@ -323,7 +328,7 @@ def parse_config(configfile, moduledir=None):
                     hostflag = '--host '+getvar('GCC_LINUX_GNUEABIHF_NAME')
                 commands = [
                     'mkdir -p \"'+targetout+'\"',
-                    'cd \"'+targetout+'\" && \"'+moduledir+'/configure\" '+hostflag
+                    'cd \"'+targetout+'\" && '+configureenv+' \"'+moduledir+'/configure\" '+hostflag
                 ]
                 make_add_target(configfile, targetout+'/Makefile', commands, deps=moduledir+'/configure',\
                                 description='Configuring target \''+targetname+'\'')
