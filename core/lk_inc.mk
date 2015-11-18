@@ -19,4 +19,17 @@ endif
 # optionally include device specific makefile
 -include $(EFIDROID_DEVICE_DIR)/lk_inc.mk
 
+# automatically set cflags for known configs
+ifeq ($(EMMC_BOOT),1)
+  CFLAGS += -D_EMMC_BOOT=1
+endif
+
+ifeq ($(SIGNED_KERNEL),1)
+  CFLAGS += -D_SIGNED_KERNEL=1
+endif
+
+ifeq ($(TARGET_BUILD_VARIANT),user)
+  CFLAGS += -DDISABLE_FASTBOOT_CMDS=1
+endif
+
 DEFINES += EFIDROID_SAFEBOOT=1
