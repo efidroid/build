@@ -5,11 +5,14 @@ EnableConfig() {
 }
 
 Compile() {
-    "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$MODULE_DIR" $BB_ARGS allnoconfig
-    EnableConfig CONFIG_STATIC
-    EnableConfig CONFIG_SED
-    EnableConfig CONFIG_LOSETUP
-    "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$MODULE_DIR" $BB_ARGS silentoldconfig
+    if [ ! -f "$MODULE_OUT/.config" ];then
+        "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$MODULE_DIR" $BB_ARGS allnoconfig
+        EnableConfig CONFIG_STATIC
+        EnableConfig CONFIG_SED
+        EnableConfig CONFIG_LOSETUP
+        "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$MODULE_DIR" $BB_ARGS silentoldconfig
+    fi
+
     "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$MODULE_DIR" $BB_ARGS all
 }
 
