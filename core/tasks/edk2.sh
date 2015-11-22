@@ -32,7 +32,8 @@ Configure() {
 
     # generate FDF include file
     echo -e "DEFINE FD_BASE = $EDK2_BASE\n" > "$EDK2_FDF_INC"
-    echo -e "DEFINE EFIDROID_MULTIBOOT_BIN = Build/EFIDROID/multiboot_bin\n" >> "$EDK2_FDF_INC"
+    echo -e "DEFINE EFIDROID_MULTIBOOT_BIN = Build/EFIDROID/multiboot_bin\n"   >> "$EDK2_FDF_INC"
+    echo -e "DEFINE EFIDROID_FSTAB         = Build/EFIDROID/fstab.multiboot\n" >> "$EDK2_FDF_INC"
 
     # get EDK git revision
     tmp=$(cd "$EDK2_DIR" && git rev-parse --verify --short HEAD)
@@ -43,8 +44,9 @@ Configure() {
 }
 
 Compile() {
-    # copy multiboot binary to workspace
+    # copy required files to workspace
     cp "$TARGET_MULTIBOOT_OUT/init" "$EDK2_EFIDROID_OUT/multiboot_bin"
+    cp "$DEVICE_FSTAB" "$EDK2_EFIDROID_OUT/fstab.multiboot"
 
     # get number of jobs
     MAKEPATH=$($MAKEFORWARD_PIPES)
