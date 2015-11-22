@@ -461,6 +461,13 @@ def make_add_target(source, name, commands=None, deps=None, phony=False, descrip
     cfg.make.target(name, commands, deps, phony, description)
     cfg.targets[name] = source
 
+def partitionpath2name(part):
+    tmp = part.split('/by-name/')
+    if len(tmp) !=2:
+        raise Exception('Invalid partition path: %s'  % (part))
+
+    return tmp[1]
+
 def main(argv):
     if not len(argv)==2:
         raise Exception('Invalid number of arguments')
@@ -534,12 +541,12 @@ def main(argv):
         if not nvvarspart:
             raise Exception('fstab doesn\'t have a nvvars partition')
         setvar('DEVICE_NVVARS_PARTITION', nvvarspart)
+        setvar('DEVICE_NVVARS_PARTITION_LK', partitionpath2name(nvvarspart))
 
-        tmp = nvvarspart.split('/by-name/')
-        if len(tmp) !=2:
-            raise Exception('BUG: can\'t parse nvvars fstab partition')
-
-        setvar('DEVICE_NVVARS_PARTITION_LK', tmp[1])
+        # check if there's an esp partition
+        esppart = fstab.getESPPartition()
+        if not nvvarspart:
+            raise Exception('fstab doesn\'t have a esp partition')
     else:
         cfg.variableinc = cfg.out+'/variables_host.mk'
         cfg.configinclude_name = cfg.out+'/config_host'
