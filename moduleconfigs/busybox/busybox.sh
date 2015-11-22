@@ -10,6 +10,7 @@ Compile() {
         EnableConfig CONFIG_STATIC
         EnableConfig CONFIG_SED
         EnableConfig CONFIG_LOSETUP
+        EnableConfig CONFIG_DD
         "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$MODULE_DIR" $BB_ARGS silentoldconfig
     fi
 
