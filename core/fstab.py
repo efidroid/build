@@ -47,9 +47,50 @@ class FSTab:
 
                 self.entries.append(FSTabEntry(blk_device, mount_point, fs_type, flags, fs_options))
 
+    def getOptionValue(self, entry, name):
+        for fs_option in entry.fs_options:
+            optname = fs_option
+            optval = None
+            fs_option_kv = fs_option.split('=')
+            if len(fs_option_kv)>1:
+                optname = fs_option_kv[0]
+                optval = fs_option_kv[1]
+
+            if name in optname:
+                return optval
+
+    def hasOption(self, entry, name):
+        for fs_option in entry.fs_options:
+            optname = fs_option
+            optval = None
+            fs_option_kv = fs_option.split('=')
+            if len(fs_option_kv)>1:
+                optname = fs_option_kv[0]
+                optval = fs_option_kv[1]
+
+            if name in optname:
+                return True
+
+        return False
+
     def getNVVarsPartition(self):
         for entry in self.entries:
             if 'nvvars' in entry.fs_options:
                 return entry.blk_device
+
+        return None
+
+    def getESPPartition(self):
+        for entry in self.entries:
+            if self.hasOption(entry, 'esp'):
+                path = self.getOptionValue(entry, 'esp')
+                if 'datamedia' in path:
+                    path = 'media'
+                elif path[0] == '/':
+                    pass
+                else:
+                    raise Exception('Invalid ESP value in fstab: %s' % (path))
+
+                return [entry.blk_device, path]
 
         return None
