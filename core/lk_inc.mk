@@ -3,6 +3,7 @@ DEFINES := $(filter-out WITH_DEBUG_DCC=1,$(DEFINES))
 DEFINES := $(filter-out WITH_DEBUG_UART=1,$(DEFINES))
 DEFINES := $(filter-out WITH_DEBUG_FBCON=1,$(DEFINES))
 DEFINES := $(filter-out WITH_DEBUG_JTAG=1,$(DEFINES))
+DEFINES := $(filter-out WITH_DEBUG_LOG_BUF=1,$(DEFINES))
 
 ifeq ($(WITH_KERNEL_UEFIAPI),1)
 	# add our modules
@@ -14,6 +15,9 @@ ifeq ($(WITH_KERNEL_UEFIAPI),1)
 
 	DEFINES += LCD_DENSITY=$(LCD_DENSITY)
 	CFLAGS += -DDEVICE_NVVARS_PARTITION=\"$(DEVICE_NVVARS_PARTITION)\"
+
+else
+DEFINES += WITH_DEBUG_LOG_BUF=1
 endif
 
 # optionally include device specific makefile
