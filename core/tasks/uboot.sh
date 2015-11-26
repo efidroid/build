@@ -6,22 +6,31 @@ if [ ! -z "$UBOOT_SOURCE" ];then
     UBOOT_DIR="$TOP/bootloader/$UBOOT_SOURCE"
 fi
 
-if [ -z "$UBOOT_TARGET" ];then
-    pr_fatal "UBOOT_TARGET is not set"
-fi
-if [ ! -d "$UBOOT_DIR" ];then
-    pr_fatal "U-Boot wasn't found at $UBOOT_DIR"
-fi
+Check() {
+    if [ -z "$UBOOT_TARGET" ];then
+        pr_fatal "UBOOT_TARGET is not set"
+    fi
+    if [ ! -d "$UBOOT_DIR" ];then
+        pr_fatal "U-Boot wasn't found at $UBOOT_DIR"
+    fi
+}
 
 Compile() {
+    Check
     "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$UBOOT_DIR" $UBOOT_ARGS "$UBOOT_TARGET"
     "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$UBOOT_DIR" $UBOOT_ARGS all
 }
 
 Clean() {
-    "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$UBOOT_DIR" $UBOOT_ARGS clean
+    if [ ! -z "$UBOOT_TARGET" ];then
+        Check
+        "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$UBOOT_DIR" $UBOOT_ARGS clean
+    fi
 }
 
 DistClean() {
-    "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$UBOOT_DIR" $UBOOT_ARGS distclean
+    if [ ! -z "$UBOOT_TARGET" ];then
+        Check
+        "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$UBOOT_DIR" $UBOOT_ARGS distclean
+    fi
 }
