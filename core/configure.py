@@ -162,16 +162,18 @@ def toolchain_write_footer(f):
     f.write('set(CMAKE_TOOLCHAIN_READY TRUE)\n')
     
 def gen_toolchains():
-    if not os.path.isdir(getvar('TARGET_OUT')):
-        os.makedirs(getvar('TARGET_OUT'))
+
     if not os.path.isdir(getvar('HOST_OUT')):
         os.makedirs(getvar('HOST_OUT'))
-
-    fTarget = open(getvar('TARGET_OUT')+'/toolchain.cmake', 'w')
     fHost   = open(getvar('HOST_OUT')+'/toolchain.cmake', 'w')
-
     toolchain_write_header(fHost)
-    toolchain_write_header(fTarget)
+
+    if cfg.devicename:
+        if not os.path.isdir(getvar('TARGET_OUT')):
+            os.makedirs(getvar('TARGET_OUT'))
+
+        fTarget = open(getvar('TARGET_OUT')+'/toolchain.cmake', 'w')
+        toolchain_write_header(fTarget)
 
     for name, o in cfg.libs.items():
         linkage = 'STATIC'
@@ -194,23 +196,24 @@ def gen_toolchains():
             f.write('endif()\n\n')
             f.write('\n')
 
-        inc_expanded = expandmodulevars(inlcudesstr, o.target, 'target')
-        file_expanded = expandmodulevars(o.filename, o.target, 'target')
-        if not inc_expanded==None and not file_expanded==None:
-            f = fTarget
-            f.write('if(NOT "${EFIDROID_TARGET}" STREQUAL "'+o.target+'")\n')
-            f.write('add_library("'+name+'" '+linkage+' IMPORTED)\n')
-            f.write('set_target_properties('+name+' PROPERTIES IMPORTED_LOCATION '+ expandvars(file_expanded)+')\n')
-            if inc_expanded:
-                f.write('include_directories('+inc_expanded+')\n')
-            f.write('endif()\n\n')
-            f.write('\n')
+        if cfg.devicename:
+            inc_expanded = expandmodulevars(inlcudesstr, o.target, 'target')
+            file_expanded = expandmodulevars(o.filename, o.target, 'target')
+            if not inc_expanded==None and not file_expanded==None:
+                f = fTarget
+                f.write('if(NOT "${EFIDROID_TARGET}" STREQUAL "'+o.target+'")\n')
+                f.write('add_library("'+name+'" '+linkage+' IMPORTED)\n')
+                f.write('set_target_properties('+name+' PROPERTIES IMPORTED_LOCATION '+ expandvars(file_expanded)+')\n')
+                if inc_expanded:
+                    f.write('include_directories('+inc_expanded+')\n')
+                f.write('endif()\n\n')
+                f.write('\n')
 
+    if cfg.devicename:
+        toolchain_write_footer(fTarget)
+        fTarget.close()
 
     toolchain_write_footer(fHost)
-    toolchain_write_footer(fTarget)
-
-    fTarget.close()
     fHost.close()
 
 def parse_config(configfile, moduledir=None):
@@ -410,6 +413,10 @@ def add_cmake_target(path, projecttype, modulesrc=None, maketargets=None, disabl
     cmakeargs = ''
 
     if projecttype == 'target':
+        # skip if we're in host mode
+        if not cfg.devicename:
+            return
+
         cmakeargs += ' -DCMAKE_C_COMPILER='+getvar('GCC_LINUX_GNUEABIHF')+'gcc'
         cmakeargs += ' -DCMAKE_CXX_COMPILER='+getvar('GCC_LINUX_GNUEABIHF')+'g++'
         cmakeargs += ' -DCMAKE_LINKER='+getvar('GCC_LINUX_GNUEABIHF')+'ld'
@@ -501,13 +508,22 @@ def main(argv):
     cfg.targets = {}
     cfg.top = os.path.abspath('')
 
-    # open script configs
+    # create out directory
     try:
         os.makedirs(cfg.out)
     except:
         pass
 
-    # set some common variables
+    # basic variables
+    setvar('builddir', cfg.out)
+    setvar('OUT', cfg.out)
+    setvar('TOP', cfg.top)
+    setvar('HOST_OUT', getvar('OUT')+'/host')
+    setvar('MAKEFORWARD', getvar('HOST_OUT')+'/makeforward')
+    setvar('MAKEFORWARD_PIPES', getvar('HOST_OUT')+'/makeforward_pipes')
+    setvar('BUILDTYPE', cfg.buildtype)
+
+    # load device config
     if cfg.devicename:
         tmp = cfg.devicename.split('/')
         if len(tmp) != 2:
@@ -547,23 +563,17 @@ def main(argv):
         esppart = fstab.getESPPartition()
         if not nvvarspart:
             raise Exception('fstab doesn\'t have a esp partition')
+
+        setvar('DEVICE_DIR', cfg.top+'/device/'+cfg.devicename);
     else:
         cfg.variableinc = cfg.out+'/variables_host.mk'
         cfg.configinclude_name = cfg.out+'/config_host'
         cfg.buildfname = cfg.out+'/build_host.mk'
 
-
+    # open output files
     cfg.configinclude_sh = open(cfg.configinclude_name+'.sh', "w")
     cfg.configinclude_py = open(cfg.configinclude_name+'.py', "w")
     cfg.configinclude_cmake = open(cfg.configinclude_name+'.cmake', "w")
-    setvar('builddir', cfg.out)
-    setvar('OUT', cfg.out)
-    setvar('TOP', cfg.top)
-    setvar('HOST_OUT', getvar('OUT')+'/host')
-    setvar('MAKEFORWARD', getvar('HOST_OUT')+'/makeforward')
-    setvar('MAKEFORWARD_PIPES', getvar('HOST_OUT')+'/makeforward_pipes')
-    setvar('DEVICE_DIR', cfg.top+'/device/'+cfg.devicename);
-    setvar('BUILDTYPE', cfg.buildtype)
 
     # get host type
     kernel_name = os.uname()[0]
@@ -572,7 +582,6 @@ def main(argv):
         hosttype = 'linux-x86'
     elif kernel_name == 'Darwin':
         hosttype = 'darwin-x86'
-
     setvar('HOSTTYPE', hosttype)
 
     # include file
