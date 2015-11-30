@@ -54,8 +54,6 @@ Compile() {
     numjobs=$(($(echo -n $plussigns | wc -c) + 1))
 
     # compile EDKII
-    # Note: using 4 threads here as this seems to be a generic value
-    # and the build system ignores this makefile's settings
     "$SHELL" -c "\
 	    cd "$EDK2_OUT" && \
 		    source edksetup.sh && \
