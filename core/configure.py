@@ -635,6 +635,31 @@ def main(argv):
         if os.path.isfile(moduledepsfile):
             parse_deps(moduledepsfile)
 
+    # add apps
+    for moduledir in glob.glob('uefi/apps/*'):
+        dirname = os.path.basename(os.path.normpath(moduledir))
+
+        # always include appconfig if available
+        appconfigfile = 'build/uefiappconfigs/'+dirname+'/EFIDroid.ini'
+        if os.path.isfile(appconfigfile):
+            parse_config(appconfigfile, moduledir);
+
+        # detect build system
+        moduleefidroidini = moduledir+'/EFIDroid.ini'
+        if os.path.isfile(moduleefidroidini):
+            parse_config(moduleefidroidini, moduledir);
+
+        elif os.path.isfile(moduledir+'/CMakeLists.txt'):
+            add_cmake_target(moduledir, 'target')
+            add_cmake_target(moduledir, 'host')
+
+        elif not os.path.isfile(appconfigfile):
+            raise Exception('Unknown make system in '+moduledir+'\nYou can manually specify it in '+appconfigfile)
+
+        moduledepsfile = moduledir+'/EFIDroidDependencies.ini'
+        if os.path.isfile(moduledepsfile):
+            parse_deps(moduledepsfile)
+
     # clean target
     cfg.make.comment('CLEAN')
     make_add_target(__file__, 'clean', phony=True)
