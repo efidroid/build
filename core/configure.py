@@ -228,7 +228,7 @@ def parse_config(configfile, moduledir=None):
             for (name, value) in config.items(section):
                 setvar(name, value)
 
-        elif section.startswith('target.'):
+        elif section.startswith('target.') or section.startswith('host.'):
             targetname = section.split('.', 1)[1]
             targetname_id = targetname.upper()
             targettype = config.get(section, 'type')
@@ -237,7 +237,7 @@ def parse_config(configfile, moduledir=None):
             targetdeps = []
             targetcompilefn = 'EFIDroidCompile'
             targetforcecompile = True
-            targetcategory = 'target'
+            targetcategory = section.split('.', 1)[0]
             targetout = None
             outdir = targetname
             maketargets = []
