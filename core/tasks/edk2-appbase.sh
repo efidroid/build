@@ -13,6 +13,7 @@ Compile() {
     MAKEFLAGS= "$EFIDROID_MAKE" -C "$EDK2_OUT/BaseTools"
 
     cp "$TOP/build/core/tasks/target.txt" "$EDK2_OUT/Conf/target.txt"
+    cp "$EDK2_OUT/BaseTools/Conf/tools_def.template" "$EDK2_OUT/Conf/tools_def.txt"
     sed -i "s/fstack-protector/fno-stack-protector/g" "$EDK2_OUT/Conf/tools_def.txt"
 
     # get number of jobs
