@@ -243,6 +243,7 @@ def parse_config(configfile, moduledir=None):
             maketargets = []
             configureenv = ''
             configureflags = ''
+            linksource = False
 
             if not moduledir:
                 moduledir = targetdir
@@ -265,6 +266,8 @@ def parse_config(configfile, moduledir=None):
                 configureenv += config.get(section, 'configureenv')
             if config.has_option(section, 'configureflags'):
                 configureflags += config.get(section, 'configureflags')
+            if config.has_option(section, 'linksource'):
+                linksource = config.get(section, 'linksource')=='1'
 
             # validate category
             if not targetcategory=='target' and not targetcategory=='host':
@@ -324,8 +327,16 @@ def parse_config(configfile, moduledir=None):
                 else:
                     raise Exception('no generator found')
 
+                compiledir = moduledir
+                if linksource:
+                    compiledir = targetout
+
+                    # add lns target
+                    make_add_target(configfile, targetout+'/'+generator, cfg.top+'/build/tools/lns -rf \"'+moduledir+'\" \"'+targetout+'\"',\
+                                    description='runnin lns on target \''+targetname+'\'')
+
                 # add autogen target
-                make_add_target(configfile, moduledir+'/configure', 'cd \"'+moduledir+'\" && ./'+generator, deps=moduledir+'/'+generator,\
+                make_add_target(configfile, compiledir+'/configure', 'cd \"'+compiledir+'\" && ./'+generator, deps=compiledir+'/'+generator,\
                                 description='Autoconfiguring target \''+targetname+'\'')
 
                 # add configure target
@@ -333,9 +344,9 @@ def parse_config(configfile, moduledir=None):
                     configureflags += ' --host '+getvar('GCC_LINUX_GNUEABIHF_NAME')
                 commands = [
                     'mkdir -p \"'+targetout+'\"',
-                    'cd \"'+targetout+'\" && '+configureenv+' \"'+moduledir+'/configure\" '+configureflags
+                    'cd \"'+targetout+'\" && '+configureenv+' \"'+compiledir+'/configure\" '+configureflags
                 ]
-                make_add_target(configfile, targetout+'/Makefile', commands, deps=moduledir+'/configure',\
+                make_add_target(configfile, targetout+'/Makefile', commands, deps=compiledir+'/configure',\
                                 description='Configuring target \''+targetname+'\'')
 
                 # add make target
