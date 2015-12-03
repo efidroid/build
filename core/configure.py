@@ -242,6 +242,7 @@ def parse_config(configfile, moduledir=None):
             outdir = targetname
             maketargets = []
             configureenv = ''
+            configureflags = ''
 
             if not moduledir:
                 moduledir = targetdir
@@ -262,6 +263,8 @@ def parse_config(configfile, moduledir=None):
                 maketargets += config.get(section, 'maketargets').split()
             if config.has_option(section, 'configureenv'):
                 configureenv += config.get(section, 'configureenv')
+            if config.has_option(section, 'configureflags'):
+                configureflags += config.get(section, 'configureflags')
 
             # validate category
             if not targetcategory=='target' and not targetcategory=='host':
@@ -326,12 +329,11 @@ def parse_config(configfile, moduledir=None):
                                 description='Autoconfiguring target \''+targetname+'\'')
 
                 # add configure target
-                hostflag = ''
                 if targetcategory=='target':
-                    hostflag = '--host '+getvar('GCC_LINUX_GNUEABIHF_NAME')
+                    configureflags += ' --host '+getvar('GCC_LINUX_GNUEABIHF_NAME')
                 commands = [
                     'mkdir -p \"'+targetout+'\"',
-                    'cd \"'+targetout+'\" && '+configureenv+' \"'+moduledir+'/configure\" '+hostflag
+                    'cd \"'+targetout+'\" && '+configureenv+' \"'+moduledir+'/configure\" '+configureflags
                 ]
                 make_add_target(configfile, targetout+'/Makefile', commands, deps=moduledir+'/configure',\
                                 description='Configuring target \''+targetname+'\'')
