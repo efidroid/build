@@ -458,6 +458,33 @@ def add_cmake_target(path, projecttype, modulesrc=None, maketargets=None, disabl
 
     cfg.make.newline()
 
+def add_uefiapp_target(path):
+    cfg.make.comment(path)
+
+    dirname = os.path.basename(os.path.normpath(path))
+    targetname = 'uefiapp_'+dirname
+    targetdeps = ['FORCE']
+
+    scriptfile  = os.path.abspath('build/core/tasks/edk2-appbase.sh')
+    targetout  = os.path.abspath('out/host/edk2_appbase')
+    moduledir = os.path.abspath('build/core/tasks')
+    targetcompilefn = 'CompileApp'
+    command = 'UEFIAPP="'+cfg.top+'/'+path+'" build/tools/runscript "'+\
+               cfg.out+'" "'+cfg.configinclude_name+'" "'+scriptfile+'"'+\
+               ' "host" "edk2_appbase" "'+targetout+'" "'+moduledir+'"'
+
+    # add build target
+    make_add_target(path, targetname, command+' '+targetcompilefn, deps=targetdeps,\
+                    description='Compiling target \''+targetname+'\'')
+    addhelp(targetname, 'UEFIApp target')
+
+    # add clean target
+    make_add_target(path, targetname+'_clean', command+' CleanApp', deps=['FORCE'],\
+                    description='Cleaning target \''+targetname+'\'')
+    cfg.make.dependencies('clean', targetname+'_clean')
+
+    cfg.make.newline()
+
 def make_add_target(source, name, commands=None, deps=None, phony=False, description=None):
     if name in cfg.targets:
         raise Exception('Duplicate target \''+name+'\' in '+source+'\nPreviously defined in '+cfg.targets[name])
@@ -640,20 +667,22 @@ def main(argv):
     # add apps
     for moduledir in glob.glob('uefi/apps/*'):
         dirname = os.path.basename(os.path.normpath(moduledir))
-
-        # always include appconfig if available
+        moduleefidroidini = moduledir+'/EFIDroid.ini'
         appconfigfile = 'build/uefiappconfigs/'+dirname+'/EFIDroid.ini'
+
+        # detect build system
         if os.path.isfile(appconfigfile):
             parse_config(appconfigfile, moduledir);
 
-        # detect build system
-        moduleefidroidini = moduledir+'/EFIDroid.ini'
-        if os.path.isfile(moduleefidroidini):
+        elif os.path.isfile(moduleefidroidini):
             parse_config(moduleefidroidini, moduledir);
 
         elif os.path.isfile(moduledir+'/CMakeLists.txt'):
             add_cmake_target(moduledir, 'target')
             add_cmake_target(moduledir, 'host')
+
+        elif os.path.isfile(moduledir+'/'+dirname+'.inf'):
+            add_uefiapp_target(moduledir)
 
         elif not os.path.isfile(appconfigfile):
             raise Exception('Unknown make system in '+moduledir+'\nYou can manually specify it in '+appconfigfile)
