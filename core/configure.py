@@ -127,7 +127,7 @@ def getvar(name):
     return None
 
 def addhelp(name, text):
-    cfg.helptext += bldwht.replace('\033', '\\e')+name+': '+txtrst.replace('\033', '\\e')+text.replace('\n', '\\n'+((len(name)+2)*' '))+'\\n'
+    cfg.helptext += bldwht.replace('\033', '\\033')+name+': '+txtrst.replace('\033', '\\033')+text.replace('\n', '\\n'+((len(name)+2)*' '))+'\\n'
 
 def define_target_vars(name, projecttype, src):
     name_upper = name.upper()
