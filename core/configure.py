@@ -354,12 +354,12 @@ def parse_config(configfile, moduledir=None):
                                 deps=targetdeps+[targetout+'/Makefile'], description='Compiling target \''+targetname+'\'')
 
                 # add clean target
-                make_add_target(configfile, targetname+'_clean', 'cd \"'+targetout+'\" && $(MAKE) clean',\
-                                deps=['FORCE', targetout+'/Makefile'], description='Cleaning target \''+targetname+'\'')
+                make_add_target(configfile, targetname+'_clean', '[ -f \"'+targetout+'\" ] && cd \"'+targetout+'\" && [ -f Makefile ] && $(MAKE) clean || true',\
+                                deps=['FORCE'], description='Cleaning target \''+targetname+'\'')
                 cfg.make.dependencies('clean', targetname+'_clean')
 
                 # add distclean target
-                make_add_target(configfile, targetname+'_distclean', 'cd \"'+targetout+'\" && $(MAKE) distclean', \
+                make_add_target(configfile, targetname+'_distclean', '[ -f \"'+targetout+'\" ] && cd \"'+targetout+'\" && [ -f Makefile ] && $(MAKE) distclean || true', \
                                 deps=[targetname+'_clean'], description='Dist-Cleaning target \''+targetname+'\'')
                 cfg.make.dependencies('distclean', targetname+'_distclean')
 
