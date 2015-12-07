@@ -9,7 +9,7 @@ Compile() {
 }
 
 Clean() {
-    rm "$MODULE_OUT/grub.efi"
+    rm -f "$MODULE_OUT/grub.efi"
 }
 
 DistClean() {
