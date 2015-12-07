@@ -1,0 +1,21 @@
+#!/bin/bash
+
+#set -e
+#set -x
+
+RANGEOTHER="$1"
+RANGETHIS="$2"
+TMPFILE="/tmp/getmissingcommits_out.txt"
+
+# get list of commits
+git log --oneline --no-merges "$RANGEOTHER" > "$TMPFILE"
+
+while read line; do
+    #echo "Checking: $line"
+	commitmsg=$(echo $line | cut -d' ' -f2-)
+	matchcount="$(git log --oneline --no-merges "$RANGETHIS" | grep -cF "${commitmsg}")"
+
+	if [ $matchcount -eq 0 ];then
+		echo "$line"
+	fi
+done < "$TMPFILE"
