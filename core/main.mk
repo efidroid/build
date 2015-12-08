@@ -12,6 +12,9 @@ export EFIDROID_MAKE := $(MAKE)
 # enable GCC colors by default (if supported)
 export GCC_COLORS ?= 1
 
+# add build/tools to path to force python2
+export PATH := $(PWD)/build/tools:$(PATH)
+
 
 .PHONY: $(MAKECMDGOALS) all
 $(MAKECMDGOALS) all: makeforward makeforward_pipes
