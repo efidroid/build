@@ -1,7 +1,6 @@
 #!/usr/bin/python -B
 
 # common imports
-import ConfigParser
 import os.path
 import sys
 import glob
@@ -15,6 +14,11 @@ try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
+
+try:
+    import ConfigParser
+except ImportError:
+    import configparser as ConfigParser
 
 # color codes
 txtblk='\033[0;30m' # Black - Regular
