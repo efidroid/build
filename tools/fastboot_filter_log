@@ -1,3 +1,0 @@
-#!/bin/bash
-
-fastboot $@ 2>&1 | sed -e ':a;N;$!ba;s/\n(bootloader) //g'

@@ -1,0 +1,20 @@
+#!/bin/bash
+
+FASTBOOT="fastboot"
+
+
+dumplog() {
+    "$FASTBOOT" $@ 2>&1 | sed -e '1s/.*//' | sed -e ':a;N;$!ba;s/\n(bootloader) //g'
+}
+
+if [ "$1" == "oem" ] && [ "$2" == "last_kmsg" ]; then
+    dumplog $@
+
+elif [ "$1" == "oem" ] && [ "$2" == "lk_log" ]; then
+    dumplog $@
+
+else
+    "$FASTBOOT" $@
+fi
+
+
