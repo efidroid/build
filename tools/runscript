@@ -15,7 +15,7 @@ mkdir -p "$MODULE_OUT"
 
 FEXT="${SCRIPT##*.}"
 if [ "$FEXT" == "sh" ];then
-    "$SHELL" -c "set -e && \
+    "$EFIDROID_SHELL" -c "set -e && \
                  source \"$CONFIGINC.sh\" && \
                  source \"\$OUT/buildtime_variables.sh\" && \
                  source \"\$TOP/build/core/compilescript_inc.sh\" && \

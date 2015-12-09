@@ -30,7 +30,7 @@ Compile() {
     numjobs=$(($(echo -n $plussigns | wc -c) + 1))
 
     # compile EDKII
-    "$SHELL" -c "\
+    "$EFIDROID_SHELL" -c "\
 	    cd "$EDK2_OUT" && \
 		    source edksetup.sh && \
 		    $EDK2_ENV build -n$numjobs -p ArmPkg/ArmPkg.dsc && \
@@ -67,7 +67,7 @@ CompileApp() {
     numjobs=$(($(echo -n $plussigns | wc -c) + 1))
 
     # compile EDKII
-    "$SHELL" -c "\
+    "$EFIDROID_SHELL" -c "\
 	    cd "$EDK2_OUT" && \
 		    source edksetup.sh && \
 		    $EDK2_ENV build -n$numjobs -p $APPCONFIG_REL \

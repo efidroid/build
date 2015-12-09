@@ -8,6 +8,7 @@ SHELL := /bin/bash
 endif
 
 export EFIDROID_MAKE := $(MAKE)
+export EFIDROID_SHELL := $(SHELL)
 
 # enable GCC colors by default (if supported)
 export GCC_COLORS ?= 1

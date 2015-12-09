@@ -60,7 +60,7 @@ fi
 
 CompileLK() {
     mkdir -p "$LK_OUT"
-    "$SHELL" -c "$LK_ENV \"$MAKEFORWARD\" \"$EFIDROID_MAKE\" -C \"$LK_DIR\" $LK_TARGET"
+    "$EFIDROID_SHELL" -c "$LK_ENV \"$MAKEFORWARD\" \"$EFIDROID_MAKE\" -C \"$LK_DIR\" $LK_TARGET"
     cat "$LK_OUT/build-$LK_TARGET/lk.bin" "$EDK2_BIN" >"$LK_OUT/build-$LK_TARGET/lk-edk2.bin"
 }
 
@@ -88,7 +88,7 @@ CompileLKSideload() {
 }
 
 Clean() {
-    "$SHELL" -c "$LK_ENV \"$MAKEFORWARD\" \"$EFIDROID_MAKE\" -C \"$LK_DIR\" $LK_TARGET clean"
+    "$EFIDROID_SHELL" -c "$LK_ENV \"$MAKEFORWARD\" \"$EFIDROID_MAKE\" -C \"$LK_DIR\" $LK_TARGET clean"
 }
 
 DistClean() {
@@ -97,7 +97,7 @@ DistClean() {
 
 CompileLKNoUEFI() {
     mkdir -p "$LK_OUT"
-    "$SHELL" -c "$LK_ENV_NOUEFI \"$MAKEFORWARD\" \"$EFIDROID_MAKE\" -C \"$LK_DIR\" $LK_TARGET"
+    "$EFIDROID_SHELL" -c "$LK_ENV_NOUEFI \"$MAKEFORWARD\" \"$EFIDROID_MAKE\" -C \"$LK_DIR\" $LK_TARGET"
 }
 
 CompileLKSideloadNoUEFI() {

@@ -54,7 +54,7 @@ Compile() {
     numjobs=$(($(echo -n $plussigns | wc -c) + 1))
 
     # compile EDKII
-    "$SHELL" -c "\
+    "$EFIDROID_SHELL" -c "\
 	    cd "$EDK2_OUT" && \
 		    source edksetup.sh && \
 		    $EDK2_ENV build -n$numjobs -b $EDK2_BUILD_TYPE -a ARM -t GCC49 -p LittleKernelPkg/LittleKernelPkg.dsc \
@@ -76,10 +76,10 @@ Compile() {
 }
 
 EDK2Shell() {
-    "$SHELL" -c "\
+    "$EFIDROID_SHELL" -c "\
         cd \"$EDK2_OUT\" && \
 		    source edksetup.sh && \
-		    $EDK2_ENV \"$SHELL\" \
+		    $EDK2_ENV \"$EFIDROID_SHELL\" \
     "
 }
 
