@@ -7,6 +7,7 @@ import glob
 import make_syntax
 import os
 import subprocess
+import os
 from fstab import *
 
 # compatibility imports
@@ -520,20 +521,17 @@ def partitionpath2name(part):
     return tmp[1]
 
 def main(argv):
-    if not len(argv)==2:
-        raise Exception('Invalid number of arguments')
-
     # get devicename
-    if len(argv[0])>0:
-        cfg.devicename = argv[0]
+    if 'DEVICEID' in os.environ:
+        cfg.devicename = os.environ['DEVICEID']
         pr_info('Configuring for %s' % cfg.devicename)
     else:
         cfg.devicename = None
         pr_info('Configuring for HOST')
 
     # get build type
-    if len(argv[1])>0:
-        cfg.buildtype = argv[1]
+    if 'BUILDTYPE' in os.environ:
+        cfg.buildtype = os.environ['BUILDTYPE']
     else:
         cfg.buildtype = 'RELEASE'
     if not (cfg.buildtype=='DEBUG' or cfg.buildtype=='RELEASE'):

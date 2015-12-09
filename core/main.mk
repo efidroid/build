@@ -15,10 +15,9 @@ export GCC_COLORS ?= 1
 # add build/tools to path to force python2
 export PATH := $(PWD)/build/tools:$(PATH)
 
-
 .PHONY: $(MAKECMDGOALS) all
 $(MAKECMDGOALS) all: makeforward makeforward_pipes
-	@python -B ./build/core/configure.py "$(firstword $(DEVICEID))" "$(BUILDTYPE)"
+	@python -B ./build/core/configure.py
 	
 	@echo -n "" > out/buildtime_variables.sh
 	@echo -n "" > out/buildtime_variables.py
