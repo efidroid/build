@@ -5,6 +5,14 @@ DEFINES := $(filter-out WITH_DEBUG_FBCON=1,$(DEFINES))
 DEFINES := $(filter-out WITH_DEBUG_JTAG=1,$(DEFINES))
 DEFINES := $(filter-out WITH_DEBUG_LOG_BUF=1,$(DEFINES))
 
+# set debug level
+ifeq ($(EFIDROID_BUILD_TYPE),DEBUG)
+    DEBUG := 2
+    DEFINES += LK_LOG_BUF_SIZE=16384
+else
+    DEBUG := 1
+endif
+
 ifeq ($(WITH_KERNEL_UEFIAPI),1)
 	# add our modules
 	MODULES += \
