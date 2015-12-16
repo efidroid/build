@@ -30,6 +30,10 @@ Configure() {
     mkdir -p "$EDK2_EFIDROID_OUT"
     "$TOP/build/tools/edk2_update" "$EDK2_DIR" "$EDK2_OUT"
 
+    # link freetype2
+    rm -f "$EDK2_EFIDROID_OUT/freetype2"
+    ln -s "$TOP/modules/freetype2" "$EDK2_EFIDROID_OUT/freetype2"
+
     # generate FDF include file
     echo -e "DEFINE FD_BASE = $EDK2_BASE\n" > "$EDK2_FDF_INC"
     echo -e "DEFINE EFIDROID_MULTIBOOT_BIN = Build/EFIDROID/multiboot_bin\n"   >> "$EDK2_FDF_INC"
