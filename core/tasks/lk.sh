@@ -1,4 +1,4 @@
-LK_DIR="$TOP/bootloader/lk/common/master"
+LK_DIR="$TOP/bootloader/lk/common/LA.BF64"
 LK_OUT="$MODULE_OUT"
 LK_ENV="BOOTLOADER_OUT=$LK_OUT ARCH=arm SUBARCH=arm TOOLCHAIN_PREFIX=$GCC_EABI"
 # optionally overwrite MEMBASE
