@@ -23,6 +23,12 @@ if [ ! -z "$LK_SOURCE" ];then
     LK_DIR="$TOP/bootloader/$LK_SOURCE"
 fi
 
+# add (default) vram size
+if [ -z "$LCD_VRAM_SIZE" ];then
+    LCD_VRAM_SIZE="$((8*1024*1024))"
+fi
+LK_ENV="$LK_ENV LCD_VRAM_SIZE=$LCD_VRAM_SIZE"
+
 # check required variables
 if [ -z "$BOOTIMG_BASE" ];then
     pr_fatal "BOOTIMG_BASE is not set"
