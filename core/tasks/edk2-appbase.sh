@@ -12,6 +12,9 @@ Setup() {
     # symlink uefi/apps
     ln -s "$TOP/uefi/apps" "$EDK2_OUT/EFIDroidUEFIApps"
 
+    # symlink modules
+    ln -s "$TOP/modules" "$EDK2_OUT/EFIDroidModules"
+
     # (re)compile BaseTools
     MAKEFLAGS= "$EFIDROID_MAKE" -C "$EDK2_OUT/BaseTools"
 
