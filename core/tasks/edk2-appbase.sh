@@ -62,6 +62,10 @@ CompileApp() {
     cp "$TOP/build/core/EFIDroidUEFIApps.dsc" "$APPCONFIG"
     sed -i "s/\[Components\]/\[Components\]\n  EFIDroidUEFIApps\/$APPNAME\/$APPNAME.inf/g" "$APPCONFIG"
 
+    if [ -f "$EDK2_OUT/EFIDroidUEFIApps/$APPNAME/$APPNAME.dsc.inc" ];then
+        echo -e "\n!include EFIDroidUEFIApps/$APPNAME/$APPNAME.dsc.inc" >> "$APPCONFIG"
+    fi
+
     # get number of jobs
     MAKEPATH=$($MAKEFORWARD_PIPES)
     plussigns=$(timeout -k 1 1 cat "$MAKEPATH/3" ; exit 0)
