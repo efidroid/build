@@ -15,7 +15,6 @@ Setup() {
     # (re)compile BaseTools
     MAKEFLAGS= "$EFIDROID_MAKE" -C "$EDK2_OUT/BaseTools"
 
-    cp "$TOP/build/core/tasks/target.txt" "$EDK2_OUT/Conf/target.txt"
     cp "$EDK2_OUT/BaseTools/Conf/tools_def.template" "$EDK2_OUT/Conf/tools_def.txt"
     sed -i "s/fstack-protector/fno-stack-protector/g" "$EDK2_OUT/Conf/tools_def.txt"
 }
@@ -33,8 +32,7 @@ Compile() {
     "$EFIDROID_SHELL" -c "\
 	    cd "$EDK2_OUT" && \
 		    source edksetup.sh && \
-		    $EDK2_ENV build -n$numjobs -p ArmPkg/ArmPkg.dsc && \
-		    $EDK2_ENV build -n$numjobs \
+		    $EDK2_ENV build -n$numjobs -b $EDK2_BUILD_TYPE -a ARM -t GCC49 -p MdePkg/MdePkg.dsc \
     " 2> >(\
     while read line; do \
         if [[ "$line" =~ "error" ]];then \
@@ -70,7 +68,7 @@ CompileApp() {
     "$EFIDROID_SHELL" -c "\
 	    cd "$EDK2_OUT" && \
 		    source edksetup.sh && \
-		    $EDK2_ENV build -n$numjobs -p $APPCONFIG_REL \
+		    $EDK2_ENV build -n$numjobs -b $EDK2_BUILD_TYPE -a ARM -t GCC49 -p $APPCONFIG_REL \
     " 2> >(\
     while read line; do \
         if [[ "$line" =~ "error" ]];then \
