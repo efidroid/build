@@ -401,6 +401,23 @@ def parse_config(configfile, moduledir=None):
 
             register_library(target, libname, filename, includes)
 
+        elif section.startswith('uefird.'):
+            idx = section.split('.', 1)[1]
+            filename = config.get(section, 'file').replace('$(%s)' % 'MODULE_SRC', cfg.top+'/'+moduledir)
+            destination = config.get(section, 'destination')
+
+            targetname = 'uefird_'+idx
+            targetdeps = ['FORCE']
+
+            if config.has_option(section, 'dependencies'):
+                targetdeps = targetdeps + config.get(section, 'dependencies').split()
+
+            make_add_target(configfile, targetname, 'mkdir -p $(UEFIRD_DIR) && mkdir -p $$(dirname $(UEFIRD_DIR)/'+destination+') && cp '+filename+' $(UEFIRD_DIR)/'+destination, deps=targetdeps, description='Compiling target \''+targetname+'\'')
+            cfg.uefird_deps += [targetname]
+
+        elif section == 'parseopts':
+            pass
+
         else:
             raise Exception('Invalid section \''+section+'\' in '+configfile)
 
@@ -418,6 +435,19 @@ def parse_deps(configfile):
             cfg.make.dependencies(targetname, name)
 
     cfg.make.newline()
+
+def cfg_parse_opts(configfile):
+    config = ConfigParser.RawConfigParser(allow_no_value=True)
+    config.optionxform = str
+    config.read(configfile)
+    opts = {}
+
+    for sectionname in config.sections():
+        if sectionname == 'parseopts':
+            for (name, value) in config.items(sectionname):
+                opts[name] = value
+
+    return opts
 
 def add_cmake_target(path, projecttype, modulesrc=None, maketargets=None, disableprefix=False):
     cfg.make.comment(path)
@@ -549,6 +579,7 @@ def main(argv):
     cfg.helptext = ''
     cfg.targets = {}
     cfg.top = os.path.abspath('')
+    cfg.uefird_deps = []
 
     # create out directory
     try:
@@ -587,6 +618,8 @@ def main(argv):
         setvar('DEVICEVENDOR', tmp[0])
         setvar('DEVICENAME', tmp[1])
         setvar('TARGET_OUT', cfg.out+'/target/'+cfg.devicename)
+        setvar('UEFIRD_DIR', getvar('TARGET_OUT')+'/uefird')
+        setvar('UEFIRD_CPIO', getvar('UEFIRD_DIR')+'.cpio')
 
         # parse fstab
         setvar('DEVICE_FSTAB', cfg.top+'/device/'+cfg.devicename+'/fstab.multiboot')
@@ -663,15 +696,22 @@ def main(argv):
 
         # detect build system
         moduleefidroidini = moduledir+'/EFIDroid.ini'
+        parsed = False
         if os.path.isfile(moduleefidroidini):
             parse_config(moduleefidroidini, moduledir);
+            opts = cfg_parse_opts(moduleefidroidini)
+            if ('extend' in opts) and (opts['extend']=='1'):
+                parsed = False
+            else:
+                parsed = True
 
-        elif os.path.isfile(moduledir+'/CMakeLists.txt'):
-            add_cmake_target(moduledir, 'target')
-            add_cmake_target(moduledir, 'host')
+        if parsed == False:
+            if os.path.isfile(moduledir+'/CMakeLists.txt'):
+                add_cmake_target(moduledir, 'target')
+                add_cmake_target(moduledir, 'host')
 
-        elif not os.path.isfile(moduleconfigfile):
-            raise Exception('Unknown make system in '+moduledir+'\nYou can manually specify it in '+moduleconfigfile)
+            elif not os.path.isfile(moduleconfigfile):
+                raise Exception('Unknown make system in '+moduledir+'\nYou can manually specify it in '+moduleconfigfile)
 
         moduledepsfile = moduledir+'/EFIDroidDependencies.ini'
         if os.path.isfile(moduledepsfile):
@@ -684,25 +724,44 @@ def main(argv):
         appconfigfile = 'build/uefiappconfigs/'+dirname+'/EFIDroid.ini'
 
         # detect build system
+        parsed = False
         if os.path.isfile(appconfigfile):
             parse_config(appconfigfile, moduledir);
+            opts = cfg_parse_opts(moduleefidroidini)
+            if ('extend' in opts) and (opts['extend']=='1'):
+                parsed = False
+            else:
+                parsed = True
 
-        elif os.path.isfile(moduleefidroidini):
-            parse_config(moduleefidroidini, moduledir);
+        if parsed == False:
+            if os.path.isfile(moduleefidroidini):
+                parse_config(moduleefidroidini, moduledir);
+                opts = cfg_parse_opts(moduleefidroidini)
+                if ('extend' in opts) and (opts['extend']=='1'):
+                    parsed = False
+                else:
+                    parsed = True
 
-        elif os.path.isfile(moduledir+'/CMakeLists.txt'):
-            add_cmake_target(moduledir, 'target')
-            add_cmake_target(moduledir, 'host')
+            if parsed == False:
+                if os.path.isfile(moduledir+'/CMakeLists.txt'):
+                    add_cmake_target(moduledir, 'target')
+                    add_cmake_target(moduledir, 'host')
 
-        elif os.path.isfile(moduledir+'/'+dirname+'.inf'):
-            add_uefiapp_target(moduledir)
+                elif os.path.isfile(moduledir+'/'+dirname+'.inf'):
+                    add_uefiapp_target(moduledir)
 
-        elif not os.path.isfile(appconfigfile):
-            raise Exception('Unknown make system in '+moduledir+'\nYou can manually specify it in '+appconfigfile)
+                elif not os.path.isfile(appconfigfile):
+                    raise Exception('Unknown make system in '+moduledir+'\nYou can manually specify it in '+appconfigfile)
 
         moduledepsfile = moduledir+'/EFIDroidDependencies.ini'
         if os.path.isfile(moduledepsfile):
             parse_deps(moduledepsfile)
+
+    if cfg.devicename:
+        # UEFIRD target
+        cfg.make.comment('UEFIRD')
+        make_add_target(__file__, 'uefird', 'cd $(UEFIRD_DIR) && find . | cpio -o -H newc > $(UEFIRD_CPIO)', phony=True, deps=cfg.uefird_deps)
+        cfg.make.newline()
 
     # clean target
     cfg.make.comment('CLEAN')
