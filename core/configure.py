@@ -403,7 +403,7 @@ def parse_config(configfile, moduledir=None):
 
         elif section.startswith('uefird.'):
             idx = section.split('.', 1)[1]
-            filename = config.get(section, 'file').replace('$(%s)' % 'MODULE_SRC', cfg.top+'/'+moduledir)
+            source = config.get(section, 'source').replace('$(%s)' % 'MODULE_SRC', cfg.top+'/'+moduledir)
             destination = config.get(section, 'destination')
 
             targetname = 'uefird_'+idx
@@ -412,7 +412,15 @@ def parse_config(configfile, moduledir=None):
             if config.has_option(section, 'dependencies'):
                 targetdeps = targetdeps + config.get(section, 'dependencies').split()
 
-            make_add_target(configfile, targetname, 'mkdir -p $(UEFIRD_DIR) && mkdir -p $$(dirname $(UEFIRD_DIR)/'+destination+') && cp '+filename+' $(UEFIRD_DIR)/'+destination, deps=targetdeps, description='Compiling target \''+targetname+'\'')
+            make_add_target(configfile, targetname, [
+                'mkdir -p $(UEFIRD_DIR)',
+                'mkdir -p $$(dirname $(UEFIRD_DIR)/'+destination+')',
+                'if [ -d "'+source+'" ];then '+
+                    'cp -R '+source+' $$(dirname $(UEFIRD_DIR)/'+destination+');'+
+                'else '+
+                    'cp '+source+' $(UEFIRD_DIR)/'+destination+';'+
+                'fi',
+            ], deps=targetdeps, description='Compiling target \''+targetname+'\'')
             cfg.uefird_deps += [targetname]
 
         elif section == 'parseopts':
