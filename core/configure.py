@@ -329,6 +329,8 @@ def parse_config(configfile, moduledir=None):
                     generator = 'makeconf.sh'
                 elif os.path.isfile(moduledir+'/bootstrap'):
                     generator = 'bootstrap'
+                elif os.path.isfile(moduledir+'/configure'):
+                    generator = 'configure'
                 else:
                     raise Exception('no generator found')
 
@@ -341,8 +343,9 @@ def parse_config(configfile, moduledir=None):
                                     description='runnin lns on target \''+targetname+'\'')
 
                 # add autogen target
-                make_add_target(configfile, compiledir+'/configure', 'cd \"'+compiledir+'\" && ./'+generator, deps=compiledir+'/'+generator,\
-                                description='Autoconfiguring target \''+targetname+'\'')
+                if not generator=='configure':
+                    make_add_target(configfile, compiledir+'/configure', 'cd \"'+compiledir+'\" && ./'+generator, deps=compiledir+'/'+generator,\
+                                    description='Autoconfiguring target \''+targetname+'\'')
 
                 # add configure target
                 if targetcategory=='target':
