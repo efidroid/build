@@ -21,6 +21,7 @@ Compile() {
         EnableConfig CONFIG_RM
         DisableConfig CONFIG_FEATURE_SH_IS_NONE
         EnableConfig CONFIG_FEATURE_SH_IS_ASH
+        EnableConfig CONFIG_LFS
         "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$MODULE_DIR" $BB_ARGS silentoldconfig
     fi
 
