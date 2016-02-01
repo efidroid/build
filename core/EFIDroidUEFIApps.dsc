@@ -61,7 +61,7 @@
 
   ShellLib|ShellPkg/Library/UefiShellLib/UefiShellLib.inf
 
-  CacheMaintenanceLib|MdePkg/Library/BaseCacheMaintenanceLib/BaseCacheMaintenanceLib.inf
+  CacheMaintenanceLib|ArmPkg/Library/ArmCacheMaintenanceLib/ArmCacheMaintenanceLib.inf
 
   # Networking Requirements for ArmPlatformPkg/Bds
   NetLib|MdeModulePkg/Library/DxeNetLib/DxeNetLib.inf
