@@ -30,10 +30,6 @@ Configure() {
     mkdir -p "$EDK2_EFIDROID_OUT"
     "$TOP/build/tools/edk2_update" "$EDK2_DIR" "$EDK2_OUT"
 
-    # link freetype2
-    rm -f "$EDK2_EFIDROID_OUT/freetype2"
-    ln -s "$TOP/modules/freetype2" "$EDK2_EFIDROID_OUT/freetype2"
-
     # link apps
     rm -f "$EDK2_OUT/Build/EFIDroidUEFIApps"
     ln -s "$TOP/out/host/edk2_appbase/Build/EFIDroidUEFIApps" "$EDK2_OUT/Build/EFIDroidUEFIApps"
