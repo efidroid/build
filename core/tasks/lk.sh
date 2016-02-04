@@ -10,9 +10,6 @@ LK_ENV="$LK_ENV EFIDROID_DEVICE_DIR=$TOP/device/$DEVICE"
 LK_ENV="$LK_ENV EFIDROID_BUILD_TYPE=$BUILDTYPE"
 LK_ENV_NOUEFI="$LK_ENV BOOTLOADER_OUT=$LK_OUT"
 
-if [ -n "$EDK2_BIN" ];then
-    LK_ENV="$LK_ENV EDK2_SIZE=$(stat -L -c %s $EDK2_BIN)"
-fi
 LK_ENV="$LK_ENV EDK2_BASE=$EDK2_BASE EDK2_API_INC=$TOP/uefi/edk2packages/LittleKernelPkg/Include"
 LK_ENV="$LK_ENV WITH_KERNEL_UEFIAPI=1"
 LK_ENV="$LK_ENV LCD_DENSITY=$LCD_DENSITY"
@@ -67,7 +64,35 @@ fi
 CompileLK() {
     mkdir -p "$LK_OUT"
     "$EFIDROID_SHELL" -c "$LK_ENV \"$MAKEFORWARD\" \"$EFIDROID_MAKE\" -C \"$LK_DIR\" $LK_TARGET"
-    cat "$LK_OUT/build-$LK_TARGET/lk.bin" "$EDK2_BIN" >"$LK_OUT/build-$LK_TARGET/lk-edk2.bin"
+}
+
+CompileLKEDK2() {
+    C="$LK_OUT/tmp.c"
+    BIN="$LK_OUT/tmp"
+    LKEDK2BIN="$LK_OUT/build-$LK_TARGET/lk-edk2.bin"
+    EDK2_SIZE="$(stat -L -c %s $EDK2_BIN)"
+
+    # generate C file
+    echo "#include <unistd.h>" > "$C"
+    echo "int main(void){unsigned int n=$EDK2_SIZE;char c;" >> "$C"
+    echo "c=(n>>(8*0))&0xff; write(1, &c, 1);" >> "$C"
+    echo "c=(n>>(8*1))&0xff; write(1, &c, 1);" >> "$C"
+    echo "c=(n>>(8*2))&0xff; write(1, &c, 1);" >> "$C"
+    echo "c=(n>>(8*3))&0xff; write(1, &c, 1);" >> "$C"
+    echo "return 0;" >> "$C"
+    echo "}" >> "$C"
+
+    # compile C file
+    gcc -Wall -Wextra -Wshadow -Werror "$C" -o "$BIN"
+
+    # write LK
+    cp "$LK_OUT/build-$LK_TARGET/lk.bin" "$LKEDK2BIN"
+
+    # write size
+    "$BIN" >> "$LKEDK2BIN"
+
+    # write EDK2
+    cat "$EDK2_BIN" >> "$LKEDK2BIN"
 }
 
 CompileLKSideload() {
