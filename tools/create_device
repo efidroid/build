@@ -73,7 +73,12 @@ UNPACKBOOTIMG = 'out/host/mkbootimg/unpackbootimg'
 BOOTIMGPREFIX = None
 
 def inputex(msg):
-    return input(bldylw+msg+txtrst)
+    prompt = bldylw+msg+txtrst
+
+    try:
+        return raw_input(prompt)
+    except:
+        return input(prompt)
 
 def file2str(filename):
     data = None
