@@ -2,6 +2,7 @@
 
 import sys
 import subprocess
+import base64
 
 bldylw='\033[1;33m' # Yellow
 txtrst='\033[0m'    # Text Reset
@@ -14,12 +15,13 @@ def inputex(msg):
     except:
         return input(prompt)
 
-def fastboot(argv, rawmode, suppressstatus=False):
+def fastboot(argv, rawmode, suppressstatus=False, bufmode=False):
+    buf = b""
     p = subprocess.Popen(['fastboot'] + argv, stderr=subprocess.PIPE)
 
     first = True
-    for line in p.stderr:
-        line = line.decode()
+    for rawline in p.stderr:
+        line = rawline.decode()
 
         if first and line.startswith('...'):
             first = False
@@ -36,15 +38,33 @@ def fastboot(argv, rawmode, suppressstatus=False):
             if line.startswith('finished. total time: '):
                 continue
 
+        if bufmode:
+            buf+=rawline[13:-1]
+            continue
+
         if rawmode:
             line = line[:-1]
 
         sys.stdout.write(line)
 
+    if bufmode:
+        return buf
+
 def run_shell():
     while True:
         cmd = inputex(bldylw+'Shell> '+txtrst);
         fastboot(['oem', 'shell', cmd], True, True)
+
+def take_screenshot(argv):
+    if len(argv)==2:
+        fastboot(argv, False)
+    else:
+        if not len(argv)==4:
+            raise('Invalid number of arguments')
+
+        data = fastboot(argv, True, True, True)
+        with open(argv[3], 'wb') as f:
+            f.write(base64.b64decode(data))
 
 def main(argv):
     rawmode = False
@@ -53,6 +73,8 @@ def main(argv):
             rawmode = True
         elif argv[1]=='lk_log':
             rawmode = True
+        elif argv[1]=='screenshot':
+            return take_screenshot(argv)
         elif argv[1]=='shell':
             return run_shell()
 
