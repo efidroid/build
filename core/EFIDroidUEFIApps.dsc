@@ -63,8 +63,6 @@
   ShellCommandLib|ShellPkg/Library/UefiShellCommandLib/UefiShellCommandLib.inf
   HandleParsingLib|ShellPkg/Library/UefiHandleParsingLib/UefiHandleParsingLib.inf
 
-  CacheMaintenanceLib|ArmPkg/Library/ArmCacheMaintenanceLib/ArmCacheMaintenanceLib.inf
-
   # Networking Requirements for ArmPlatformPkg/Bds
   NetLib|MdeModulePkg/Library/DxeNetLib/DxeNetLib.inf
 
@@ -76,9 +74,14 @@
   ArmLib|ArmPkg/Library/ArmLib/ArmV7/ArmV7Lib.inf
   ArmSoftFloatLib|ArmPkg/Library/ArmSoftFloatLib/ArmSoftFloatLib.inf
   BdsLib|ArmPkg/Library/BdsLib/BdsLib.inf
+  CacheMaintenanceLib|ArmPkg/Library/ArmCacheMaintenanceLib/ArmCacheMaintenanceLib.inf
 
 [LibraryClasses.AARCH64]
   ArmLib|ArmPkg/Library/ArmLib/AArch64/AArch64Lib.inf
+
+[LibraryClasses.IA32,LibraryClasses.X64]
+  TimerLib|MdePkg/Library/BaseTimerLibNullTemplate/BaseTimerLibNullTemplate.inf
+  PerformanceLib|MdePkg/Library/BasePerformanceLibNull/BasePerformanceLibNull.inf
 
 [Components]
 
