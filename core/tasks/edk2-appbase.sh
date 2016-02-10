@@ -2,7 +2,12 @@ EDK2_BUILD_TYPE="$BUILDTYPE"
 
 EDK2_OUT="$MODULE_OUT"
 EDK2_DIR="$TOP/uefi/edk2"
-EDK2_ENV="GCC49_ARM_PREFIX=$GCC_LINUX_GNUEABIHF MAKEFLAGS="
+EDK2_ENV="MAKEFLAGS="
+EDK2_ARCH="ARM"
+
+if [ "$EDK2_ARCH" == "ARM" ];then
+  EDK2_ENV="$EDK2_ENV GCC49_ARM_PREFIX=$GCC_LINUX_GNUEABIHF"
+fi
 
 Setup() {
     # setup build directory
@@ -35,7 +40,7 @@ Compile() {
     "$EFIDROID_SHELL" -c "\
 	    cd "$EDK2_OUT" && \
 		    source edksetup.sh && \
-		    $EDK2_ENV build -n$numjobs -b $EDK2_BUILD_TYPE -a ARM -t GCC49 -p MdePkg/MdePkg.dsc \
+		    $EDK2_ENV build -n$numjobs -b $EDK2_BUILD_TYPE -a $EDK2_ARCH -t GCC49 -p MdePkg/MdePkg.dsc \
     " 2> >(\
     while read line; do \
         if [[ "$line" =~ "error" ]];then \
@@ -75,7 +80,7 @@ CompileApp() {
     "$EFIDROID_SHELL" -c "\
 	    cd "$EDK2_OUT" && \
 		    source edksetup.sh && \
-		    $EDK2_ENV build -n$numjobs -b $EDK2_BUILD_TYPE -a ARM -t GCC49 -p $APPCONFIG_REL \
+		    $EDK2_ENV build -n$numjobs -b $EDK2_BUILD_TYPE -a $EDK2_ARCH -t GCC49 -p $APPCONFIG_REL \
     " 2> >(\
     while read line; do \
         if [[ "$line" =~ "error" ]];then \
@@ -89,19 +94,19 @@ CompileApp() {
     echo -n "$plussigns" > "$MAKEPATH/3"
 
     BASENAME=$(awk -F "=" '/BASE_NAME/ {print $2}' "$UEFIAPP/$APPNAME.inf" | tr -d '[[:space:]]')
-    pr_alert "Installing: $EDK2_OUT/Build/EFIDroidUEFIApps/${EDK2_BUILD_TYPE}_GCC49/ARM/$BASENAME.efi"
+    pr_alert "Installing: $EDK2_OUT/Build/EFIDroidUEFIApps/${EDK2_BUILD_TYPE}_GCC49/$EDK2_ARCH/$BASENAME.efi"
 }
 
 CleanApp() {
     # get app info
     APPNAME="${UEFIAPP##*/}"
     BASENAME=$(awk -F "=" '/BASE_NAME/ {print $2}' "$UEFIAPP/$APPNAME.inf" | tr -d '[[:space:]]')
-    EFIPATH="$EDK2_OUT/Build/EFIDroidUEFIApps/${EDK2_BUILD_TYPE}_GCC49/ARM/$BASENAME.efi"
+    EFIPATH="$EDK2_OUT/Build/EFIDroidUEFIApps/${EDK2_BUILD_TYPE}_GCC49/$EDK2_ARCH/$BASENAME.efi"
 
     # remove build files
-    rm -f "$EDK2_OUT/Build/EFIDroidUEFIApps/${EDK2_BUILD_TYPE}_GCC49/ARM/$BASENAME.efi"
-    rm -f "$EDK2_OUT/Build/EFIDroidUEFIApps/${EDK2_BUILD_TYPE}_GCC49/ARM/$BASENAME.debug"
-    rm -Rf "$EDK2_OUT/Build/EFIDroidUEFIApps/${EDK2_BUILD_TYPE}_GCC49/ARM/EFIDroidUEFIApps/$BASENAME"
+    rm -f "$EDK2_OUT/Build/EFIDroidUEFIApps/${EDK2_BUILD_TYPE}_GCC49/$EDK2_ARCH/$BASENAME.efi"
+    rm -f "$EDK2_OUT/Build/EFIDroidUEFIApps/${EDK2_BUILD_TYPE}_GCC49/$EDK2_ARCH/$BASENAME.debug"
+    rm -Rf "$EDK2_OUT/Build/EFIDroidUEFIApps/${EDK2_BUILD_TYPE}_GCC49/$EDK2_ARCH/EFIDroidUEFIApps/$BASENAME"
 }
 
 Clean() {
