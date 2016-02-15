@@ -8,6 +8,7 @@ import make_syntax
 import os
 import subprocess
 import os
+import hashlib
 from fstab import *
 from utils import *
 
@@ -516,6 +517,57 @@ def partitionpath2name(part):
 
     return tmp[1]
 
+def sha1(filepath):
+    sha1lib = hashlib.sha1()
+
+    with open(filepath, 'rb') as f:
+        sha1lib.update(f.read())
+
+    return sha1lib.hexdigest()
+
+def setup_toolchain(NAMEPREFIX):
+    # stop if toolchain dir does already exist
+    bindir = getvar(NAMEPREFIX+'PATH')
+    if os.path.isdir(bindir):
+        return
+
+    # make cachedir
+    cachedir = 'prebuilts/cache'
+    try:
+        os.makedirs(cachedir)
+    except:
+        pass
+
+    # download toolchain
+    downloadfile = cachedir+'/'+os.path.basename(getvar(NAMEPREFIX+'SRC'))
+    if not os.path.isfile(downloadfile) or not sha1(downloadfile)==getvar(NAMEPREFIX+'SHA1'):
+        p = subprocess.Popen(['wget', '-o', downloadfile, '--show-progress', getvar(NAMEPREFIX+'SRC')])
+        p.communicate()
+        if p.returncode:
+            pr_fatal('Can\'t download toolchain')
+
+        # verify checksum
+        if not sha1(downloadfile)==getvar(NAMEPREFIX+'SHA1'):
+            pr_fatal('sha1sum doesn\'t match')
+
+    # make toolchain dir
+    try:
+        os.makedirs(getvar('GCC_TARGET_DIR'))
+    except:
+        pass
+
+    # extract toolchain
+    pr_info('extracting '+downloadfile+' ...')
+    p = subprocess.Popen(['tar', 'xf', downloadfile, '-C', getvar('GCC_TARGET_DIR')])
+    p.communicate()
+    if p.returncode:
+        pr_fatal('Can\'t extract toolchain')
+
+    if not os.path.isdir(bindir):
+        pr_fatal('invalid toolchain')
+
+    pass
+
 def main(argv):
     # get devicename
     if 'DEVICEID' in os.environ:
@@ -652,10 +704,14 @@ def main(argv):
     setvar('GCC_LINUX_TARGET_PATH', getvar(cfg.gcc_linux_var+'PATH'));
     setvar('GCC_LINUX_TARGET_NAME', getvar(cfg.gcc_linux_var+'NAME'));
     setvar('GCC_LINUX_TARGET_PREFIX', getvar(cfg.gcc_linux_var+'PREFIX'));
+    setvar('GCC_LINUX_TARGET_SRC', getvar(cfg.gcc_linux_var+'SRC'));
+    setvar('GCC_LINUX_TARGET_SHA1', getvar(cfg.gcc_linux_var+'SHA1'));
 
     setvar('GCC_NONE_TARGET_PATH', getvar(cfg.gcc_none_var+'PATH'));
     setvar('GCC_NONE_TARGET_NAME', getvar(cfg.gcc_none_var+'NAME'));
     setvar('GCC_NONE_TARGET_PREFIX', getvar(cfg.gcc_none_var+'PREFIX'));
+    setvar('GCC_NONE_TARGET_SRC', getvar(cfg.gcc_none_var+'SRC'));
+    setvar('GCC_NONE_TARGET_SHA1', getvar(cfg.gcc_none_var+'SHA1'));
 
     # we need the toolchain vars
     evaluatevars()
@@ -788,6 +844,9 @@ def main(argv):
     cfg.configinclude_sh.close()
     cfg.configinclude_py.close()
     cfg.configinclude_cmake.close()
+
+    setup_toolchain('GCC_LINUX_TARGET_')
+    setup_toolchain('GCC_NONE_TARGET_')
 
 if __name__ == "__main__":
     try:
