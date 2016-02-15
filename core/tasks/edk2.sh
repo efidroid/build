@@ -90,5 +90,5 @@ Clean() {
 }
 
 DistClean() {
-    true
+    Clean
 }
