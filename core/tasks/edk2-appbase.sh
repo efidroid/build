@@ -3,7 +3,6 @@ EDK2_BUILD_TYPE="$BUILDTYPE"
 EDK2_OUT="$MODULE_OUT"
 EDK2_DIR="$TOP/uefi/edk2"
 EDK2_ENV="MAKEFLAGS="
-EDK2_ARCH="ARM"
 EDK2_COMPILER="GCC49"
 
 if [ "$TARGET_ARCH" == "arm" ];then
@@ -15,9 +14,7 @@ elif [ "$TARGET_ARCH" == "x86_64" ];then
 elif [ "$TARGET_ARCH" == "aarch64" ];then
     EDK2_ARCH="AArch64"
 fi
-
 unset TARGET_ARCH
-
 EDK2_ENV="$EDK2_ENV ${EDK2_COMPILER}_${EDK2_ARCH}_PREFIX=$GCC_LINUX_TARGET_PREFIX"
 
 Setup() {
