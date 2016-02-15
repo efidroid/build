@@ -2,10 +2,24 @@ EDK2_BUILD_TYPE="$BUILDTYPE"
 
 EDK2_OUT="$MODULE_OUT"
 EDK2_DIR="$TOP/uefi/edk2"
-EDK2_ENV="GCC49_ARM_PREFIX=$GCC_LINUX_TARGET_PREFIX MAKEFLAGS="
-EDK2_BIN="$EDK2_OUT/Build/LittleKernelPkg/${EDK2_BUILD_TYPE}_GCC49/FV/LITTLEKERNELPKG_EFI.fd"
+EDK2_ENV="MAKEFLAGS="
+EDK2_COMPILER="GCC49"
+
+EDK2_BIN="$EDK2_OUT/Build/LittleKernelPkg/${EDK2_BUILD_TYPE}_${EDK2_COMPILER}/FV/LITTLEKERNELPKG_EFI.fd"
 EDK2_EFIDROID_OUT="$EDK2_OUT/Build/EFIDROID"
 EDK2_FDF_INC="$EDK2_EFIDROID_OUT/LittleKernelPkg.fdf.inc"
+
+if [ "$TARGET_ARCH" == "arm" ];then
+    EDK2_ARCH="ARM"
+elif [ "$TARGET_ARCH" == "x86" ];then
+    EDK2_ARCH="IA32"
+elif [ "$TARGET_ARCH" == "x86_64" ];then
+    EDK2_ARCH="X64"
+elif [ "$TARGET_ARCH" == "aarch64" ];then
+    EDK2_ARCH="AArch64"
+fi
+unset TARGET_ARCH
+EDK2_ENV="$EDK2_ENV ${EDK2_COMPILER}_${EDK2_ARCH}_PREFIX=$GCC_LINUX_TARGET_PREFIX"
 
 # check required variables
 if [ -z "$EDK2_BASE" ];then
@@ -59,7 +73,7 @@ Compile() {
     "$EFIDROID_SHELL" -c "\
 	    cd "$EDK2_OUT" && \
 		    source edksetup.sh && \
-		    $EDK2_ENV build -n$numjobs -b $EDK2_BUILD_TYPE -a ARM -t GCC49 -p LittleKernelPkg/LittleKernelPkg.dsc \
+		    $EDK2_ENV build -n$numjobs -b $EDK2_BUILD_TYPE -a ${EDK2_ARCH} -t ${EDK2_COMPILER} -p LittleKernelPkg/LittleKernelPkg.dsc \
 			    -DFIRMWARE_VER=$EDK2_VERSION \
 			    -DFIRMWARE_VENDOR=EFIDroid \
 			    -DDRAM_BASE=$DRAM_BASE \
