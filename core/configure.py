@@ -563,12 +563,12 @@ def main(argv):
     setvar('BUILDTYPE', cfg.buildtype)
 
     # get target arch
-    if 'TARGET_ARCH' in os.environ:
-        setvar('TARGET_ARCH', os.environ['TARGET_ARCH'])
+    if 'EFIDROID_TARGET_ARCH' in os.environ:
+        setvar('EFIDROID_TARGET_ARCH', os.environ['EFIDROID_TARGET_ARCH'])
     else:
-        setvar('TARGET_ARCH', 'arm')
+        setvar('EFIDROID_TARGET_ARCH', 'arm')
 
-    setvar('TARGET_COMMON_OUT', cfg.out+'/target/common/'+getvar('TARGET_ARCH'))
+    setvar('TARGET_COMMON_OUT', cfg.out+'/target/common/'+getvar('EFIDROID_TARGET_ARCH'))
 
     # load device config
     if cfg.devicename:
@@ -646,8 +646,8 @@ def main(argv):
     parse_config('build/config.ini')
 
     # compiler aliases
-    cfg.gcc_linux_var = 'GCC_LINUX_'+getvar('TARGET_ARCH').upper()+'_';
-    cfg.gcc_none_var = 'GCC_NONE_'+getvar('TARGET_ARCH').upper()+'_';
+    cfg.gcc_linux_var = 'GCC_LINUX_'+getvar('EFIDROID_TARGET_ARCH').upper()+'_';
+    cfg.gcc_none_var = 'GCC_NONE_'+getvar('EFIDROID_TARGET_ARCH').upper()+'_';
 
     setvar('GCC_LINUX_TARGET_PATH', getvar(cfg.gcc_linux_var+'PATH'));
     setvar('GCC_LINUX_TARGET_NAME', getvar(cfg.gcc_linux_var+'NAME'));

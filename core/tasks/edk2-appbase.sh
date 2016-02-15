@@ -5,16 +5,15 @@ EDK2_DIR="$TOP/uefi/edk2"
 EDK2_ENV="MAKEFLAGS="
 EDK2_COMPILER="GCC49"
 
-if [ "$TARGET_ARCH" == "arm" ];then
+if [ "$EFIDROID_TARGET_ARCH" == "arm" ];then
     EDK2_ARCH="ARM"
-elif [ "$TARGET_ARCH" == "x86" ];then
+elif [ "$EFIDROID_TARGET_ARCH" == "x86" ];then
     EDK2_ARCH="IA32"
-elif [ "$TARGET_ARCH" == "x86_64" ];then
+elif [ "$EFIDROID_TARGET_ARCH" == "x86_64" ];then
     EDK2_ARCH="X64"
-elif [ "$TARGET_ARCH" == "aarch64" ];then
+elif [ "$EFIDROID_TARGET_ARCH" == "aarch64" ];then
     EDK2_ARCH="AArch64"
 fi
-unset TARGET_ARCH
 EDK2_ENV="$EDK2_ENV ${EDK2_COMPILER}_${EDK2_ARCH}_PREFIX=$GCC_LINUX_TARGET_PREFIX"
 
 Setup() {

@@ -9,16 +9,15 @@ EDK2_BIN="$EDK2_OUT/Build/LittleKernelPkg/${EDK2_BUILD_TYPE}_${EDK2_COMPILER}/FV
 EDK2_EFIDROID_OUT="$EDK2_OUT/Build/EFIDROID"
 EDK2_FDF_INC="$EDK2_EFIDROID_OUT/LittleKernelPkg.fdf.inc"
 
-if [ "$TARGET_ARCH" == "arm" ];then
+if [ "$EFIDROID_TARGET_ARCH" == "arm" ];then
     EDK2_ARCH="ARM"
-elif [ "$TARGET_ARCH" == "x86" ];then
+elif [ "$EFIDROID_TARGET_ARCH" == "x86" ];then
     EDK2_ARCH="IA32"
-elif [ "$TARGET_ARCH" == "x86_64" ];then
+elif [ "$EFIDROID_TARGET_ARCH" == "x86_64" ];then
     EDK2_ARCH="X64"
-elif [ "$TARGET_ARCH" == "aarch64" ];then
+elif [ "$EFIDROID_TARGET_ARCH" == "aarch64" ];then
     EDK2_ARCH="AArch64"
 fi
-unset TARGET_ARCH
 EDK2_ENV="$EDK2_ENV ${EDK2_COMPILER}_${EDK2_ARCH}_PREFIX=$GCC_LINUX_TARGET_PREFIX"
 
 # check required variables
