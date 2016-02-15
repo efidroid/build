@@ -298,7 +298,7 @@ def parse_config(configfile, moduledir=None):
 
                 # add configure target
                 if targetcategory=='target':
-                    configureflags += ' --host '+getvar('GCC_LINUX_GNUEABIHF_NAME')
+                    configureflags += ' --host '+getvar('GCC_LINUX_TARGET_NAME')
                 commands = [
                     'mkdir -p \"'+targetout+'\"',
                     'cd \"'+targetout+'\" && '+configureenv+' \"'+compiledir+'/configure\" '+configureflags
@@ -425,10 +425,11 @@ def add_cmake_target(path, projecttype, modulesrc=None, maketargets=None, disabl
         if not cfg.devicename:
             return
 
-        cmakeargs += ' -DCMAKE_C_COMPILER='+getvar('GCC_LINUX_GNUEABIHF')+'gcc'
-        cmakeargs += ' -DCMAKE_CXX_COMPILER='+getvar('GCC_LINUX_GNUEABIHF')+'g++'
-        cmakeargs += ' -DCMAKE_LINKER='+getvar('GCC_LINUX_GNUEABIHF')+'ld'
-        cmakeargs += ' -DCMAKE_OBJCOPY='+getvar('GCC_LINUX_GNUEABIHF')+'objcopy'
+        prefix = getvar('GCC_LINUX_TARGET_PREFIX')
+        cmakeargs += ' -DCMAKE_C_COMPILER='+prefix+'gcc'
+        cmakeargs += ' -DCMAKE_CXX_COMPILER='+prefix+'g++'
+        cmakeargs += ' -DCMAKE_LINKER='+prefix+'ld'
+        cmakeargs += ' -DCMAKE_OBJCOPY='+prefix+'objcopy'
         cmakeargs += ' -DCMAKE_TOOLCHAIN_FILE='+getvar('TARGET_OUT')+'/toolchain.cmake'
     elif projecttype == 'host':
         cmakeargs += ' -DCMAKE_TOOLCHAIN_FILE='+getvar('HOST_OUT')+'/toolchain.cmake'
@@ -556,6 +557,14 @@ def main(argv):
     setvar('MAKEFORWARD_PIPES', getvar('HOST_OUT')+'/makeforward_pipes')
     setvar('BUILDTYPE', cfg.buildtype)
 
+    # get target arch
+    if 'TARGET_ARCH' in os.environ:
+        setvar('TARGET_ARCH', os.environ['TARGET_ARCH'])
+    else:
+        setvar('TARGET_ARCH', 'arm')
+
+    setvar('TARGET_COMMON_OUT', cfg.out+'/target/common/'+getvar('TARGET_ARCH'))
+
     # load device config
     if cfg.devicename:
         tmp = cfg.devicename.split('/')
@@ -631,11 +640,24 @@ def main(argv):
     # add build config
     parse_config('build/config.ini')
 
+    # compiler aliases
+    cfg.gcc_linux_var = 'GCC_LINUX_'+getvar('TARGET_ARCH').upper()+'_';
+    cfg.gcc_none_var = 'GCC_NONE_'+getvar('TARGET_ARCH').upper()+'_';
+
+    setvar('GCC_LINUX_TARGET_PATH', getvar(cfg.gcc_linux_var+'PATH'));
+    setvar('GCC_LINUX_TARGET_NAME', getvar(cfg.gcc_linux_var+'NAME'));
+    setvar('GCC_LINUX_TARGET_PREFIX', getvar(cfg.gcc_linux_var+'PREFIX'));
+
+    setvar('GCC_NONE_TARGET_PATH', getvar(cfg.gcc_none_var+'PATH'));
+    setvar('GCC_NONE_TARGET_NAME', getvar(cfg.gcc_none_var+'NAME'));
+    setvar('GCC_NONE_TARGET_PREFIX', getvar(cfg.gcc_none_var+'PREFIX'));
+
     # we need the toolchain vars
     evaluatevars()
 
     # set PATH
-    cfg.make._line('export PATH := '+getvar('GCC_LINUX_GNUEABIHF_BIN')+':$(PATH)')
+    cfg.make._line('export PATH := '+getvar('GCC_LINUX_TARGET_PATH')+':$(PATH)')
+    cfg.make._line('export PATH := '+getvar('GCC_NONE_TARGET_PATH')+':$(PATH)')
 
     # add device config
     if cfg.devicename:

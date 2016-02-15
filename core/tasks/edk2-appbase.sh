@@ -6,9 +6,17 @@ EDK2_ENV="MAKEFLAGS="
 EDK2_ARCH="ARM"
 EDK2_COMPILER="GCC49"
 
-if [ "$EDK2_ARCH" == "ARM" ];then
-  EDK2_ENV="$EDK2_ENV ${EDK2_COMPILER}_ARM_PREFIX=$GCC_LINUX_GNUEABIHF"
+if [ "$TARGET_ARCH" == "arm" ];then
+    EDK2_ARCH="ARM"
+elif [ "$TARGET_ARCH" == "x86" ];then
+    EDK2_ARCH="IA32"
+elif [ "$TARGET_ARCH" == "x86_64" ];then
+    EDK2_ARCH="X64"
+elif [ "$TARGET_ARCH" == "aarch64" ];then
+    EDK2_ARCH="AArch64"
 fi
+
+EDK2_ENV="$EDK2_ENV ${EDK2_COMPILER}_${EDK2_ARCH}_PREFIX=$GCC_LINUX_TARGET_PREFIX"
 
 Setup() {
     # setup build directory

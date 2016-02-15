@@ -1,4 +1,4 @@
-BB_ARGS="ARCH=arm CROSS_COMPILE=$GCC_LINUX_GNUEABIHF O=$MODULE_OUT"
+BB_ARGS="ARCH=arm CROSS_COMPILE=$GCC_LINUX_TARGET_PREFIX O=$MODULE_OUT"
 
 EnableConfig() {
     sed -i "s/# $1 is not set/$1=y/g" "$MODULE_OUT/.config"
