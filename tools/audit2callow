@@ -11,7 +11,7 @@ def main(argv):
         scontext = gettag(line, 'scontext=').split(':')[2]
         tcontext = gettag(line, 'tcontext=').split(':')[2]
         tclass = gettag(line, 'tclass=')
-        perm = gettag(line, 'avc:  denied  { ')
+        perm = gettag(line, '{ ')
         print('util_sepolicy_inject("%s", "%s", "%s", "%s");' % (scontext, tcontext, tclass, perm))
         
 
