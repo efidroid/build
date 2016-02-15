@@ -16,6 +16,8 @@ elif [ "$TARGET_ARCH" == "aarch64" ];then
     EDK2_ARCH="AArch64"
 fi
 
+unset TARGET_ARCH
+
 EDK2_ENV="$EDK2_ENV ${EDK2_COMPILER}_${EDK2_ARCH}_PREFIX=$GCC_LINUX_TARGET_PREFIX"
 
 Setup() {
@@ -106,7 +108,7 @@ CompileApp() {
     pr_alert "Installing: $EDK2_OUT/Build/EFIDroidUEFIApps/${EDK2_BUILD_TYPE}_${EDK2_COMPILER}/$EDK2_ARCH/$BASENAME.efi"
 }
 
-CleanApp() {
+Clean() {
     # get app info
     APPNAME="${UEFIAPP##*/}"
     BASENAME=$(awk -F "=" '/BASE_NAME/ {print $2}' "$UEFIAPP/$APPNAME.inf" | tr -d '[[:space:]]')
@@ -118,10 +120,6 @@ CleanApp() {
     rm -Rf "$EDK2_OUT/Build/EFIDroidUEFIApps/${EDK2_BUILD_TYPE}_${EDK2_COMPILER}/$EDK2_ARCH/EFIDroidUEFIApps/$BASENAME"
 }
 
-Clean() {
-    rm -Rf $EDK2_OUT/*
-}
-
 DistClean() {
-    true
+    rm -Rf $EDK2_OUT/*
 }

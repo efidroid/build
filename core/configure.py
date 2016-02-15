@@ -473,7 +473,7 @@ def add_uefiapp_target(path):
     targetdeps = ['FORCE']
 
     scriptfile  = os.path.abspath('build/core/tasks/edk2-appbase.sh')
-    targetout  = os.path.abspath('out/host/edk2_appbase')
+    targetout  = os.path.abspath(getvar('TARGET_COMMON_OUT')+'/'+targetname)
     moduledir = os.path.abspath('build/core/tasks')
     targetcompilefn = 'CompileApp'
     command = 'UEFIAPP="'+cfg.top+'/'+path+'" build/tools/runscript "'+\
@@ -486,9 +486,14 @@ def add_uefiapp_target(path):
     addhelp(targetname, 'UEFIApp target')
 
     # add clean target
-    make_add_target(path, targetname+'_clean', command+' CleanApp', deps=['FORCE'],\
+    make_add_target(path, targetname+'_clean', command+' Clean', deps=['FORCE'],\
                     description='Cleaning target \''+targetname+'\'')
     cfg.make.dependencies('clean', targetname+'_clean')
+
+    # add distclean target
+    make_add_target(path, targetname+'_distclean', command+' DistClean',\
+                    description='Dist-Cleaning target \''+targetname+'\'')
+    cfg.make.dependencies('distclean', targetname+'_distclean')
 
     cfg.make.newline()
 
