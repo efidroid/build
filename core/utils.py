@@ -1,3 +1,5 @@
+import sys
+
 # color codes
 txtblk='\033[0;30m' # Black - Regular
 txtred='\033[0;31m' # Red
