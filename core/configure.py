@@ -541,7 +541,7 @@ def setup_toolchain(NAMEPREFIX):
     # download toolchain
     downloadfile = cachedir+'/'+os.path.basename(getvar(NAMEPREFIX+'SRC'))
     if not os.path.isfile(downloadfile) or not sha1(downloadfile)==getvar(NAMEPREFIX+'SHA1'):
-        p = subprocess.Popen(['wget', '-o', downloadfile, '--show-progress', getvar(NAMEPREFIX+'SRC')])
+        p = subprocess.Popen(['curl', '-o', downloadfile, getvar(NAMEPREFIX+'SRC')])
         p.communicate()
         if p.returncode:
             pr_fatal('Can\'t download toolchain')
