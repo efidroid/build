@@ -6,12 +6,7 @@ DEFINES := $(filter-out WITH_DEBUG_JTAG=1,$(DEFINES))
 DEFINES := $(filter-out WITH_DEBUG_LOG_BUF=1,$(DEFINES))
 
 # set debug level
-ifeq ($(EFIDROID_BUILD_TYPE),DEBUG)
-    DEBUG := 2
-    DEFINES += LK_LOG_BUF_SIZE=16384
-else
-    DEBUG := 1
-endif
+DEBUG := 1
 
 ifeq ($(WITH_KERNEL_UEFIAPI),1)
 	# add our modules
@@ -25,8 +20,15 @@ ifeq ($(WITH_KERNEL_UEFIAPI),1)
 	DEFINES += LCD_VRAM_SIZE=$(LCD_VRAM_SIZE)
 	CFLAGS += -DDEVICE_NVVARS_PARTITION=\"$(DEVICE_NVVARS_PARTITION)\"
 
+    # disable LK debugging
+    DEBUG := 0
 else
-DEFINES += WITH_DEBUG_LOG_BUF=1
+    DEFINES += WITH_DEBUG_LOG_BUF=1
+
+    ifeq ($(EFIDROID_BUILD_TYPE),DEBUG)
+        DEBUG := 2
+        DEFINES += LK_LOG_BUF_SIZE=16384
+    endif
 endif
 
 # optionally include device specific makefile
