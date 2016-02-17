@@ -662,7 +662,7 @@ def main(argv):
 
         # check if there's an esp partition
         esppart = fstab.getESPPartition()
-        if not nvvarspart:
+        if not esppart:
             raise Exception('fstab doesn\'t have a esp partition')
 
         setvar('DEVICE_DIR', cfg.top+'/device/'+cfg.devicename);
