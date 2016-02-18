@@ -49,12 +49,21 @@ LK_MKBOOTIMG_ADDITIONAL_FLAGS=""
 # device tree
 if [ ! -z "$BOOTIMG_DT" ];then
     DTBCONVERT="$HOST_DTBCONVERT_OUT/dtbconvert"
+    DTBTOOL="$HOST_DTBCONVERT_OUT/dtbtool"
+
+    DTBDIR="$LK_OUT/dtb_out"
     DTIMG_PATCHED="$LK_OUT/dt_patched.img"
+
     LK_MKBOOTIMG_ADDITIONAL_FLAGS="$LK_MKBOOTIMG_ADDITIONAL_FLAGS --dt $DTIMG_PATCHED"
 fi
 
 GeneratePatchedDtImg() {
-    "$DTBCONVERT" "$BOOTIMG_DT" "$DTIMG_PATCHED"
+    rm -Rf "$DTBDIR"
+    mkdir -p "$DTBDIR"
+
+    "$DTBCONVERT" "$BOOTIMG_DT" "$DTBDIR"
+    "$TOP/build/tools/makedtb_rec" "$DTBDIR"
+    "$DTBTOOL" -o "$DTIMG_PATCHED" "$DTBDIR/"
 }
 
 # pagesize

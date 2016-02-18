@@ -1,0 +1,14 @@
+#!/bin/bash
+
+OUTDIR="$1"
+
+if [ -z "$OUTDIR" ];then
+    echo "usage: $0 DIR"
+    exit 1
+fi
+
+for f in ${OUTDIR}/*.dts ;do
+    NAME=$(basename "$f" .dts)
+    echo "compiling $NAME.dts"
+    dtc -O dtb -I dts -o "$OUTDIR/$NAME.dtb" "$OUTDIR/$NAME.dts"
+done 
