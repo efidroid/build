@@ -48,8 +48,14 @@ LK_MKBOOTIMG_ADDITIONAL_FLAGS=""
 
 # device tree
 if [ ! -z "$BOOTIMG_DT" ];then
-    LK_MKBOOTIMG_ADDITIONAL_FLAGS="$LK_MKBOOTIMG_ADDITIONAL_FLAGS --dt $BOOTIMG_DT"
+    DTBCONVERT="$HOST_DTBCONVERT_OUT/dtbconvert"
+    DTIMG_PATCHED="$LK_OUT/dt_patched.img"
+    LK_MKBOOTIMG_ADDITIONAL_FLAGS="$LK_MKBOOTIMG_ADDITIONAL_FLAGS --dt $DTIMG_PATCHED"
 fi
+
+GeneratePatchedDtImg() {
+    "$DTBCONVERT" "$BOOTIMG_DT" "$DTIMG_PATCHED"
+}
 
 # pagesize
 if [ ! -z "$BOOTIMG_PAGESIZE" ];then
@@ -96,6 +102,8 @@ CompileLKEDK2() {
 }
 
 CompileLKSideload() {
+    GeneratePatchedDtImg
+
     pr_alert "Installing: $TARGET_OUT/lk_sideload.img"
     set -x
 	"$HOST_MKBOOTIMG_OUT/mkbootimg" \
@@ -132,6 +140,8 @@ CompileLKNoUEFI() {
 }
 
 CompileLKSideloadNoUEFI() {
+    GeneratePatchedDtImg
+
     pr_alert "Installing: $TARGET_OUT/lk_nouefi_sideload.img"
     set -x
 	"$HOST_MKBOOTIMG_OUT/mkbootimg" \
