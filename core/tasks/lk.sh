@@ -58,12 +58,14 @@ if [ ! -z "$BOOTIMG_DT" ];then
 fi
 
 GeneratePatchedDtImg() {
-    rm -Rf "$DTBDIR"
-    mkdir -p "$DTBDIR"
+    if [ ! -z "$BOOTIMG_DT" ];then
+        rm -Rf "$DTBDIR"
+        mkdir -p "$DTBDIR"
 
-    "$DTBCONVERT" "$BOOTIMG_DT" "$DTBDIR"
-    "$TOP/build/tools/makedtb_rec" "$DTBDIR"
-    "$DTBTOOL" -o "$DTIMG_PATCHED" "$DTBDIR/"
+        "$DTBCONVERT" "$BOOTIMG_DT" "$DTBDIR"
+        "$TOP/build/tools/makedtb_rec" "$DTBDIR"
+        "$DTBTOOL" -o "$DTIMG_PATCHED" "$DTBDIR/"
+    fi
 }
 
 # pagesize
