@@ -690,7 +690,7 @@ def main(argv):
     cfg.make.newline()
 
     # add force target
-    cfg.make.comment('# Used to force goals to build.  Only use for conditionally defined goals.')
+    cfg.make.comment('Used to force goals to build.  Only use for conditionally defined goals.')
     cfg.make.target('FORCE')
     cfg.make.newline()
 
