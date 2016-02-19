@@ -1,7 +1,13 @@
 source "$TOP/build/core/tasks/edk2-common.sh"
 
 # set build type
-EDK2_BUILD_TYPE="$BUILDTYPE"
+if [ "$BUILDTYPE" == "DEBUG" ];then
+    EDK2_BUILD_TYPE="DEBUG"
+elif [ "$BUILDTYPE" == "USERDEBUG" ];then
+    EDK2_BUILD_TYPE="RELEASE"
+elif [ "$BUILDTYPE" == "RELEASE" ];then
+    EDK2_BUILD_TYPE="RELEASE"
+fi
 
 # check required variables
 if [ -z "$EDK2_BASE" ];then

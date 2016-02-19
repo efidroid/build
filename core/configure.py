@@ -582,7 +582,7 @@ def main(argv):
         cfg.buildtype = os.environ['BUILDTYPE']
     else:
         cfg.buildtype = 'RELEASE'
-    if not (cfg.buildtype=='DEBUG' or cfg.buildtype=='RELEASE'):
+    if not (cfg.buildtype=='DEBUG' or cfg.buildtype=='USERDEBUG' or cfg.buildtype=='RELEASE'):
         raise Exception('Invalid build type \''+cfg.buildtype+'\'')
     pr_info('Buildtype: '+cfg.buildtype)
 

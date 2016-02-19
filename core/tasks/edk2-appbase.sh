@@ -1,7 +1,44 @@
 source "$TOP/build/core/tasks/edk2-common.sh"
 
+setflag_printlevel "$DEBUG_INIT"
+setflag_printlevel "$DEBUG_WARN"
+setflag_printlevel "$DEBUG_LOAD"
+setflag_printlevel "$DEBUG_FS"
+#setflag_printlevel "$DEBUG_POOL"
+#setflag_printlevel "$DEBUG_PAGE"
+setflag_printlevel "$DEBUG_INFO"
+setflag_printlevel "$DEBUG_DISPATCH"
+setflag_printlevel "$DEBUG_VARIABLE"
+setflag_printlevel "$DEBUG_BM"
+setflag_printlevel "$DEBUG_BLKIO"
+setflag_printlevel "$DEBUG_NET"
+setflag_printlevel "$DEBUG_UNDI"
+setflag_printlevel "$DEBUG_LOADFILE"
+setflag_printlevel "$DEBUG_EVENT"
+setflag_printlevel "$DEBUG_GCD"
+setflag_printlevel "$DEBUG_CACHE"
+setflag_printlevel "$DEBUG_VERBOSE"
+setflag_printlevel "$DEBUG_ERROR"
+
+setflag_propertymask "$DEBUG_PROPERTY_DEBUG_ASSERT_ENABLED"
+setflag_propertymask "$DEBUG_PROPERTY_DEBUG_PRINT_ENABLED"
+setflag_propertymask "$DEBUG_PROPERTY_DEBUG_CODE_ENABLED"
+#setflag_propertymask "$DEBUG_PROPERTY_CLEAR_MEMORY_ENABLED"
+setflag_propertymask "$DEBUG_PROPERTY_ASSERT_BREAKPOINT_ENABLED"
+setflag_propertymask "$DEBUG_PROPERTY_ASSERT_DEADLOOP_ENABLED"
+
 # set build type
-EDK2_BUILD_TYPE="$BUILDTYPE"
+if [ "$BUILDTYPE" == "DEBUG" ];then
+    EDK2_BUILD_TYPE="DEBUG"
+    EDK2_DEFINES="$EDK2_DEFINES -DDEBUG_ENABLE_OUTPUT=TRUE"
+elif [ "$BUILDTYPE" == "USERDEBUG" ];then
+    EDK2_BUILD_TYPE="RELEASE"
+    EDK2_DEFINES="$EDK2_DEFINES -DDEBUG_ENABLE_OUTPUT=TRUE"
+    EDK2_DEFINES="$EDK2_DEFINES -DDEBUG_PRINT_ERROR_LEVEL=$EDK2_PRINT_ERROR_LEVEL"
+    EDK2_DEFINES="$EDK2_DEFINES -DDEBUG_PROPERTY_MASK=$EDK2_PROPERTY_MASK"
+elif [ "$BUILDTYPE" == "RELEASE" ];then
+    EDK2_BUILD_TYPE="RELEASE"
+fi
 
 Setup() {
     # setup build directory
@@ -47,7 +84,7 @@ CompileApp() {
     fi
 
     # compile
-    CompileEDK2 "$APPCONFIG_REL"
+    CompileEDK2 "$APPCONFIG_REL" "$EDK2_DEFINES"
 
     # print binary path
     BASENAME=$(awk -F "=" '/BASE_NAME/ {print $2}' "$UEFIAPP/$APPNAME.inf" | tr -d '[[:space:]]')
