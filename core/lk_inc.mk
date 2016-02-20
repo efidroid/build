@@ -1,3 +1,6 @@
+# useful macros
+FILTER_OUT = $(foreach v,$(2),$(if $(findstring $(1),$(v)),,$(v)))
+
 # disable all debug features by default
 DEFINES := $(filter-out WITH_DEBUG_DCC=1,$(DEFINES))
 DEFINES := $(filter-out WITH_DEBUG_UART=1,$(DEFINES))
