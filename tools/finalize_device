@@ -84,7 +84,7 @@ def main(argv):
         if not prange[0]==0 and prange[1]==0:
             prange[1] = 0xffffffff + 1
 
-        if pcat=='sdram':
+        if pcat=='sdram' or pcat=='ebi1':
             if prange[1]>highestaddr:
                 highestaddr = prange[1]
 
