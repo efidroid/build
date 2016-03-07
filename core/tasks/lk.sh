@@ -178,3 +178,16 @@ CompileLKSideloadNoUEFI() {
 		-o "$TARGET_OUT/lk_nouefi_sideload.img"
     set +x
 }
+
+BuildOtaPackage() {
+    rm -Rf "$MODULE_OUT/*"
+    cp "$TARGET_OUT/lk_sideload.img" "$MODULE_OUT/boot.img"
+    cp "$TARGET_OUT/lk_sideload_recovery.img" "$MODULE_OUT/recovery.img"
+
+    ZIPNAME="$TARGET_OUT/otapackage-$(date +'%Y%m%d').zip"
+
+    cd "$MODULE_OUT" &&
+        zip -r "$ZIPNAME" .
+
+    pr_alert "Installing: $ZIPNAME"
+}
