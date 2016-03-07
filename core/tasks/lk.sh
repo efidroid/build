@@ -130,6 +130,9 @@ CompileLKEDK2() {
 CompileLKSideload() {
     GeneratePatchedDtImg
 
+    # generate meta data
+    "$TOP/build/tools/create_efidroid_metadata" "$DEVICE" > "$TARGET_OUT/efidroid_meta.bin"
+
     pr_alert "Installing: $TARGET_OUT/lk_sideload.img"
     set -x
 	"$HOST_MKBOOTIMG_OUT/mkbootimg" \
@@ -139,6 +142,7 @@ CompileLKSideload() {
 		$LK_MKBOOTIMG_ADDITIONAL_FLAGS \
 		-o "$TARGET_OUT/lk_sideload.img"
     set +x
+    cat "$TARGET_OUT/efidroid_meta.bin" >> "$TARGET_OUT/lk_sideload.img"
 
     pr_alert "Installing: $TARGET_OUT/lk_sideload_recovery.img"
     set -x
@@ -150,6 +154,7 @@ CompileLKSideload() {
 		$LK_MKBOOTIMG_ADDITIONAL_FLAGS \
 		-o "$TARGET_OUT/lk_sideload_recovery.img"
     set +x
+    cat "$TARGET_OUT/efidroid_meta.bin" >> "$TARGET_OUT/lk_sideload_recovery.img"
 }
 
 Clean() {

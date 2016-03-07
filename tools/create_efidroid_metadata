@@ -1,0 +1,102 @@
+#!/usr/bin/python -B
+#
+# Copyright (C) 2016 The EFIDroid Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# common imports
+import sys
+import os
+import struct
+import time
+import subprocess
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '../core'))
+from utils import *
+
+# compatibility imports
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
+
+def out(x):
+    sys.stdout.buffer.write(x)
+
+def out_str(data, pad=False):
+    if type(data) is str:
+        data = bytes(data, 'utf-8');
+    padstr = ''
+    if pad:
+        padstr = 'x'
+    out(struct.pack("<%ds%s" % (len(data), padstr), data))
+
+def main(argv):
+    # check arguments
+    if not len(argv) == 1:
+        raise Exception('Invalid number of arguments')
+
+    device_name = argv[0]
+    device_name_len = len(device_name)+1
+
+    # manifest
+    p = subprocess.Popen(['repo', 'manifest', '-r'], stdout=subprocess.PIPE)
+    manifest_data = p.communicate()[0]
+    if p.returncode != 0:
+        pr_fatal('can\'t get repo manifest')
+
+    # magic
+    out_str('EFIDroid');
+
+    # version
+    out(struct.pack('<L', 1))
+
+    # timestamp
+    timestamp = int(time.time())
+    out(struct.pack('<L', timestamp))
+
+    # spec version
+    p = subprocess.Popen(['bash', '-c', 'cat uefi/edk2/MdePkg/Include/Uefi/UefiSpec.h | grep SYSTEM_TABLE_REVISION | (cat ; echo EFI_SPECIFICATION_VERSION) | gcc -E -P -'], stdout=subprocess.PIPE)
+    data = p.communicate()[0]
+    if p.returncode != 0:
+        pr_fatal('can\'t get UEFI spec version')
+    efi_spec_version = eval(data)
+    out(struct.pack('<L', efi_spec_version))
+
+    # write efidroid release version
+    out(struct.pack('<L', 0x00010000))
+
+    # write device size
+    out(struct.pack('<L', device_name_len))
+
+    # write device name offset
+    out(struct.pack('<L', 32))
+
+    # write manifest size
+    out(struct.pack('<L', len(manifest_data)+1))
+
+    # write manifest name offset
+    out(struct.pack('<L', 32 + device_name_len))
+
+    # write device name
+    out_str(device_name, pad=True);
+
+    # write manifest
+    out_str(manifest_data)
+
+if __name__ == '__main__':
+    try:
+        main(sys.argv[1:])
+    except:
+        pr_error('Error: %s' % sys.exc_info()[1])
+        raise
