@@ -308,6 +308,10 @@ def parse_config(configfile, moduledir=None):
                 configureenv += generic_env
                 makeenv += generic_env
 
+                configureenv += ' CFLAGS="$$CFLAGS $(AUTOCONF_ADDITIONAL_CFLAGS)"'
+                configureenv += ' CPPFLAGS="$$CPPFLAGS $(AUTOCONF_ADDITIONAL_CPPFLAGS)"'
+                configureenv += ' LDFLAGS="$$LDFLAGS $(AUTOCONF_ADDITIONAL_LDFLAGS)"'
+
                 compiledir = moduledir
                 if linksource:
                     compiledir = targetout
@@ -854,6 +858,27 @@ def main(argv):
     makefile.write(makeout.getvalue())
     makefile.close()
     makeout.close()
+
+    # add autoconf flags
+    additional_ldflags = ''
+    additional_cflags = ''
+    additional_cppflags = ''
+    for name, o in cfg.libs.items():
+        inlcudesstr = ''
+        for include in o.includes:
+            inlcudesstr += ' -I'+include+''
+
+        if cfg.devicename:
+            inc_expanded = expandmodulevars(inlcudesstr, o.target, 'target')
+            file_expanded = expandmodulevars(o.filename, o.target, 'target')
+            if not inc_expanded==None and not file_expanded==None:
+                additional_cflags += inc_expanded
+                additional_cppflags += inc_expanded
+                additional_ldflags += ' -L' + os.path.dirname(file_expanded) + ''
+
+    setvar('AUTOCONF_ADDITIONAL_CFLAGS', additional_cflags)
+    setvar('AUTOCONF_ADDITIONAL_CPPFLAGS', additional_cppflags)
+    setvar('AUTOCONF_ADDITIONAL_LDFLAGS', additional_ldflags)
 
     # generate includes file
     genvarinc()
