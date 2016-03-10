@@ -211,6 +211,7 @@ def parse_config(configfile, moduledir=None):
             outdir = targetname
             maketargets = []
             configureenv = ''
+            makeenv = ''
             configureflags = ''
             linksource = False
 
@@ -233,6 +234,8 @@ def parse_config(configfile, moduledir=None):
                 maketargets += config.get(section, 'maketargets').split()
             if config.has_option(section, 'configureenv'):
                 configureenv += config.get(section, 'configureenv')
+            if config.has_option(section, 'makeenv'):
+                makeenv += config.get(section, 'makeenv')
             if config.has_option(section, 'configureflags'):
                 configureflags += config.get(section, 'configureflags')
             if config.has_option(section, 'linksource'):
@@ -322,7 +325,7 @@ def parse_config(configfile, moduledir=None):
                                 description='Configuring target \''+targetname+'\'')
 
                 # add make target
-                make_add_target(configfile, targetname, 'cd \"'+targetout+'\" && $(MAKE) '+(' '.join(maketargets)), \
+                make_add_target(configfile, targetname, 'cd \"'+targetout+'\" && '+makeenv+' $(MAKE) '+(' '.join(maketargets)), \
                                 deps=targetdeps+[targetout+'/Makefile'], description='Compiling target \''+targetname+'\'')
 
                 # add clean target
