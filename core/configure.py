@@ -301,6 +301,13 @@ def parse_config(configfile, moduledir=None):
                 else:
                     raise Exception('no generator found')
 
+                # add CC and CXX environment variables
+                generic_env = ''
+                if targetcategory == 'target':
+                    generic_env += ' CC="'+getvar('GCC_LINUX_ARM_NAME')+'-gcc" CXX="'+getvar('GCC_LINUX_ARM_NAME')+'-g++"'
+                configureenv += generic_env
+                makeenv += generic_env
+
                 compiledir = moduledir
                 if linksource:
                     compiledir = targetout
