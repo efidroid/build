@@ -94,6 +94,14 @@ def main(argv):
         elif argv[1]=='shell':
             return run_shell()
 
+    elif len(argv)>=1 and argv[0]=='boot-unpatched':
+        fastboot(['oem', 'setnvvar', 'fastboot-enable-boot-patch', '0'], False)
+        argv = ['boot'] + argv[1:]
+
+    elif len(argv)>=1 and argv[0]=='boot-patched':
+        fastboot(['oem', 'setnvvar', 'fastboot-enable-boot-patch', '1'], False)
+        argv = ['boot'] + argv[1:]
+
     fastboot(argv, rawmode)
 
 if __name__ == '__main__':
