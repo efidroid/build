@@ -23,3 +23,9 @@ croot() {
 mkefidroid() {
     make -C "$TOP" $@
 }
+
+lunch() {
+    mkdir -p "$TOP/out"
+    "$TOP/build/tools/generate_build_env" "$TOP/out/build_env.sh"
+    source "$TOP/out/build_env.sh"
+}

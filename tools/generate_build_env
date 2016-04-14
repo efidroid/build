@@ -1,0 +1,70 @@
+#!/usr/bin/python -B
+#
+# Copyright (C) 2016 The EFIDroid Project
+#
+# Licensed under the Apache License, Version 2.0 (the 'License');
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an 'AS IS' BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# common imports
+import os.path
+import sys
+import os
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '../core'))
+from utils import *
+
+def inputex(msg):
+    prompt = bldylw+msg+txtrst
+
+    try:
+        return raw_input(prompt)
+    except:
+        return input(prompt)
+
+def inputchoice(msg, choices):
+    print(bldylw+msg+txtrst)
+
+    for idx,choice in enumerate(choices):
+        print('%u) %s' % (idx+1, choice))
+
+    num = inputex('> ')
+
+    return choices[int(num)-1]
+
+def main(argv):
+    # check arguments
+    if not len(argv) == 1:
+        raise Exception('Invalid number of arguments')
+    outfile = argv[0]
+
+    devices = []
+    for vendor in os.listdir('device'):
+        for device in os.listdir('device/'+vendor):
+            devices += [vendor+'/'+device]
+    devices += ['CUSTOM']
+
+    device = inputchoice('Device name: ', devices)
+    if device==devices[-1]:
+        device = inputex('Device name (vendor/codename): ')
+    
+    buildtype = inputchoice('build type: ', ['RELEASE', 'DEBUG', 'USERDEBUG'])
+
+    with open(outfile, 'w') as f:
+        f.write('export DEVICEID='+device+'\n')
+        f.write('export BUILDTYPE='+buildtype+'\n')
+
+if __name__ == '__main__':
+    try:
+        main(sys.argv[1:])
+    except:
+        pr_error('Error: %s' % sys.exc_info()[1])
+        raise
