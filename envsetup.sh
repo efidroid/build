@@ -19,3 +19,7 @@ export TOP="$PWD"
 croot() {
 	cd "$TOP"
 }
+
+mkefidroid() {
+    make -C "$TOP" $@
+}
