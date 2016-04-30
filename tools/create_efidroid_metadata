@@ -31,11 +31,14 @@ except ImportError:
     from io import StringIO
 
 def out(x):
-    sys.stdout.buffer.write(x)
+    if hasattr(sys.stdout, 'buffer'):
+        sys.stdout.buffer.write(x)
+    else:
+        sys.stdout.write(x)
 
 def out_str(data, pad=False):
     if type(data) is str:
-        data = bytes(data, 'utf-8');
+        data = data.encode('utf-8')
     padstr = ''
     if pad:
         padstr = 'x'
