@@ -1,4 +1,4 @@
-#!/usr/bin/python -B
+#!/usr/bin/env python -B
 #
 # Copyright (C) 2016 The EFIDroid Project
 #
