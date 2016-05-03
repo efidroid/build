@@ -33,7 +33,7 @@ export PATH := $(PWD)/build/tools:$(PATH)
 
 .PHONY: $(MAKECMDGOALS) all
 $(MAKECMDGOALS) all: makeforward makeforward_pipes
-	@python -B ./build/core/configure.py
+	@python ./build/core/configure.py
 	
 	@echo -n "" > out/buildtime_variables.sh
 	@echo -n "" > out/buildtime_variables.py
