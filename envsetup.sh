@@ -16,6 +16,8 @@
 
 export TOP="$PWD"
 
+export PATH="$TOP/build/tools:$PATH"
+
 croot() {
 	cd "$TOP"
 }
