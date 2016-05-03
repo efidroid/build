@@ -44,3 +44,11 @@ CompileW32() {
 
     pr_alert "Installing: $MODULE_OUT/dist/fastbootwrapper.exe"
 }
+
+Clean() {
+    rm -Rf "$MODULE_OUT"
+}
+
+DistClean() {
+    Clean
+}
