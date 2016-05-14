@@ -41,14 +41,16 @@ def inputchoice(msg, choices):
     return choices[int(num)-1]
 
 def main(argv):
+    top = os.environ['TOP']
+
     # check arguments
     if not len(argv) == 1:
         raise Exception('Invalid number of arguments')
     outfile = argv[0]
 
     devices = []
-    for vendor in os.listdir('device'):
-        for device in os.listdir('device/'+vendor):
+    for vendor in os.listdir(top+'/device'):
+        for device in os.listdir(top+'/device/'+vendor):
             devices += [vendor+'/'+device]
     devices += ['CUSTOM']
 
