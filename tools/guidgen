@@ -20,8 +20,8 @@ import uuid
 
 guid = uuid.uuid4()
 
-print("1:", guid);
-print("2:", str(guid).upper());
+print("1:", guid)
+print("2:", str(guid).upper())
 
 bguid = bytearray(guid.bytes)
 # { 0xc2217e7d, 0x6853, 0x4c3f, { 0xae, 0x97, 0xaf, 0xbc, 0x85, 0xc9, 0xa1, 0xe0 }}
@@ -45,7 +45,7 @@ print(
         bguid[14],
         bguid[15],
     )
-);
+)
 
 print(
     "4: { 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x }" 
@@ -67,4 +67,4 @@ print(
         bguid[14],
         bguid[15],
     )
-);
+)
