@@ -95,7 +95,7 @@ CompileApp() {
         APPCONFIG="$EDK2_OUT/$APPCONFIG_REL"
 
         # build dsc file
-        cp "$TOP/build/core/EFIDroidUEFIApps.dsc" "$APPCONFIG"
+        cp "$TOP/build/templates/EFIDroidUEFIApps.dsc" "$APPCONFIG"
         sed -i "s/\[Components\]/\[Components\]\n  EFIDroidUEFIApps\/$APPNAME\/$APPNAME.inf/g" "$APPCONFIG"
 
         if [ -f "$EDK2_OUT/EFIDroidUEFIApps/$APPNAME/$APPNAME.dsc.inc" ];then

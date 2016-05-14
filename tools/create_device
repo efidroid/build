@@ -158,8 +158,8 @@ def main(argv):
     with open(devicedir+'/config.ini', 'w') as configfile:
         config.write(configfile)
 
-    copyfile('build/tools/fstab.multiboot_template', devicedir+'/fstab.multiboot')
-    copyfile('build/tools/lk_inc.template.mk', devicedir+'/lk_inc.mk')
+    copyfile('build/templates/fstab.multiboot_template', devicedir+'/fstab.multiboot')
+    copyfile('build/templates/lk_inc.template.mk', devicedir+'/lk_inc.mk')
     
 
 if __name__ == "__main__":
