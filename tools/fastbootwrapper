@@ -18,7 +18,10 @@ import sys
 import subprocess
 import base64
 
+bldred='\033[1;31m' # Red
+bldgrn='\033[1;32m' # Green
 bldylw='\033[1;33m' # Yellow
+bldwht='\033[1;37m' # White
 txtrst='\033[0m'    # Text Reset
 
 def inputex(msg):
@@ -43,6 +46,21 @@ def fastboot(argv, rawmode, suppressstatus=False, bufmode=False):
 
         if line.startswith('(bootloader) '):
             line = line[13:]
+
+            if not bufmode and (len(line)>=2 and line[1]=='/'):
+                level = line[0]
+
+                if level=='A': # ALWAYS
+                    sys.stdout.write(bldwht)
+                elif level=='E': # CRITICAL
+                    sys.stdout.write(bldred)
+                elif level=='I': # INFO
+                    sys.stdout.write(bldylw)
+                elif level=='D': # SPEW
+                    sys.stdout.write(bldgrn)
+
+                else:
+                    sys.stdout.write(bldwht)
         elif rawmode:
             print('')
 
@@ -63,6 +81,8 @@ def fastboot(argv, rawmode, suppressstatus=False, bufmode=False):
 
     if bufmode:
         return buf
+
+    print(txtrst)
 
 def run_shell():
     while True:
