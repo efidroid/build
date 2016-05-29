@@ -18,6 +18,7 @@
 import os.path
 import sys
 import os
+import argparse
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../core'))
 from utils import *
@@ -44,25 +45,44 @@ def main(argv):
     top = os.environ['TOP']
 
     # check arguments
-    if not len(argv) == 1:
+    if not len(argv) >= 1:
         raise Exception('Invalid number of arguments')
     outfile = argv[0]
 
+    # parse args
+    parser = argparse.ArgumentParser(prog='lunch')
+    parser.add_argument('--toolchain', dest='toolchain', action='store_const', const=True,
+                        help='select toolchain')
+    args = parser.parse_args(argv[1:])
+
+    # toolchain
+    toolchain_none = 'common'
+    toolchain_linux = 'common'
+    if args.toolchain:
+        toolchain_none = inputex('gcc-none toolchain: ')
+        toolchain_linux = inputex('gcc-linux toolchain: ')
+
+    # get device list
     devices = []
     for vendor in os.listdir(top+'/device'):
         for device in os.listdir(top+'/device/'+vendor):
             devices += [vendor+'/'+device]
     devices += ['CUSTOM']
 
+    # device
     device = inputchoice('Device name: ', devices)
     if device==devices[-1]:
         device = inputex('Device name (vendor/codename): ')
     
+    # build type
     buildtype = inputchoice('build type: ', ['RELEASE', 'DEBUG', 'USERDEBUG'])
 
+    # write config
     with open(outfile, 'w') as f:
         f.write('export DEVICEID='+device+'\n')
         f.write('export BUILDTYPE='+buildtype+'\n')
+        f.write('export EFIDROID_TOOLCHAIN_NAME_GCC_NONE='+toolchain_none+'\n')
+        f.write('export EFIDROID_TOOLCHAIN_NAME_GCC_LINUX='+toolchain_linux+'\n')
 
 if __name__ == '__main__':
     try:
