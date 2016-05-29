@@ -44,7 +44,7 @@ else
     DEFINES += WITH_DEBUG_LOG_BUF=1
 
     ifeq ($(EFIDROID_BUILD_TYPE),DEBUG)
-        DEBUG := 2
+        DEBUG := 3
         DEFINES += LK_LOG_BUF_SIZE=16384
     endif
 endif
