@@ -38,14 +38,22 @@ except ImportError:
     import configparser as ConfigParser
 
 def setvar(name, value):
+    if not name:
+        raise Exception('Invalid variable name')
+    if not value:
+        raise Exception('no value given for variable \''+name+'\'')
+
     cfg.variables[name] = value
 
-def expandvars(string):
+def expandvars_ex(varlist, string):
     # all variables got expanded already so this is much easier
-    for k, v in cfg.variables.items():
+    for k, v in varlist.items():
         string = string.replace('$(%s)' % k, v)
 
     return string
+
+def expandvars(string):
+    return expandvars_ex(cfg.variables, string)
 
 def expandmodulevars(string, module, projecttype):
     module_out = getvar(projecttype.upper()+'_'+module.upper()+'_OUT')
@@ -197,6 +205,16 @@ def parse_config(configfile, moduledir=None):
             for (name, value) in config.items(section):
                 setvar(name, value)
 
+        elif section.startswith('toolchain.'):
+            parts = section.split('.')
+            identifier = '_'.join(parts[1:])
+            if identifier in cfg.toolchains:
+                raise Exception('Toolchain \''+identifier+'\' does already exist')
+
+            cfg.toolchains[identifier] = {}
+            for (name, value) in config.items(section):
+                cfg.toolchains[identifier][name] = value
+
         elif section.startswith('target.') or section.startswith('host.'):
             targetname = section.split('.', 1)[1]
             targetname_id = targetname.upper()
@@ -304,7 +322,7 @@ def parse_config(configfile, moduledir=None):
                 # add CC and CXX environment variables
                 generic_env = ''
                 if targetcategory == 'target':
-                    generic_env += ' CC="'+getvar('GCC_LINUX_ARM_NAME')+'-gcc" CXX="'+getvar('GCC_LINUX_ARM_NAME')+'-g++"'
+                    generic_env += ' CC="'+getvar('GCC_LINUX_TARGET_NAME')+'-gcc" CXX="'+getvar('GCC_LINUX_TARGET_NAME')+'-g++"'
                 configureenv += generic_env
                 makeenv += generic_env
 
@@ -549,11 +567,18 @@ def sha1(filepath):
 
     return sha1lib.hexdigest()
 
-def setup_toolchain(NAMEPREFIX):
+def setup_toolchain(toolchain):
+    # expand all variables
+    for k,v in toolchain.items():
+        toolchain[k] = expandvars(v)
+
     # stop if toolchain dir does already exist
-    bindir = getvar(NAMEPREFIX+'PATH')
-    if os.path.isdir(bindir):
+    if os.path.isdir(toolchain['path']):
         return
+
+    # check if we have a source
+    if not 'src' in toolchain:
+        raise Exception('Toolchain in \''+toolchain['path']+'\' doesn\'t exist and has no source option')
 
     # make cachedir
     cachedir = 'prebuilts/cache'
@@ -563,15 +588,15 @@ def setup_toolchain(NAMEPREFIX):
         pass
 
     # download toolchain
-    downloadfile = cachedir+'/'+os.path.basename(getvar(NAMEPREFIX+'SRC'))
-    if not os.path.isfile(downloadfile) or not sha1(downloadfile)==getvar(NAMEPREFIX+'SHA1'):
-        p = subprocess.Popen(['curl', '-L', '-o', downloadfile, getvar(NAMEPREFIX+'SRC')])
+    downloadfile = cachedir+'/'+os.path.basename(toolchain['src'])
+    if not os.path.isfile(downloadfile) or not sha1(downloadfile)==toolchain['sha1']:
+        p = subprocess.Popen(['curl', '-L', '-o', downloadfile, toolchain['src']])
         p.communicate()
         if p.returncode:
             pr_fatal('Can\'t download toolchain')
 
         # verify checksum
-        if not sha1(downloadfile)==getvar(NAMEPREFIX+'SHA1'):
+        if not sha1(downloadfile)==toolchain['sha1']:
             pr_fatal('sha1sum doesn\'t match')
 
     # make toolchain dir
@@ -587,10 +612,19 @@ def setup_toolchain(NAMEPREFIX):
     if p.returncode:
         pr_fatal('Can\'t extract toolchain')
 
-    if not os.path.isdir(bindir):
+    if not os.path.isdir(toolchain['path']):
         pr_fatal('invalid toolchain')
 
-    pass
+
+def setup_toolchain_variables(prefix, toolchain):
+    # expand all local variables
+    for k,v in toolchain.items():
+        v = expandvars_ex(toolchain, v)
+        toolchain[k] = v
+
+    setvar(prefix+'_PATH', toolchain['path'])
+    setvar(prefix+'_NAME', toolchain['name'])
+    setvar(prefix+'_PREFIX', toolchain['prefix'])
 
 def main(argv):
     # get devicename
@@ -622,6 +656,7 @@ def main(argv):
     cfg.targets = {}
     cfg.top = os.path.abspath('')
     cfg.uefird_deps = []
+    cfg.toolchains = {}
 
     # create out directory
     try:
@@ -721,21 +756,33 @@ def main(argv):
     # add build config
     parse_config('build/config.ini')
 
-    # compiler aliases
-    cfg.gcc_linux_var = 'GCC_LINUX_'+getvar('EFIDROID_TARGET_ARCH').upper()+'_';
-    cfg.gcc_none_var = 'GCC_NONE_'+getvar('EFIDROID_TARGET_ARCH').upper()+'_';
+    # get selected toolchain name
+    toolchain_name_gcc_linux = 'common'
+    if 'EFIDROID_TOOLCHAIN_NAME_GCC_LINUX' in os.environ:
+       toolchain_name_gcc_linux = os.environ['EFIDROID_TOOLCHAIN_NAME_GCC_LINUX']
+    pr_info('Toolchain-LINUX: '+toolchain_name_gcc_linux)
 
-    setvar('GCC_LINUX_TARGET_PATH', getvar(cfg.gcc_linux_var+'PATH'));
-    setvar('GCC_LINUX_TARGET_NAME', getvar(cfg.gcc_linux_var+'NAME'));
-    setvar('GCC_LINUX_TARGET_PREFIX', getvar(cfg.gcc_linux_var+'PREFIX'));
-    setvar('GCC_LINUX_TARGET_SRC', getvar(cfg.gcc_linux_var+'SRC'));
-    setvar('GCC_LINUX_TARGET_SHA1', getvar(cfg.gcc_linux_var+'SHA1'));
+    toolchain_name_gcc_none = 'common'
+    if 'EFIDROID_TOOLCHAIN_NAME_GCC_NONE' in os.environ:
+       toolchain_name_gcc_none = os.environ['EFIDROID_TOOLCHAIN_NAME_GCC_NONE']
+    pr_info('Toolchain-NONE: '+toolchain_name_gcc_none)
 
-    setvar('GCC_NONE_TARGET_PATH', getvar(cfg.gcc_none_var+'PATH'));
-    setvar('GCC_NONE_TARGET_NAME', getvar(cfg.gcc_none_var+'NAME'));
-    setvar('GCC_NONE_TARGET_PREFIX', getvar(cfg.gcc_none_var+'PREFIX'));
-    setvar('GCC_NONE_TARGET_SRC', getvar(cfg.gcc_none_var+'SRC'));
-    setvar('GCC_NONE_TARGET_SHA1', getvar(cfg.gcc_none_var+'SHA1'));
+    # build toolchain id's
+    toolchain_id_linux = 'gcc_linux_'+getvar('EFIDROID_TARGET_ARCH')+'_'+toolchain_name_gcc_linux
+    toolchain_id_none  = 'gcc_none_' +getvar('EFIDROID_TARGET_ARCH')+'_'+toolchain_name_gcc_none
+
+    # check if toolchains are available
+    if not toolchain_id_linux in cfg.toolchains:
+        raise Exception('Toolchain \''+toolchain_name_gcc_linux+'\' doesn\'t support gcc_linux')
+    if not toolchain_id_none  in cfg.toolchains:
+        raise Exception('Toolchain \''+toolchain_name_gcc_none+'\' doesn\'t support gcc_none')
+
+    cfg.toolchain_gcc_linux = cfg.toolchains[toolchain_id_linux]
+    cfg.toolchain_gcc_none  = cfg.toolchains[toolchain_id_none]
+
+    # setup variables needed by our modules
+    setup_toolchain_variables('GCC_LINUX_TARGET', cfg.toolchain_gcc_linux)
+    setup_toolchain_variables('GCC_NONE_TARGET',  cfg.toolchain_gcc_none)
 
     # we need the toolchain vars
     evaluatevars()
@@ -869,8 +916,8 @@ def main(argv):
     cfg.configinclude_py.close()
     cfg.configinclude_cmake.close()
 
-    setup_toolchain('GCC_LINUX_TARGET_')
-    setup_toolchain('GCC_NONE_TARGET_')
+    setup_toolchain(cfg.toolchain_gcc_linux)
+    setup_toolchain(cfg.toolchain_gcc_none)
 
 if __name__ == "__main__":
     try:
