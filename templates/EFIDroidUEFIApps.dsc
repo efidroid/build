@@ -60,11 +60,6 @@
   SortLib|MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
 
   ShellLib|ShellPkg/Library/UefiShellLib/UefiShellLib.inf
-  ShellCommandLib|ShellPkg/Library/UefiShellCommandLib/UefiShellCommandLib.inf
-  HandleParsingLib|ShellPkg/Library/UefiHandleParsingLib/UefiHandleParsingLib.inf
-
-  # Networking Requirements for ArmPlatformPkg/Bds
-  NetLib|MdeModulePkg/Library/DxeNetLib/DxeNetLib.inf
 
 [LibraryClasses.common.UEFI_APPLICATION]
   DxeServicesLib|MdePkg/Library/DxeServicesLib/DxeServicesLib.inf
@@ -72,8 +67,6 @@
 
 [LibraryClasses.ARM]
   ArmLib|ArmPkg/Library/ArmLib/ArmV7/ArmV7Lib.inf
-  ArmSoftFloatLib|ArmPkg/Library/ArmSoftFloatLib/ArmSoftFloatLib.inf
-  BdsLib|ArmPkg/Library/BdsLib/BdsLib.inf
   CacheMaintenanceLib|ArmPkg/Library/ArmCacheMaintenanceLib/ArmCacheMaintenanceLib.inf
 
 [LibraryClasses.AARCH64]
