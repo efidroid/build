@@ -50,12 +50,11 @@ setvar "EDK2_BIN" "$EDK2_BIN"
 setvar "EDK2_BASE" "$EDK2_BASE"
 
 Configure() {
-    # setup build directory
-    mkdir -p "$EDK2_OUT"
-    mkdir -p "$EDK2_EFIDROID_OUT"
-    "$TOP/build/tools/edk2_update" "$EDK2_DIR" "$EDK2_OUT"
+    # setup
+    EDK2Setup
 
     # link apps
+    mkdir -p "$EDK2_EFIDROID_OUT"
     rm -f "$EDK2_OUT/Build/EFIDroidUEFIApps"
     ln -s "$TARGET_COMMON_OUT/uefiapp_EFIDroidUi/Build/EFIDroidUEFIApps" "$EDK2_OUT/Build/EFIDroidUEFIApps"
 
@@ -66,9 +65,6 @@ Configure() {
     # get EDK git revision
     tmp=$(cd "$EDK2_DIR" && git rev-parse --verify --short HEAD)
     setvar "EDK2_VERSION" "$tmp"
-
-    # (re)compile BaseTools
-    MAKEFLAGS= "$EFIDROID_MAKE" -C "$EDK2_OUT/BaseTools"
 }
 
 Compile() {

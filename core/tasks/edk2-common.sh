@@ -75,6 +75,26 @@ elif [ "$EFIDROID_TARGET_ARCH" == "aarch64" ];then
     EDK2_ARCH="AArch64"
 fi
 EDK2_ENV="$EDK2_ENV ${EDK2_COMPILER}_${EDK2_ARCH}_PREFIX=$GCC_NONE_TARGET_PREFIX"
+EDK2_ENV="$EDK2_ENV PACKAGES_PATH=${EDK2_OUT}:${EDK2_DIR}:$TOP/uefi/edk2packages"
+
+EDK2Setup() {
+    # copy base files (if changed)
+    mkdir -p "$EDK2_OUT"
+    cp -Rpu "$EDK2_DIR/BaseTools" "$EDK2_OUT/"
+    cp -Rpu "$EDK2_DIR/Conf" "$EDK2_OUT/"
+    ln -fs "$EDK2_DIR/edksetup.sh" "$EDK2_OUT/"
+
+    # symlink uefi/apps
+    rm -f "$EDK2_OUT/EFIDroidUEFIApps"
+    ln -s "$TOP/uefi/apps" "$EDK2_OUT/EFIDroidUEFIApps"
+
+    # symlink modules
+    rm -f "$EDK2_OUT/EFIDroidModules"
+    ln -s "$TOP/modules" "$EDK2_OUT/EFIDroidModules"
+
+    # (re)compile BaseTools
+    MAKEFLAGS= "$EFIDROID_MAKE" -C "$EDK2_OUT/BaseTools"
+}
 
 CompileEDK2() {
     PROJECTCONFIG="$1"

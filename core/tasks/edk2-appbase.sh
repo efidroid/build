@@ -57,27 +57,9 @@ elif [ "$BUILDTYPE" == "RELEASE" ];then
     EDK2_BUILD_TYPE="RELEASE"
 fi
 
-Setup() {
-    # setup build directory
-    mkdir -p "$EDK2_OUT"
-    "$TOP/build/tools/edk2_update" "$EDK2_DIR" "$EDK2_OUT"
-
-    # symlink uefi/apps
-    ln -s "$TOP/uefi/apps" "$EDK2_OUT/EFIDroidUEFIApps"
-
-    # symlink modules
-    ln -s "$TOP/modules" "$EDK2_OUT/EFIDroidModules"
-
-    # (re)compile BaseTools
-    MAKEFLAGS= "$EFIDROID_MAKE" -C "$EDK2_OUT/BaseTools"
-
-    cp "$EDK2_OUT/BaseTools/Conf/tools_def.template" "$EDK2_OUT/Conf/tools_def.txt"
-    sed -i "s/fstack-protector/fno-stack-protector/g" "$EDK2_OUT/Conf/tools_def.txt"
-}
-
 Compile() {
     # setup
-    Setup
+    EDK2Setup
 
     # compile MdePkg
     CompileEDK2 "$MdePkg/MdePkg.dsc"
@@ -88,7 +70,7 @@ CompileApp() {
     APPNAME="${UEFIAPP##*/}"
 
     # setup
-    Setup
+    EDK2Setup
 
     if [ ! -f "$EDK2_OUT/EFIDroidUEFIApps/$APPNAME/$APPNAME.dsc" ];then
         APPCONFIG_REL="Conf/UEFIApp_$APPNAME.dsc"
