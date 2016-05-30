@@ -81,9 +81,3 @@
 [BuildOptions]
   GCC:*_*_*_CXX_FLAGS     = -nostdinc -nostdlib
 
-##############################################################################
-#
-#  Include Boilerplate text required for building with the Standard Libraries.
-#
-##############################################################################
-!include StdLib/StdLib.inc
