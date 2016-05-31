@@ -678,6 +678,7 @@ def main(argv):
         setvar('EFIDROID_TARGET_ARCH', os.environ['EFIDROID_TARGET_ARCH'])
     else:
         setvar('EFIDROID_TARGET_ARCH', 'arm')
+    pr_info('Architecture: %s' % getvar('EFIDROID_TARGET_ARCH'))
 
     setvar('TARGET_COMMON_OUT', cfg.out+'/target/common/'+getvar('EFIDROID_TARGET_ARCH'))
 
