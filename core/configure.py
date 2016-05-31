@@ -610,7 +610,7 @@ def setup_toolchain(toolchain):
         pass
 
     # extract toolchain
-    pr_info('extracting '+downloadfile+' ...')
+    pr_alert('extracting '+downloadfile+' ...')
     p = subprocess.Popen(['tar', 'xf', downloadfile, '-C', getvar('GCC_TARGET_DIR')])
     p.communicate()
     if p.returncode:
@@ -635,10 +635,10 @@ def main(argv):
     # get devicename
     if 'DEVICEID' in os.environ:
         cfg.devicename = os.environ['DEVICEID']
-        pr_info('Configuring for %s' % cfg.devicename)
+        pr_alert('Configuring for %s' % cfg.devicename)
     else:
         cfg.devicename = None
-        pr_info('Configuring for HOST')
+        pr_alert('Configuring for HOST')
 
     # get build type
     if 'BUILDTYPE' in os.environ:
@@ -647,7 +647,7 @@ def main(argv):
         cfg.buildtype = 'USERDEBUG'
     if not (cfg.buildtype=='DEBUG' or cfg.buildtype=='USERDEBUG' or cfg.buildtype=='RELEASE'):
         raise Exception('Invalid build type \''+cfg.buildtype+'\'')
-    pr_info('Buildtype: '+cfg.buildtype)
+    pr_alert('Buildtype: '+cfg.buildtype)
 
     # initialize make
     makeout = StringIO()
@@ -683,7 +683,7 @@ def main(argv):
         setvar('EFIDROID_TARGET_ARCH', os.environ['EFIDROID_TARGET_ARCH'])
     else:
         setvar('EFIDROID_TARGET_ARCH', 'arm')
-    pr_info('Architecture: %s' % getvar('EFIDROID_TARGET_ARCH'))
+    pr_alert('Architecture: %s' % getvar('EFIDROID_TARGET_ARCH'))
 
     setvar('TARGET_COMMON_OUT', cfg.out+'/target/common/'+getvar('EFIDROID_TARGET_ARCH'))
 
@@ -766,12 +766,12 @@ def main(argv):
     toolchain_name_gcc_linux = 'common'
     if 'EFIDROID_TOOLCHAIN_NAME_GCC_LINUX' in os.environ:
        toolchain_name_gcc_linux = os.environ['EFIDROID_TOOLCHAIN_NAME_GCC_LINUX']
-    pr_info('Toolchain-LINUX: '+toolchain_name_gcc_linux)
+    pr_alert('Toolchain-LINUX: '+toolchain_name_gcc_linux)
 
     toolchain_name_gcc_none = 'common'
     if 'EFIDROID_TOOLCHAIN_NAME_GCC_NONE' in os.environ:
        toolchain_name_gcc_none = os.environ['EFIDROID_TOOLCHAIN_NAME_GCC_NONE']
-    pr_info('Toolchain-NONE: '+toolchain_name_gcc_none)
+    pr_alert('Toolchain-NONE: '+toolchain_name_gcc_none)
 
     # build toolchain id's
     toolchain_id_linux = 'gcc_linux_'+getvar('EFIDROID_TARGET_ARCH')+'_'+toolchain_name_gcc_linux
