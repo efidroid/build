@@ -40,7 +40,7 @@ except ImportError:
 def setvar(name, value):
     if not name:
         raise Exception('Invalid variable name')
-    if not value:
+    if value == None:
         raise Exception('no value given for variable \''+name+'\'')
 
     cfg.variables[name] = value
