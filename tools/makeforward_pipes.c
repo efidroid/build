@@ -115,7 +115,7 @@ int main(void) {
         exit(-1);
     }
 
-    // connect jobserver pipes
+    // print path to the make process' fd's
     snprintf(buf, sizeof(buf), "/proc/%d/fd", pid);
     printf("%s", buf);
 
