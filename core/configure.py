@@ -572,6 +572,10 @@ def setup_toolchain(toolchain):
     for k,v in toolchain.items():
         toolchain[k] = expandvars(v)
 
+    # this toolchain doesn't provide a directory(it's native)
+    if not 'path' in toolchain:
+        return
+
     # stop if toolchain dir does already exist
     if os.path.isdir(toolchain['path']):
         return
@@ -622,7 +626,8 @@ def setup_toolchain_variables(prefix, toolchain):
         v = expandvars_ex(toolchain, v)
         toolchain[k] = v
 
-    setvar(prefix+'_PATH', toolchain['path'])
+    if 'path' in toolchain:
+        setvar(prefix+'_PATH', toolchain['path'])
     setvar(prefix+'_NAME', toolchain['name'])
     setvar(prefix+'_PREFIX', toolchain['prefix'])
 
@@ -789,8 +794,10 @@ def main(argv):
     evaluatevars()
 
     # set PATH
-    cfg.make._line('export PATH := '+getvar('GCC_LINUX_TARGET_PATH')+':$(PATH)')
-    cfg.make._line('export PATH := '+getvar('GCC_NONE_TARGET_PATH')+':$(PATH)')
+    if getvar('GCC_LINUX_TARGET_PATH'):
+        cfg.make._line('export PATH := '+getvar('GCC_LINUX_TARGET_PATH')+':$(PATH)')
+    if getvar('GCC_NONE_TARGET_PATH'):
+        cfg.make._line('export PATH := '+getvar('GCC_NONE_TARGET_PATH')+':$(PATH)')
 
     # add device config
     if cfg.devicename:
