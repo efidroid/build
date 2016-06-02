@@ -56,8 +56,8 @@ def main(argv):
     args = parser.parse_args(argv[1:])
 
     # toolchain
-    toolchain_none = 'common'
-    toolchain_linux = 'common'
+    toolchain_none = None
+    toolchain_linux = None
     if args.toolchain:
         toolchain_none = inputex('gcc-none toolchain: ')
         toolchain_linux = inputex('gcc-linux toolchain: ')
@@ -81,8 +81,10 @@ def main(argv):
     with open(outfile, 'w') as f:
         f.write('export DEVICEID='+device+'\n')
         f.write('export BUILDTYPE='+buildtype+'\n')
-        f.write('export EFIDROID_TOOLCHAIN_NAME_GCC_NONE='+toolchain_none+'\n')
-        f.write('export EFIDROID_TOOLCHAIN_NAME_GCC_LINUX='+toolchain_linux+'\n')
+        if not toolchain_none == None:
+            f.write('export EFIDROID_TOOLCHAIN_NAME_GCC_NONE='+toolchain_none+'\n')
+        if not toolchain_linux == None:
+            f.write('export EFIDROID_TOOLCHAIN_NAME_GCC_LINUX='+toolchain_linux+'\n')
 
 if __name__ == '__main__':
     try:
