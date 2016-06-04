@@ -32,7 +32,7 @@ def inputex(msg):
     except:
         return input(prompt)
 
-def fastboot(argv, rawmode, suppressstatus=False, bufmode=False):
+def fastboot(argv, rawmode, suppressstatus=False, bufmode=False, nocolors=False):
     buf = b""
     p = subprocess.Popen(['fastboot'] + argv, stderr=subprocess.PIPE)
 
@@ -47,7 +47,7 @@ def fastboot(argv, rawmode, suppressstatus=False, bufmode=False):
         if line.startswith('(bootloader) '):
             line = line[13:]
 
-            if not bufmode and (len(line)>=2 and line[1]=='/'):
+            if not bufmode and not nocolors==True and (len(line)>=2 and line[1]=='/'):
                 level = line[0]
 
                 if level=='A': # ALWAYS
@@ -82,23 +82,33 @@ def fastboot(argv, rawmode, suppressstatus=False, bufmode=False):
     if bufmode:
         return buf
 
-    print(txtrst)
+    if not nocolors==True:
+        print(txtrst)
 
 def run_shell():
     while True:
         cmd = inputex(bldylw+'Shell> '+txtrst);
         fastboot(['oem', 'shell', cmd], True, True)
 
+def read_b64data(argv):
+    if len(argv)==2:
+        fastboot(argv, False, nocolors=True)
+    else:
+        if not len(argv)==3:
+            raise('Invalid number of arguments')
+
+        data = fastboot(argv[:2], True, True, True, True)
+        with open(argv[2], 'wb') as f:
+            f.write(base64.b64decode(data))
+
 def take_screenshot(argv):
     if len(argv)==2:
-        fastboot(argv, False)
+        return read_b64data(argv)
     else:
         if not len(argv)==4:
             raise('Invalid number of arguments')
 
-        data = fastboot(argv, True, True, True)
-        with open(argv[3], 'wb') as f:
-            f.write(base64.b64decode(data))
+        return read_b64data(argv[:3])
 
 def main(argv):
     rawmode = False
@@ -111,6 +121,8 @@ def main(argv):
             rawmode = True
         elif argv[1]=='screenshot':
             return take_screenshot(argv)
+        elif argv[1]=='dump-atags':
+            return read_b64data(argv)
         elif argv[1]=='shell':
             return run_shell()
 
