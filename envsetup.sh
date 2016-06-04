@@ -18,6 +18,10 @@ export TOP="$PWD"
 
 export PATH="$TOP/build/tools:$PATH"
 
+# add some common out directories
+export PATH="$TOP/out/host/dtbconvert:$PATH"
+export PATH="$TOP/out/host/mkbootimg:$PATH"
+
 croot() {
 	cd "$TOP"
 }
