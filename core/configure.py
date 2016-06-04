@@ -833,7 +833,8 @@ def main(argv):
                 add_cmake_target(moduledir, 'host')
 
             elif not os.path.isfile(moduleconfigfile):
-                raise Exception('Unknown make system in '+moduledir+'\nYou can manually specify it in '+moduleconfigfile)
+                pr_warning('Unknown make system in '+moduledir+'\nYou can manually specify it in '+moduleconfigfile)
+                continue
 
         moduledepsfile = moduledir+'/EFIDroidDependencies.ini'
         if os.path.isfile(moduledepsfile):
