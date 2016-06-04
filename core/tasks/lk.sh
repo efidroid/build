@@ -64,9 +64,12 @@ LK_MKBOOTIMG_ADDITIONAL_FLAGS=""
 # device tree
 if [ ! -z "$BOOTIMG_DT" ];then
     QCDT2EFIDROIDDTS="$HOST_DTBCONVERT_OUT/qcdt2efidroiddts"
+    QCDTEXTRACT="$HOST_DTBCONVERT_OUT/qcdtextract"
     DTBTOOL="$HOST_DTBCONVERT_OUT/dtbtool"
+    DTB_DECOMPALL="$TOP/build/tools/dtb_decompall"
 
     DTBDIR="$LK_OUT/dtb_out"
+    DTBORIGDIR="$LK_OUT/dtborig_out"
     DTIMG_PATCHED="$LK_OUT/dt_patched.img"
 
     LK_MKBOOTIMG_ADDITIONAL_FLAGS="$LK_MKBOOTIMG_ADDITIONAL_FLAGS --dt $DTIMG_PATCHED"
@@ -76,9 +79,20 @@ GeneratePatchedDtImg() {
     if [ ! -z "$BOOTIMG_DT" ];then
         rm -Rf "$DTBDIR"
         mkdir -p "$DTBDIR"
+        rm -Rf "$DTBORIGDIR"
+        mkdir -p "$DTBORIGDIR"
 
-        "$QCDT2EFIDROIDDTS" "$BOOTIMG_DT" "$DTBDIR"
+        # extract original dt.img
+        "$QCDTEXTRACT" "$BOOTIMG_DT" "$DTBORIGDIR"
+        "$DTB_DECOMPALL" "$DTBORIGDIR"
+
+        # generate patched dts's
+        "$QCDT2EFIDROIDDTS" "$BOOTIMG_DT" "$DTBDIR" "$DTBORIGDIR"
+
+        # convert them to dtb
         "$TOP/build/tools/makedtb_rec" "$DTBDIR"
+
+        # generate new dt.img
         "$DTBTOOL" -o "$DTIMG_PATCHED" "$DTBDIR/"
     fi
 }
