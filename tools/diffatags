@@ -1,0 +1,57 @@
+#!/bin/bash
+#
+# Copyright (C) 2016 The EFIDroid Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+DTIMG="$1"
+OUT="$2"
+
+set -e
+
+if [ -z "$1" ] || [ -z "$2" ];then
+    echo "Usage: diffatags dt.img outdir"
+    exit 1
+fi
+
+# cleanup
+rm -Rf "$OUT/"*
+
+# extract QCDT
+mkdir -p "$OUT/extract"
+qcdtextract "$DTIMG" "$OUT/extract"
+dtb_decompall "$OUT/extract"
+
+# dump dtb from device
+fastbootwrapper oem dump-atags "$OUT/live.dtb"
+
+# decompile dtb
+dtc -I dtb -O dts -o "$OUT/live.dts" "$OUT/live.dtb"
+
+# find closest original dts
+smallestdiff="0"
+first="1"
+bestfile=""
+for f in "$OUT/extract/"*.dts ;do
+    diffnum=$(diff "$OUT/live.dts" "$f" | grep "^>\|^<" | wc -l)
+    
+    if [ "$first" == "1" ] || [ "$smallestdiff" -gt "$diffnum" ];then
+        smallestdiff="$diffnum"
+        first="0"
+        bestfile="$f"
+    fi
+done
+
+# copy best dts and remove others
+cp "$bestfile" "$OUT/base.dts"
+rm -R "$OUT/extract"
