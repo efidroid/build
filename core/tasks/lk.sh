@@ -63,7 +63,7 @@ LK_MKBOOTIMG_ADDITIONAL_FLAGS=""
 
 # device tree
 if [ ! -z "$BOOTIMG_DT" ];then
-    DTBCONVERT="$HOST_DTBCONVERT_OUT/dtbconvert"
+    QCDT2EFIDROIDDTS="$HOST_DTBCONVERT_OUT/qcdt2efidroiddts"
     DTBTOOL="$HOST_DTBCONVERT_OUT/dtbtool"
 
     DTBDIR="$LK_OUT/dtb_out"
@@ -77,7 +77,7 @@ GeneratePatchedDtImg() {
         rm -Rf "$DTBDIR"
         mkdir -p "$DTBDIR"
 
-        "$DTBCONVERT" "$BOOTIMG_DT" "$DTBDIR"
+        "$QCDT2EFIDROIDDTS" "$BOOTIMG_DT" "$DTBDIR"
         "$TOP/build/tools/makedtb_rec" "$DTBDIR"
         "$DTBTOOL" -o "$DTIMG_PATCHED" "$DTBDIR/"
     fi
