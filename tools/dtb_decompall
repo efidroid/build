@@ -17,7 +17,7 @@
 DIR="$1"
 
 if [ -z "$DIR" ];then
-    echo "Usage: dtbconvertall directory"
+    echo "Usage: dtb_decompall directory"
     exit 1
 fi
 
