@@ -150,6 +150,10 @@ def main(argv):
     config.set('variables', 'BOOTIMG_ADDITIONAL_ARGS', '--ramdisk_offset 0x'+getbootimgarg('ramdisk_offset')+' --tags_offset 0x'+getbootimgarg('tags_offset'));
     config.set('variables', 'LCD_DENSITY', lcd_density);
 
+    if os.path.isfile(BOOTIMGPREFIX+'zImage.fdt'):
+        copyfile(BOOTIMGPREFIX+'zImage.fdt', devicedir+'/fdt.img')
+        config.set('variables', 'BOOTIMG_APPENDED_FDT', '$(DEVICE_DIR)/fdt.img');
+
     if os.path.getsize(BOOTIMGPREFIX+'dt')>0:
         copyfile(BOOTIMGPREFIX+'dt', devicedir+'/dt.img')
         config.set('variables', 'BOOTIMG_DT', '$(DEVICE_DIR)/dt.img');
