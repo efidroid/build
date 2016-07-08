@@ -58,42 +58,98 @@ if [ ! -d "$LK_DIR" ];then
     pr_fatal "LK wasn't found at $LK_DIR"
 fi
 
+LK_BINARY="$LK_OUT/build-$LK_TARGET/lk.bin"
+LK_BINARY_FINAL="$LK_OUT/lk_final.bin"
+
 # optional arguments
 LK_MKBOOTIMG_ADDITIONAL_FLAGS=""
 
+# DTB variables
+DTBEFIDROIDIFY="$HOST_DTBTOOLS_OUT/dtbefidroidify"
+QCDTEXTRACT="$HOST_DTBTOOLS_OUT/qcdtextract"
+FDTEXTRACT="$HOST_DTBTOOLS_OUT/fdtextract"
+DTBTOOL="$HOST_DTBTOOLS_OUT/dtbtool"
+DTBDIR="$LK_OUT/dtb_out"
+DTBPATCHEDDIR="$LK_OUT/dtbpatched_out"
+DTIMG_PATCHED="$LK_OUT/dt_patched.img"
+FDT_PATCHED="$LK_OUT/fdt_patched.img"
+
 # device tree
 if [ ! -z "$BOOTIMG_DT" ];then
-    QCDT2EFIDROIDDTS="$HOST_DTBCONVERT_OUT/qcdt2efidroiddts"
-    QCDTEXTRACT="$HOST_DTBCONVERT_OUT/qcdtextract"
-    DTBTOOL="$HOST_DTBCONVERT_OUT/dtbtool"
-    DTB_DECOMPALL="$TOP/build/tools/dtb_decompall"
-
-    DTBDIR="$LK_OUT/dtb_out"
-    DTBORIGDIR="$LK_OUT/dtborig_out"
-    DTIMG_PATCHED="$LK_OUT/dt_patched.img"
-
     LK_MKBOOTIMG_ADDITIONAL_FLAGS="$LK_MKBOOTIMG_ADDITIONAL_FLAGS --dt $DTIMG_PATCHED"
 fi
 
+GenerateKernelHeader() {
+    C="$LK_OUT/tmp.c"
+    BIN="$LK_OUT/tmp"
+    KERNEL_SIZE="$1"
+    HEADER_OUT="$2"
+
+    # generate C file
+    echo "#include <unistd.h>" > "$C"
+    echo "#include <stdint.h>" >> "$C"
+    echo "int main(void){int i;uint32_t n;" >> "$C"
+    echo "n=0xea00000a; write(1, &n, sizeof(n));" >> "$C"   # b 0x30
+    echo "for(i=0;i<8;i++)" >> "$C"
+    echo "{n=0xe1a00000; write(1, &n, sizeof(n));}" >> "$C" # NOP
+    echo "n=0x016f2818; write(1, &n, sizeof(n));" >> "$C"   # Magic numbers to help the loader
+    echo "n=0x00000000; write(1, &n, sizeof(n));" >> "$C"   # absolute load/run zImage address
+    echo "n=$KERNEL_SIZE; write(1, &n, sizeof(n));" >> "$C" # zImage end address
+    echo "return 0;" >> "$C"
+    echo "}" >> "$C"
+
+    # compile C file
+    gcc -Wall -Wextra -Wshadow -Werror "$C" -o "$BIN"
+
+    # write header
+    "$BIN" >> "$HEADER_OUT"
+}
+
+GenerateKernelImg() {
+    if [ ! -z "$BOOTIMG_APPENDED_FDT" ];then
+        # header + LK
+        LK_SIZE="$(( 0x30 + $(stat -L -c %s $LK_BINARY) ))"
+
+        # write header
+        rm -f "$LK_BINARY_FINAL"
+        GenerateKernelHeader "$LK_SIZE" "$LK_BINARY_FINAL"
+
+        # write LK
+        cat "$LK_BINARY" >> "$LK_BINARY_FINAL"
+
+        # write fdt
+        cat "$FDT_PATCHED" >> "$LK_BINARY_FINAL"
+    else
+        cp "$LK_BINARY" "$LK_BINARY_FINAL"
+    fi
+}
+
 GeneratePatchedDtImg() {
-    if [ ! -z "$BOOTIMG_DT" ];then
+    if [ ! -z "$BOOTIMG_DT" ] || [ ! -z "$BOOTIMG_APPENDED_FDT" ]; then
+        # cleanup
         rm -Rf "$DTBDIR"
         mkdir -p "$DTBDIR"
-        rm -Rf "$DTBORIGDIR"
-        mkdir -p "$DTBORIGDIR"
+        rm -Rf "$DTBPATCHEDDIR"
+        mkdir -p "$DTBPATCHEDDIR"
 
-        # extract original dt.img
-        "$QCDTEXTRACT" "$BOOTIMG_DT" "$DTBORIGDIR"
-        "$DTB_DECOMPALL" "$DTBORIGDIR"
+        if [ ! -z "$BOOTIMG_DT" ];then
+            # extract QCDT
+            "$QCDTEXTRACT" "$BOOTIMG_DT" "$DTBDIR"
+        elif [ ! -z "$BOOTIMG_APPENDED_FDT" ];then
+            # extract FDT
+            "$FDTEXTRACT" "$BOOTIMG_APPENDED_FDT" "$DTBDIR"
+        fi
 
-        # generate patched dts's
-        "$QCDT2EFIDROIDDTS" "$BOOTIMG_DT" "$DTBDIR" "$DTBORIGDIR"
+        # generate patched dtb's
+        "$DTBEFIDROIDIFY" "$DTBDIR" "$DTBPATCHEDDIR"
 
-        # convert them to dtb
-        "$TOP/build/tools/makedtb_rec" "$DTBDIR"
-
-        # generate new dt.img
-        "$DTBTOOL" -o "$DTIMG_PATCHED" "$DTBDIR/"
+        if [ ! -z "$BOOTIMG_DT" ];then
+            # generate new dt.img
+            "$DTBTOOL" -o "$DTIMG_PATCHED" "$DTBPATCHEDDIR/"
+        elif [ ! -z "$BOOTIMG_APPENDED_FDT" ];then
+            # create new fdt.img
+            cat "$DTBPATCHEDDIR/"* > "$FDT_PATCHED"
+        fi
     fi
 }
 
@@ -118,6 +174,20 @@ CompileLKEDK2() {
     LKEDK2BIN="$LK_OUT/build-$LK_TARGET/lk-edk2.bin"
     EDK2_SIZE="$(stat -L -c %s $EDK2_BIN)"
 
+    rm -f "$LK_BINARY_FINAL"
+
+    # write header
+    if [ ! -z "$BOOTIMG_APPENDED_FDT" ];then
+        # header + LK + edk2size + EDK2
+        LKEDK2_SIZE="$(( 0x30 + $(stat -L -c %s $LK_BINARY) + 4 + $(stat -L -c %s $EDK2_BIN)))"
+
+        # write header
+        GenerateKernelHeader "$LKEDK2_SIZE" "$LK_BINARY_FINAL"
+    fi
+
+    # write LK
+    cat "$LK_BINARY" >> "$LK_BINARY_FINAL"
+
     # generate C file
     echo "#include <unistd.h>" > "$C"
     echo "int main(void){unsigned int n=$EDK2_SIZE;char c;" >> "$C"
@@ -131,26 +201,28 @@ CompileLKEDK2() {
     # compile C file
     gcc -Wall -Wextra -Wshadow -Werror "$C" -o "$BIN"
 
-    # write LK
-    cp "$LK_OUT/build-$LK_TARGET/lk.bin" "$LKEDK2BIN"
-
     # write size
-    "$BIN" >> "$LKEDK2BIN"
+    "$BIN" >> "$LK_BINARY_FINAL"
 
     # write EDK2
-    cat "$EDK2_BIN" >> "$LKEDK2BIN"
+    cat "$EDK2_BIN" >> "$LK_BINARY_FINAL"
+
+    GeneratePatchedDtImg
+
+    # appended fdt
+    if [ ! -z "$BOOTIMG_APPENDED_FDT" ];then
+        cat "$FDT_PATCHED" >> "$LK_BINARY_FINAL"
+    fi
 }
 
 CompileLKSideload() {
-    GeneratePatchedDtImg
-
     # generate meta data
     "$TOP/build/tools/create_efidroid_metadata" "$DEVICE" > "$TARGET_OUT/efidroid_meta.bin"
 
     pr_alert "Installing: $TARGET_OUT/lk_sideload.img"
     set -x
 	"$HOST_MKBOOTIMG_OUT/mkbootimg" \
-		--kernel "$LK_OUT/build-$LK_TARGET/lk-edk2.bin" \
+		--kernel "$LK_BINARY_FINAL" \
 		--ramdisk /dev/null \
 		--base "$BOOTIMG_BASE" \
 		$LK_MKBOOTIMG_ADDITIONAL_FLAGS \
@@ -161,7 +233,7 @@ CompileLKSideload() {
     pr_alert "Installing: $TARGET_OUT/lk_sideload_recovery.img"
     set -x
 	"$HOST_MKBOOTIMG_OUT/mkbootimg" \
-		--kernel "$LK_OUT/build-$LK_TARGET/lk-edk2.bin" \
+		--kernel "$LK_BINARY_FINAL" \
 		--ramdisk /dev/null \
 		--base "$BOOTIMG_BASE" \
         --cmdline "uefi.bootmode=recovery" \
@@ -182,15 +254,15 @@ DistClean() {
 CompileLKNoUEFI() {
     mkdir -p "$LK_OUT"
     "$EFIDROID_SHELL" -c "$LK_ENV_NOUEFI \"$MAKEFORWARD\" \"$EFIDROID_MAKE\" -C \"$LK_DIR\" $LK_TARGET"
+    GeneratePatchedDtImg
+    GenerateKernelImg
 }
 
 CompileLKSideloadNoUEFI() {
-    GeneratePatchedDtImg
-
     pr_alert "Installing: $TARGET_OUT/lk_nouefi_sideload.img"
     set -x
 	"$HOST_MKBOOTIMG_OUT/mkbootimg" \
-		--kernel "$LK_OUT/build-$LK_TARGET/lk.bin" \
+		--kernel "$LK_BINARY_FINAL" \
 		--ramdisk /dev/null \
 		--base "$BOOTIMG_BASE" \
 		$LK_MKBOOTIMG_ADDITIONAL_FLAGS \
