@@ -38,6 +38,16 @@ ifeq ($(WITH_KERNEL_UEFIAPI),1)
     DEFINES += LCD_VRAM_SIZE=$(LCD_VRAM_SIZE)
     CFLAGS += -DDEVICE_NVVARS_PARTITION=\"$(DEVICE_NVVARS_PARTITION)\"
 
+    # remove apps
+    MODULES := $(filter-out app/aboot,$(MODULES))
+    MODULES := $(filter-out app/clocktests,$(MODULES))
+    MODULES := $(filter-out app/nandwrite,$(MODULES))
+    MODULES := $(filter-out app/pcitests,$(MODULES))
+    MODULES := $(filter-out app/rpmbtests,$(MODULES))
+    MODULES := $(filter-out app/shell,$(MODULES))
+    MODULES := $(filter-out app/stringtests,$(MODULES))
+    MODULES := $(filter-out app/tests,$(MODULES))
+
     # disable LK debugging
     DEBUG := 0
 else
