@@ -90,4 +90,15 @@ ifeq ($(WITH_DEBUG_LAST_KMSG),1)
     CFLAGS += -DWITH_DEBUG_LAST_KMSG=1
 endif
 
+ifeq ($(WITH_KERNEL_UEFIAPI),1)
+    ifeq ($(DEBUG_ENABLE_UEFI_FBCON),1)
+        # enable FBCON
+        DEFINES += WITH_DEBUG_FBCON=1
+
+        CFLAGS += -DDEBUG_ENABLE_UEFI_FBCON=1
+    else
+        CFLAGS += -DDEBUG_ENABLE_UEFI_FBCON=0
+    endif
+endif
+
 DEFINES += EFIDROID_SAFEBOOT=1
