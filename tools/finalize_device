@@ -67,10 +67,21 @@ def main(argv):
     found_edk2_base = False
     for line in lines:
         count+=1
+        linedec = line.decode()
 
-        if line.decode().startswith('(bootloader) \tID:5(appsbl)'):
+        if linedec.startswith('(bootloader) \tID:5(appsbl)'):
             cols = lines[count+1].split()
             dst = int(cols[3].decode().split(':')[1], 16)
+
+            pr_notice('updating LK_BASE to 0x%016x' % (dst))
+            config.set('variables', 'LK_BASE', '0x%016x'%dst)
+            found_lk_base = True
+            break
+
+        if linedec.startswith('(bootloader) found ELF') and linedec.endswith('on aboot'):
+            cols = lines[count+1].split()
+            print(cols)
+            dst = int(cols[2].decode(), 16)
 
             pr_notice('updating LK_BASE to 0x%016x' % (dst))
             config.set('variables', 'LK_BASE', '0x%016x'%dst)
