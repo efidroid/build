@@ -26,10 +26,20 @@ DEFINES := $(filter-out WITH_DEBUG_LOG_BUF=1,$(DEFINES))
 # set debug level
 DEBUG := 1
 
+# add our modules
+MODULES += \
+    $(EFIDROID_TOP)/uefi/lkmodules/shared/fastboot \
+    $(EFIDROID_TOP)/uefi/lkmodules/shared/lib/base64 \
+    $(EFIDROID_TOP)/uefi/lkmodules/shared/lib/atagparse
+
+DEFINES += WITH_FASTBOOT_EXT=1
+DEFINES += WITH_LIB_BASE64=1
+DEFINES += WITH_LIB_ATAGPARSE=1
+
 ifeq ($(WITH_KERNEL_UEFIAPI),1)
     # add our modules
     MODULES += \
-	    $(EFIDROID_TOP)/uefi/lkmodules/uefiapi
+	    $(EFIDROID_TOP)/uefi/lkmodules/shared/uefiapi
 
     # enable the UEFIAPI
     DEFINES += WITH_KERNEL_UEFIAPI=1
