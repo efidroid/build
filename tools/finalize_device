@@ -42,6 +42,8 @@ def inputex(msg):
     return input(bldylw+msg+txtrst)
 
 def main(argv):
+    SCRIPTDIR = os.path.dirname(os.path.realpath(__file__))
+
     # check arguments
     if not len(argv) == 1:
         raise Exception('Invalid number of arguments')
@@ -76,7 +78,7 @@ def main(argv):
             break
 
     # parse ram-ptable
-    p = subprocess.Popen(['fastbootwrapper', 'oem', 'ram-ptable'], stdout=subprocess.PIPE)
+    p = subprocess.Popen([SCRIPTDIR+'/fastbootwrapper', 'oem', 'ram-ptable'], stdout=subprocess.PIPE)
     lines = p.stdout.read().splitlines()
 
     count = -1
