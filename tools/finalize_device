@@ -70,14 +70,14 @@ def main(argv):
             cols = lines[count+1].split()
             dst = int(cols[3].decode().split(':')[1], 16)
 
-            pr_notice('updating LK_BASE to 0x%08x' % (dst))
-            config.set('variables', 'LK_BASE', '0x%08x'%dst)
+            pr_notice('updating LK_BASE to 0x%016x' % (dst))
+            config.set('variables', 'LK_BASE', '0x%016x'%dst)
             found_lk_base = True
             break
 
     # parse ram-ptable
-    p = subprocess.Popen(['fastboot', 'oem', 'ram-ptable'], stderr=subprocess.PIPE)
-    lines = p.stderr.read().splitlines()
+    p = subprocess.Popen(['fastbootwrapper', 'oem', 'ram-ptable'], stdout=subprocess.PIPE)
+    lines = p.stdout.read().splitlines()
 
     count = -1
     highestaddr = -1
@@ -103,16 +103,16 @@ def main(argv):
                 highestaddr = prange[1]
 
         if ptype=='appsbl' and not found_lk_base:
-            pr_notice('updating LK_BASE to 0x%08x' % (prange[0]))
-            config.set('variables', 'LK_BASE', '0x%08x'%prange[0])
+            pr_notice('updating LK_BASE to 0x%016x' % (prange[0]))
+            config.set('variables', 'LK_BASE', '0x%016x'%prange[0])
             found_lk_base = True
 
     if not highestaddr == -1:
         edk2size = 32*1024*1024
         edk2base = highestaddr - edk2size
-        pr_notice('updating EDK2_BASE to 0x%08x (size=0x%08x)' % (edk2base, edk2size))
-        config.set('variables', 'EDK2_BASE', '0x%08x'%edk2base);
-        config.set('variables', 'DRAM_SIZE', '0x%08x'%edk2size);
+        pr_notice('updating EDK2_BASE to 0x%016x (size=0x%016x)' % (edk2base, edk2size))
+        config.set('variables', 'EDK2_BASE', '0x%016x'%edk2base);
+        config.set('variables', 'DRAM_SIZE', '0x%016x'%edk2size);
         found_edk2_base = True
 
     if not found_lk_base or not found_edk2_base:
