@@ -117,6 +117,8 @@ def main(argv):
             rawmode = True
         elif argv[1]=='lk_log':
             rawmode = True
+        elif argv[1]=='ram-ptable':
+            rawmode = True
         elif argv[1]=='getnvvar':
             rawmode = True
         elif argv[1]=='screenshot':
