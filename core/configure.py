@@ -119,12 +119,13 @@ def define_target_vars(name, projecttype, src):
 
 def register_library(target, name, filename, includes, static=True):
     o = Bunch()
+    o.name = name
     o.target = target
     o.filename = filename
     o.includes = includes
     o.static = static
 
-    cfg.libs[name] = o
+    cfg.libs.append(o)
 
 def toolchain_write_header(f):
     f.write('if(DEFINED CMAKE_TOOLCHAIN_READY)\n')
@@ -139,7 +140,6 @@ def toolchain_write_footer(f):
     f.write('set(CMAKE_TOOLCHAIN_READY TRUE)\n')
     
 def gen_toolchains():
-
     if not os.path.isdir(getvar('HOST_OUT')):
         os.makedirs(getvar('HOST_OUT'))
     fHost   = open(getvar('HOST_OUT')+'/toolchain.cmake', 'w')
@@ -152,7 +152,7 @@ def gen_toolchains():
         fTarget = open(getvar('TARGET_OUT')+'/toolchain.cmake', 'w')
         toolchain_write_header(fTarget)
 
-    for name, o in cfg.libs.items():
+    for o in cfg.libs:
         linkage = 'STATIC'
         if not o.static:
             linkage = 'SHARED'
@@ -166,8 +166,8 @@ def gen_toolchains():
         if not inc_expanded==None and not file_expanded==None:
             f = fHost
             f.write('if(NOT "${EFIDROID_TARGET}" STREQUAL "'+o.target+'")\n')
-            f.write('add_library("'+name+'" '+linkage+' IMPORTED)\n')
-            f.write('set_target_properties('+name+' PROPERTIES IMPORTED_LOCATION '+ expandvars(file_expanded)+')\n')
+            f.write('add_library("'+o.name+'" '+linkage+' IMPORTED)\n')
+            f.write('set_target_properties('+o.name+' PROPERTIES IMPORTED_LOCATION '+ expandvars(file_expanded)+')\n')
             if inc_expanded:
                 f.write('include_directories('+inc_expanded+')\n')
             f.write('endif()\n\n')
@@ -179,8 +179,8 @@ def gen_toolchains():
             if not inc_expanded==None and not file_expanded==None:
                 f = fTarget
                 f.write('if(NOT "${EFIDROID_TARGET}" STREQUAL "'+o.target+'")\n')
-                f.write('add_library("'+name+'" '+linkage+' IMPORTED)\n')
-                f.write('set_target_properties('+name+' PROPERTIES IMPORTED_LOCATION '+ expandvars(file_expanded)+')\n')
+                f.write('add_library("'+o.name+'" '+linkage+' IMPORTED)\n')
+                f.write('set_target_properties('+o.name+' PROPERTIES IMPORTED_LOCATION '+ expandvars(file_expanded)+')\n')
                 if inc_expanded:
                     f.write('include_directories('+inc_expanded+')\n')
                 f.write('endif()\n\n')
@@ -393,6 +393,8 @@ def parse_config(configfile, moduledir=None):
             includes = []
             if config.has_option(section, 'includes'):
                 includes += config.get(section, 'includes').split()
+            if config.has_option(section, 'name'):
+                libname = config.get(section, 'name')
 
             register_library(target, libname, filename, includes)
 
@@ -656,7 +658,7 @@ def main(argv):
     cfg.makevars = make_syntax.Writer(makeoutvars)
     cfg.out = os.path.abspath('out')
     cfg.variables = {}
-    cfg.libs = {}
+    cfg.libs = []
     cfg.helptext = ''
     cfg.targets = {}
     cfg.top = os.path.abspath('')
