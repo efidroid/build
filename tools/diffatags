@@ -14,44 +14,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-DTIMG="$1"
-OUT="$2"
+DTSOUT="$1"
+DTBPATCHOUT="$TOP/out/target/$DEVICEID/lk_nouefi/dtbpatched_out"
 
 set -e
 
-if [ -z "$1" ] || [ -z "$2" ];then
-    echo "Usage: diffatags dt.img outdir"
+if [ -z "$1" ];then
+    echo "Usage: diffatags live.dts [dtbpatched_out]"
     exit 1
 fi
 
-# cleanup
-rm -Rf "$OUT/"*
+if [ -n "$2" ];then
+    DTBPATCHOUT="$2"
+fi
 
-# extract QCDT
-mkdir -p "$OUT/extract"
-qcdtextract "$DTIMG" "$OUT/extract"
-dtb_decompall "$OUT/extract"
+# dump dtb from device, decompile to dts
+fastbootwrapper oem dump-atags | dtc -I dtb -O dts -o "$DTSOUT"
 
-# dump dtb from device
-fastbootwrapper oem dump-atags "$OUT/live.dtb"
+# get socinfo from the device's dtb
+socinfo=$(cat "$DTSOUT" | grep "efidroid-soc-info")
 
-# decompile dtb
-dtc -I dtb -O dts -o "$OUT/live.dts" "$OUT/live.dtb"
+# decompile all of the patched dtb's
+"$TOP/build/tools/dtb_decompall" "$DTBPATCHOUT" > /dev/null
 
-# find closest original dts
-smallestdiff="0"
-first="1"
-bestfile=""
-for f in "$OUT/extract/"*.dts ;do
-    diffnum=$(diff "$OUT/live.dts" "$f" | grep "^>\|^<" | wc -l)
-    
-    if [ "$first" == "1" ] || [ "$smallestdiff" -gt "$diffnum" ];then
-        smallestdiff="$diffnum"
-        first="0"
-        bestfile="$f"
-    fi
-done
-
-# copy best dts and remove others
-cp "$bestfile" "$OUT/base.dts"
-rm -R "$OUT/extract"
+# copy base dtb
+grep -lR "$socinfo" "$DTBPATCHOUT/"*.dts | xargs -I {} cp {} "$DTSOUT.base"
