@@ -90,25 +90,13 @@ def run_shell():
         cmd = inputex(bldylw+'Shell> '+txtrst);
         fastboot(['oem', 'shell', cmd], True, True)
 
-def read_b64data(argv):
-    if len(argv)==2:
+def read_b64data(argv, nargs):
+    if len(argv)!=nargs:
         fastboot(argv, False, nocolors=True)
     else:
-        if not len(argv)==3:
-            raise('Invalid number of arguments')
-
-        data = fastboot(argv[:2], True, True, True, True)
-        with open(argv[2], 'wb') as f:
+        data = fastboot(argv[:-1], True, True, True, True)
+        with open(argv[-1], 'wb') as f:
             f.write(base64.b64decode(data))
-
-def take_screenshot(argv):
-    if len(argv)==2:
-        return read_b64data(argv)
-    else:
-        if not len(argv)==4:
-            raise('Invalid number of arguments')
-
-        return read_b64data(argv[:3])
 
 def main(argv):
     rawmode = False
@@ -122,9 +110,9 @@ def main(argv):
         elif argv[1]=='getnvvar':
             rawmode = True
         elif argv[1]=='screenshot':
-            return take_screenshot(argv)
+            return read_b64data(argv, 4)
         elif argv[1]=='dump-atags':
-            return read_b64data(argv)
+            return read_b64data(argv, 3)
         elif argv[1]=='shell':
             return run_shell()
 
