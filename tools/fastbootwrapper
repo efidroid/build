@@ -61,7 +61,7 @@ def fastboot(argv, rawmode, suppressstatus=False, bufmode=False, nocolors=False)
 
                 else:
                     sys.stdout.write(bldwht)
-        elif rawmode:
+        elif rawmode and not bufmode:
             print('')
 
         if suppressstatus:
@@ -91,12 +91,23 @@ def run_shell():
         fastboot(['oem', 'shell', cmd], True, True)
 
 def read_b64data(argv, nargs):
-    if len(argv)!=nargs:
+    if len(argv)<nargs or len(argv)>nargs+1:
         fastboot(argv, False, nocolors=True)
     else:
-        data = fastboot(argv[:-1], True, True, True, True)
-        with open(argv[-1], 'wb') as f:
-            f.write(base64.b64decode(data))
+        # get filename
+        filename = None
+        if len(argv)==nargs+1:
+            filename = argv[-1]
+            argv = argv[:-1]
+
+        data = fastboot(argv, True, True, True, True)
+        data_decoded = base64.b64decode(data)
+
+        if filename==None:
+            sys.stdout.write(data_decoded)
+        else:
+            with open(filename, 'wb') as f:
+                f.write(data_decoded)
 
 def main(argv):
     rawmode = False
@@ -110,9 +121,11 @@ def main(argv):
         elif argv[1]=='getnvvar':
             rawmode = True
         elif argv[1]=='screenshot':
-            return read_b64data(argv, 4)
-        elif argv[1]=='dump-atags':
+            # oem screenshot ID
             return read_b64data(argv, 3)
+        elif argv[1]=='dump-atags':
+            # oem dump-atags
+            return read_b64data(argv, 2)
         elif argv[1]=='shell':
             return run_shell()
 
