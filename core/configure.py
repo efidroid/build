@@ -103,8 +103,12 @@ def getvar(name):
         return cfg.variables[name]
     return None
 
-def addhelp(name, text):
-    cfg.helptext += bldwht.replace('\033', '\\033')+name+': '+txtrst.replace('\033', '\\033')+text.replace('\n', '\\n'+((len(name)+2)*' '))+'\\n'
+def addhelp(name, text, internal=False):
+    cfg.help.append({
+        'name': name,
+        'text': bldwht.replace('\033', '\\033')+name+': '+txtrst.replace('\033', '\\033')+text.replace('\n', '\\n'+((len(name)+2)*' '))+'\\n',
+        'internal':internal
+    })
 
 def define_target_vars(name, projecttype, src):
     name_upper = name.upper()
@@ -232,6 +236,7 @@ def parse_config(configfile, moduledir=None):
             makeenv = ''
             configureflags = ''
             linksource = False
+            internalTarget = False
 
             if not moduledir:
                 moduledir = targetdir
@@ -258,6 +263,8 @@ def parse_config(configfile, moduledir=None):
                 configureflags += config.get(section, 'configureflags')
             if config.has_option(section, 'linksource'):
                 linksource = config.get(section, 'linksource')=='1'
+            if config.has_option(section, 'group'):
+                internalTarget = config.get(section, 'group')=='internal'
 
             # validate category
             if not targetcategory=='target' and not targetcategory=='host':
@@ -302,9 +309,9 @@ def parse_config(configfile, moduledir=None):
 
                 # add help entry
                 if config.has_option(section, 'help'):
-                    addhelp(targetname, config.get(section, 'help'))
+                    addhelp(targetname, config.get(section, 'help'), internal=internalTarget)
                 else:
-                    addhelp(targetname, '\''+targetcategory+'/'+targettype+'\' target')
+                    addhelp(targetname, '\''+targetcategory+'/'+targettype+'\' target', internal=internalTarget)
 
             elif targettype == 'autoconf':
                 generator = None
@@ -365,9 +372,9 @@ def parse_config(configfile, moduledir=None):
 
                 # add help entry
                 if config.has_option(section, 'help'):
-                    addhelp(targetname, config.get(section, 'help'))
+                    addhelp(targetname, config.get(section, 'help'), internal=internalTarget)
                 else:
-                    addhelp(targetname, '\''+targetcategory+'/'+targettype+'\' target')
+                    addhelp(targetname, '\''+targetcategory+'/'+targettype+'\' target', internal=internalTarget)
 
             elif targettype == 'cmake':
                 add_cmake_target(os.path.dirname(configfile), targetcategory, moduledir, maketargets=maketargets, disableprefix=True)
@@ -659,7 +666,7 @@ def main(argv):
     cfg.out = os.path.abspath('out')
     cfg.variables = {}
     cfg.libs = []
-    cfg.helptext = ''
+    cfg.help = []
     cfg.targets = {}
     cfg.top = os.path.abspath('')
     cfg.uefird_deps = []
@@ -900,11 +907,31 @@ def main(argv):
     cfg.make.newline()
     addhelp('distclean', 'Remove the entire build directory (out)')
 
+    # add help for 'help
+    addhelp('help', 'Show available targets')
+    addhelp('help-internal', 'Show available targets including internal ones')
+
+    # sort help
+    cfg.help = sorted(cfg.help, key=lambda k: k['name'])
+
+    # build helptext
+    helptext = ''
+    helptext_all = ''
+    for o in cfg.help:
+        helptext_all += o['text']
+        if not o['internal']:
+            helptext += o['text']
+
     # help target
-    addhelp('help', 'Show this help text')
     cfg.make.comment('HELP')
-    make_add_target(__file__, 'help', 'echo -e \"'+cfg.helptext.replace('"', '\\"')+'\"', description='Generating Help')
+    make_add_target(__file__, 'help', 'echo -e \"'+helptext.replace('"', '\\"')+'\"', description='Generating Help')
     cfg.make.default(['help'])
+    cfg.make.newline()
+
+    # help target
+    cfg.make.comment('HELP-INTERNAL')
+    make_add_target(__file__, 'help-internal', 'echo -e \"'+helptext_all.replace('"', '\\"')+'\"', description='Generating Help')
+    cfg.make.default(['help-internal'])
     cfg.make.newline()
 
     # generate make file
