@@ -109,10 +109,12 @@ GenerateKernelImg() {
 
         # write header
         rm -f "$LK_BINARY_FINAL"
+        rm -f "$LK_BINARY_FINAL_ORIGDTB"
         GenerateKernelHeader "$LK_SIZE" "$LK_BINARY_FINAL"
 
-        # write LK
+        # write LK, duplicate for origdtb version
         cat "$LK_BINARY" >> "$LK_BINARY_FINAL"
+        cp "$LK_BINARY_FINAL" "$LK_BINARY_FINAL_ORIGDTB"
 
         # write fdt
         cat "$FDT_PATCHED" >> "$LK_BINARY_FINAL"
