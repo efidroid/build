@@ -276,15 +276,17 @@ CompileLKSideloadNoUEFI() {
 		-o "$TARGET_OUT/lk_nouefi_sideload.img"
     set +x
 
-    pr_alert "Installing: $TARGET_OUT/lk_nouefi_sideload_origdtb.img"
-    set -x
-	"$HOST_MKBOOTIMG_OUT/mkbootimg" \
-		--kernel "$LK_BINARY_FINAL_ORIGDTB" \
-		--ramdisk /dev/null \
-		--base "$BOOTIMG_BASE" \
-		$LK_MKBOOTIMG_ADDITIONAL_FLAGS_ORIGDTB \
-		-o "$TARGET_OUT/lk_nouefi_sideload_origdtb.img"
-    set +x
+    if [ ! -z "$BOOTIMG_DT" ] || [ ! -z "$BOOTIMG_APPENDED_FDT" ]; then
+        pr_alert "Installing: $TARGET_OUT/lk_nouefi_sideload_origdtb.img"
+        set -x
+	    "$HOST_MKBOOTIMG_OUT/mkbootimg" \
+		    --kernel "$LK_BINARY_FINAL_ORIGDTB" \
+		    --ramdisk /dev/null \
+		    --base "$BOOTIMG_BASE" \
+		    $LK_MKBOOTIMG_ADDITIONAL_FLAGS_ORIGDTB \
+		    -o "$TARGET_OUT/lk_nouefi_sideload_origdtb.img"
+        set +x
+    fi
 }
 
 BuildOtaPackage() {
