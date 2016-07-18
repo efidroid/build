@@ -32,7 +32,7 @@ LK_ENV="$LK_ENV DEVICE_NVVARS_PARTITION=\"$DEVICE_NVVARS_PARTITION_LK\""
 
 # check if lk source exists
 if [ ! -z "$LK_SOURCE" ];then
-    LK_DIR="$TOP/bootloader/$LK_SOURCE"
+    LK_DIR="$TOP/bootloader/lk/$LK_SOURCE"
 fi
 
 # add (default) vram size
