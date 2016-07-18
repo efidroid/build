@@ -60,9 +60,11 @@ fi
 
 LK_BINARY="$LK_OUT/build-$LK_TARGET/lk.bin"
 LK_BINARY_FINAL="$LK_OUT/lk_final.bin"
+LK_BINARY_FINAL_ORIGDTB="$LK_OUT/lk_final_origdtb.bin"
 
 # optional arguments
 LK_MKBOOTIMG_ADDITIONAL_FLAGS=""
+LK_MKBOOTIMG_ADDITIONAL_FLAGS_ORIGDTB=""
 
 # DTB variables
 DTBEFIDROIDIFY="$HOST_DTBTOOLS_OUT/dtbefidroidify"
@@ -73,11 +75,6 @@ DTBDIR="$LK_OUT/dtb_out"
 DTBPATCHEDDIR="$LK_OUT/dtbpatched_out"
 DTIMG_PATCHED="$LK_OUT/dt_patched.img"
 FDT_PATCHED="$LK_OUT/fdt_patched.img"
-
-# device tree
-if [ ! -z "$BOOTIMG_DT" ];then
-    LK_MKBOOTIMG_ADDITIONAL_FLAGS="$LK_MKBOOTIMG_ADDITIONAL_FLAGS --dt $DTIMG_PATCHED"
-fi
 
 GenerateKernelHeader() {
     C="$LK_OUT/tmp.c"
@@ -119,12 +116,14 @@ GenerateKernelImg() {
 
         # write fdt
         cat "$FDT_PATCHED" >> "$LK_BINARY_FINAL"
+        cat "$BOOTIMG_APPENDED_FDT" >> "$LK_BINARY_FINAL_ORIGDTB"
     else
         cp "$LK_BINARY" "$LK_BINARY_FINAL"
+        cp "$LK_BINARY" "$LK_BINARY_FINAL_ORIGDTB"
     fi
 }
 
-GeneratePatchedDtImg() {
+GeneratePatchedDeviceTree() {
     if [ ! -z "$BOOTIMG_DT" ] || [ ! -z "$BOOTIMG_APPENDED_FDT" ]; then
         # cleanup
         rm -Rf "$DTBDIR"
@@ -161,6 +160,12 @@ fi
 # additional args
 if [ ! -z "$BOOTIMG_ADDITIONAL_ARGS" ];then
     LK_MKBOOTIMG_ADDITIONAL_FLAGS="$LK_MKBOOTIMG_ADDITIONAL_FLAGS $BOOTIMG_ADDITIONAL_ARGS"
+fi
+
+# device tree
+if [ ! -z "$BOOTIMG_DT" ];then
+    LK_MKBOOTIMG_ADDITIONAL_FLAGS_ORIGDTB="$LK_MKBOOTIMG_ADDITIONAL_FLAGS --dt $BOOTIMG_DT"
+    LK_MKBOOTIMG_ADDITIONAL_FLAGS="$LK_MKBOOTIMG_ADDITIONAL_FLAGS --dt $DTIMG_PATCHED"
 fi
 
 CompileLK() {
@@ -207,7 +212,7 @@ CompileLKEDK2() {
     # write EDK2
     cat "$EDK2_BIN" >> "$LK_BINARY_FINAL"
 
-    GeneratePatchedDtImg
+    GeneratePatchedDeviceTree
 
     # appended fdt
     if [ ! -z "$BOOTIMG_APPENDED_FDT" ];then
@@ -254,7 +259,7 @@ DistClean() {
 CompileLKNoUEFI() {
     mkdir -p "$LK_OUT"
     "$EFIDROID_SHELL" -c "$LK_ENV_NOUEFI \"$MAKEFORWARD\" \"$EFIDROID_MAKE\" -C \"$LK_DIR\" $LK_TARGET"
-    GeneratePatchedDtImg
+    GeneratePatchedDeviceTree
     GenerateKernelImg
 }
 
@@ -267,6 +272,16 @@ CompileLKSideloadNoUEFI() {
 		--base "$BOOTIMG_BASE" \
 		$LK_MKBOOTIMG_ADDITIONAL_FLAGS \
 		-o "$TARGET_OUT/lk_nouefi_sideload.img"
+    set +x
+
+    pr_alert "Installing: $TARGET_OUT/lk_nouefi_sideload_origdtb.img"
+    set -x
+	"$HOST_MKBOOTIMG_OUT/mkbootimg" \
+		--kernel "$LK_BINARY_FINAL_ORIGDTB" \
+		--ramdisk /dev/null \
+		--base "$BOOTIMG_BASE" \
+		$LK_MKBOOTIMG_ADDITIONAL_FLAGS_ORIGDTB \
+		-o "$TARGET_OUT/lk_nouefi_sideload_origdtb.img"
     set +x
 }
 
