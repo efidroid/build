@@ -23,6 +23,8 @@ import os
 import subprocess
 import os
 import hashlib
+import urllib
+from urlparse import urlparse
 from fstab import *
 from utils import *
 
@@ -601,7 +603,8 @@ def setup_toolchain(toolchain):
         pass
 
     # download toolchain
-    downloadfile = cachedir+'/'+os.path.basename(toolchain['src'])
+    filename = urllib.unquote(os.path.basename(urlparse(toolchain['src']).path))
+    downloadfile = cachedir+'/'+filename
     if not os.path.isfile(downloadfile) or not sha1(downloadfile)==toolchain['sha1']:
         p = subprocess.Popen(['curl', '-L', '-o', downloadfile, toolchain['src']])
         p.communicate()
