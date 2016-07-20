@@ -931,7 +931,6 @@ def main(argv):
     # help target
     cfg.make.comment('HELP-INTERNAL')
     make_add_target(__file__, 'help-internal', 'echo -e \"'+helptext_all.replace('"', '\\"')+'\"', description='Generating Help')
-    cfg.make.default(['help-internal'])
     cfg.make.newline()
 
     # generate make file
