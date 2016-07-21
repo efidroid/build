@@ -58,10 +58,32 @@ setflag_propertymask() {
     EDK2_PROPERTY_MASK=$(printf "0x%x" $(( $EDK2_PROPERTY_MASK | $FLAGS )) )
 }
 
+# determine edk2 tool def to use
+gcc_version=$("${GCC_NONE_TARGET_PREFIX}gcc" -v 2>&1 | tail -1 | awk '{print $3}')
+case $gcc_version in
+  4.5.*)
+    EDK2_COMPILER=GCC45
+    ;;
+  4.6.*)
+    EDK2_COMPILER=GCC46
+    ;;
+  4.7.*)
+    EDK2_COMPILER=GCC47
+    ;;
+  4.8.*)
+    EDK2_COMPILER=GCC48
+    ;;
+  4.9.*|4.1[0-9].*|5.*.*|6.*.*)
+    EDK2_COMPILER=GCC49
+    ;;
+  *)
+    EDK2_COMPILER=GCC44
+    ;;
+esac
+
 EDK2_OUT="$MODULE_OUT"
 EDK2_DIR="$TOP/uefi/edk2"
 EDK2_ENV="MAKEFLAGS="
-EDK2_COMPILER="GCC49"
 EDK2_PRINT_ERROR_LEVEL="0"
 EDK2_PROPERTY_MASK="0"
 
