@@ -37,7 +37,7 @@ if [ -z "$DRAM_SIZE" ];then
     DRAM_SIZE="0x01000000" # 16MB
 fi
 
-EDK2_BIN="$EDK2_OUT/Build/LittleKernelPkg/${EDK2_BUILD_TYPE}_${EDK2_COMPILER}/FV/LITTLEKERNELPKG_EFI.fd"
+EDK2_BIN="$EDK2_OUT/Build/LittleKernelPkg/${EDK2_BUILD_TYPE}_${EDK2_COMPILER}/FV/FVMAIN_COMPACT.Fv"
 EDK2_EFIDROID_OUT="$EDK2_OUT/Build/EFIDROID"
 EDK2_FDF_INC="$EDK2_EFIDROID_OUT/LittleKernelPkg.fdf.inc"
 EDK2_DEFINES="$EDK2_DEFINES -DFIRMWARE_VER=$EDK2_VERSION"
@@ -59,7 +59,8 @@ Configure() {
     ln -s "$TARGET_COMMON_OUT/uefiapp_EFIDroidUi/Build/EFIDroidUEFIApps" "$EDK2_OUT/Build/EFIDroidUEFIApps"
 
     # generate FDF include file
-    echo -e "DEFINE FD_BASE = $EDK2_BASE\n" > "$EDK2_FDF_INC"
+    echo -e "DEFINE FD_BASE = $EDK2_BASE\n" >  "$EDK2_FDF_INC"
+    echo -e "DEFINE FD_SIZE = 0x00400000\n" >> "$EDK2_FDF_INC"
     echo -e "DEFINE EFIDROID_UEFIRD        = Build/EFIDROID/uefird.cpio\n" >> "$EDK2_FDF_INC"
 
     # get EDK git revision
