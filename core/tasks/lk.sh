@@ -25,7 +25,7 @@ LK_ENV="$LK_ENV EFIDROID_DEVICE_DIR=$TOP/device/$DEVICE"
 LK_ENV="$LK_ENV EFIDROID_BUILD_TYPE=$BUILDTYPE"
 LK_ENV_NOUEFI="$LK_ENV BOOTLOADER_OUT=$LK_OUT"
 
-LK_ENV="$LK_ENV EDK2_BASE=$EDK2_BASE EDK2_API_INC=$TOP/uefi/edk2packages/LittleKernelPkg/Include"
+LK_ENV="$LK_ENV EDK2_API_INC=$TOP/uefi/edk2packages/LittleKernelPkg/Include"
 LK_ENV="$LK_ENV WITH_KERNEL_UEFIAPI=1"
 LK_ENV="$LK_ENV LCD_DENSITY=$LCD_DENSITY"
 LK_ENV="$LK_ENV DEVICE_NVVARS_PARTITION=\"$DEVICE_NVVARS_PARTITION_LK\""
@@ -186,7 +186,7 @@ CompileLKEDK2() {
     # write header
     if [ ! -z "$BOOTIMG_APPENDED_FDT" ];then
         # header + LK + edk2size + EDK2
-        LKEDK2_SIZE="$(( 0x30 + $(stat -L -c %s $LK_BINARY) + 4 + $(stat -L -c %s $EDK2_BIN)))"
+        LKEDK2_SIZE="$(( 0x30 + $(stat -L -c %s $LK_BINARY) + 8 + $(stat -L -c %s $EDK2_BIN)))"
 
         # write header
         GenerateKernelHeader "$LKEDK2_SIZE" "$LK_BINARY_FINAL"
@@ -197,11 +197,10 @@ CompileLKEDK2() {
 
     # generate C file
     echo "#include <unistd.h>" > "$C"
-    echo "int main(void){unsigned int n=$EDK2_SIZE;char c;" >> "$C"
-    echo "c=(n>>(8*0))&0xff; write(1, &c, 1);" >> "$C"
-    echo "c=(n>>(8*1))&0xff; write(1, &c, 1);" >> "$C"
-    echo "c=(n>>(8*2))&0xff; write(1, &c, 1);" >> "$C"
-    echo "c=(n>>(8*3))&0xff; write(1, &c, 1);" >> "$C"
+    echo "#include <stdint.h>" >> "$C"
+    echo "int main(void){uint32_t n;" >> "$C"
+    echo "n=$EDK2_BASE; write(1, &n, sizeof(n));" >> "$C"
+    echo "n=$EDK2_SIZE; write(1, &n, sizeof(n));" >> "$C"
     echo "return 0;" >> "$C"
     echo "}" >> "$C"
 

@@ -28,25 +28,30 @@ fi
 if [ -z "$EDK2_BASE" ];then
     pr_fatal "EDK2_BASE is not set"
 fi
+if [ -z "$EDK2_SIZE" ];then
+    pr_fatal "EDK2_SIZE is not set"
+fi
 
 # default values
-if [ -z "$DRAM_BASE" ];then
-    DRAM_BASE="$EDK2_BASE"
+if [ -z "$EDK2_FD_BASE" ];then
+    # by default, put the FD at EDK2's loading addr
+    EDK2_FD_BASE="$EDK2_BASE"
 fi
-if [ -z "$DRAM_SIZE" ];then
-    DRAM_SIZE="0x01000000" # 16MB
+if [ -z "$EDK2_FD_SIZE" ];then
+    # by default, use 4MB
+    EDK2_FD_SIZE="0x00400000"
 fi
 
 EDK2_BIN="$EDK2_OUT/Build/LittleKernelPkg/${EDK2_BUILD_TYPE}_${EDK2_COMPILER}/FV/FVMAIN_COMPACT.Fv"
 EDK2_EFIDROID_OUT="$EDK2_OUT/Build/EFIDROID"
 EDK2_FDF_INC="$EDK2_EFIDROID_OUT/LittleKernelPkg.fdf.inc"
 EDK2_DEFINES="$EDK2_DEFINES -DFIRMWARE_VER=\"EFIDroid $EDK2_VERSION\""
-EDK2_DEFINES="$EDK2_DEFINES -DDRAM_BASE=$DRAM_BASE"
-EDK2_DEFINES="$EDK2_DEFINES -DDRAM_SIZE=$DRAM_SIZE"
+EDK2_DEFINES="$EDK2_DEFINES -DDRAM_BASE=$EDK2_BASE"
+EDK2_DEFINES="$EDK2_DEFINES -DDRAM_SIZE=$EDK2_SIZE"
 
 # set global variables
+setvar "EDK2_FD_BASE" "$EDK2_FD_BASE"
 setvar "EDK2_BIN" "$EDK2_BIN"
-setvar "EDK2_BASE" "$EDK2_BASE"
 
 Configure() {
     # setup
@@ -58,8 +63,8 @@ Configure() {
     ln -s "$TARGET_COMMON_OUT/uefiapp_EFIDroidUi/Build/EFIDroidUEFIApps" "$EDK2_OUT/Build/EFIDroidUEFIApps"
 
     # generate FDF include file
-    echo -e "DEFINE FD_BASE = $EDK2_BASE\n" >  "$EDK2_FDF_INC"
-    echo -e "DEFINE FD_SIZE = 0x00400000\n" >> "$EDK2_FDF_INC"
+    echo -e "DEFINE FD_BASE = $EDK2_FD_BASE\n" >  "$EDK2_FDF_INC"
+    echo -e "DEFINE FD_SIZE = $EDK2_FD_SIZE\n" >> "$EDK2_FDF_INC"
     echo -e "DEFINE EFIDROID_UEFIRD        = Build/EFIDROID/uefird.cpio\n" >> "$EDK2_FDF_INC"
 
     # get EDK git revision
