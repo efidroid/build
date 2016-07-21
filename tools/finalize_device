@@ -125,7 +125,7 @@ def main(argv):
         edk2base = highestaddr - edk2size
         pr_notice('updating EDK2_BASE to 0x%016x (size=0x%016x)' % (edk2base, edk2size))
         config.set('variables', 'EDK2_BASE', '0x%016x'%edk2base);
-        config.set('variables', 'DRAM_SIZE', '0x%016x'%edk2size);
+        config.set('variables', 'EDK2_SIZE', '0x%016x'%edk2size);
         found_edk2_base = True
 
     if not found_lk_base or not found_edk2_base:
