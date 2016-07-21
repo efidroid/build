@@ -775,12 +775,12 @@ def main(argv):
     parse_config('build/config.ini')
 
     # get selected toolchain name
-    toolchain_name_gcc_linux = 'common'
+    toolchain_name_gcc_linux = 'gcc6'
     if 'EFIDROID_TOOLCHAIN_NAME_GCC_LINUX' in os.environ:
        toolchain_name_gcc_linux = os.environ['EFIDROID_TOOLCHAIN_NAME_GCC_LINUX']
     pr_alert('Toolchain-LINUX: '+toolchain_name_gcc_linux)
 
-    toolchain_name_gcc_none = 'common'
+    toolchain_name_gcc_none = 'gcc6'
     if 'EFIDROID_TOOLCHAIN_NAME_GCC_NONE' in os.environ:
        toolchain_name_gcc_none = os.environ['EFIDROID_TOOLCHAIN_NAME_GCC_NONE']
     pr_alert('Toolchain-NONE: '+toolchain_name_gcc_none)
