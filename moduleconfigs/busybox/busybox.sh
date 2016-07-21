@@ -32,7 +32,6 @@ Compile() {
         EnableConfig CONFIG_DD
         EnableConfig CONFIG_CP
         EnableConfig CONFIG_ASH
-        EnableConfig CONFIG_CP
         EnableConfig CONFIG_RM
         DisableConfig CONFIG_FEATURE_SH_IS_NONE
         EnableConfig CONFIG_FEATURE_SH_IS_ASH
