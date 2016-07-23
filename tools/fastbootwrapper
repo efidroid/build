@@ -126,6 +126,9 @@ def main(argv):
         elif argv[1]=='dump-atags':
             # oem dump-atags
             return read_b64data(argv, 2)
+        elif argv[1]=='dump-mem':
+            # oem dump-mem ADDR LEN
+            return read_b64data(argv, 4)
         elif argv[1]=='shell':
             return run_shell()
 
