@@ -66,6 +66,10 @@ else
     # enable FBCON
     DEFINES += WITH_DEBUG_FBCON=1
 
+    # enable libboot
+    MODULES += $(EFIDROID_TOP)/uefi/lkmodules/shared/lib/boot
+    DEFINES += WITH_LIB_BOOT=1
+
     ifeq ($(EFIDROID_BUILD_TYPE),DEBUG)
         DEBUG := 3
         DEFINES += LK_LOG_BUF_SIZE=16384
