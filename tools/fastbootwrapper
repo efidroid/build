@@ -37,6 +37,7 @@ def fastboot(argv, rawmode, suppressstatus=False, bufmode=False, nocolors=False)
     p = subprocess.Popen(['fastboot'] + argv, stderr=subprocess.PIPE)
 
     first = True
+    lastlinewasempty = True
     for rawline in p.stderr:
         line = rawline.decode()
 
@@ -47,7 +48,7 @@ def fastboot(argv, rawmode, suppressstatus=False, bufmode=False, nocolors=False)
         if line.startswith('(bootloader) '):
             line = line[13:]
 
-            if not bufmode and not nocolors==True and (len(line)>=2 and line[1]=='/'):
+            if not bufmode and not nocolors==True and (len(line)>=2 and line[1]=='/') and lastlinewasempty:
                 level = line[0]
 
                 if level=='A': # ALWAYS
@@ -61,6 +62,7 @@ def fastboot(argv, rawmode, suppressstatus=False, bufmode=False, nocolors=False)
 
                 else:
                     sys.stdout.write(bldwht)
+
         elif rawmode and not bufmode:
             print('')
 
@@ -77,6 +79,7 @@ def fastboot(argv, rawmode, suppressstatus=False, bufmode=False, nocolors=False)
         if rawmode:
             line = line[:-1]
 
+        lastlinewasempty = line==''
         sys.stdout.write(line)
 
     if bufmode:
