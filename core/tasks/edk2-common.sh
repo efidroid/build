@@ -124,8 +124,12 @@ CompileEDK2() {
 
     # get number of jobs
     MAKEPATH=$($MAKEFORWARD_PIPES)
-    plussigns=$(timeout -k 1 1 cat "$MAKEPATH/3" ; exit 0)
-    numjobs=$(($(echo -n $plussigns | wc -c) + 1))
+    if [ -f "$MAKEPATH/3" ];then
+        plussigns=$(timeout -k 1 1 cat "$MAKEPATH/3" ; exit 0)
+        numjobs=$(($(echo -n $plussigns | wc -c) + 1))
+    else
+        numjobs=1
+    fi
 
     # compile EDKII
     "$EFIDROID_SHELL" -c "\
@@ -143,7 +147,9 @@ CompileEDK2() {
     done)
 
     # write back our jobs
-    echo -n "$plussigns" > "$MAKEPATH/3"
+    if [ -f "$MAKEPATH/3" ];then
+        echo -n "$plussigns" > "$MAKEPATH/3"
+    fi
 }
 
 EDK2Shell() {
