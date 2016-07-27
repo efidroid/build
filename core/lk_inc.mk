@@ -58,6 +58,9 @@ ifeq ($(WITH_KERNEL_UEFIAPI),1)
     MODULES := $(filter-out app/stringtests,$(MODULES))
     MODULES := $(filter-out app/tests,$(MODULES))
 
+    # this uses timers which aren't available in UEFI
+    DEFINES := $(filter-out LONG_PRESS_POWER_ON=1,$(DEFINES))
+
     # disable LK debugging
     DEBUG := 0
 else
