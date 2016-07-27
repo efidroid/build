@@ -1,0 +1,152 @@
+#!/usr/bin/env python
+#
+# Copyright (C) 2016 The EFIDroid Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import sys
+import os
+import argparse
+import subprocess
+import re
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '../core'))
+from utils import *
+
+def dirblocksize(path):
+    p = subprocess.Popen(['du', '-ks', path], stdout=subprocess.PIPE)
+    data = p.stdout.read()
+    data = int(re.findall(r"[\w]+", data)[0])
+    return data
+
+def align(a, b):
+    return (((a) + (b) - 1) / (b)) * (b)
+
+def dirlist(path):
+    nodes = []
+    for name in os.listdir(path):
+        nodes.append(path+'/'+name)
+
+    return nodes
+
+def dir2ramdisk(path, out, gap=0):
+    blocks = dirblocksize(path)
+    blocks += align(gap, 1024)/1024
+    blocks = align(blocks, 63)
+
+    # remove file if it exists
+    if os.path.exists(out):
+        os.remove(out)
+
+    subprocess.call(['mkdosfs', '-F', '12', '-C', out, str(blocks)], stdout=open('/dev/null', 'w'))
+    subprocess.call(['mcopy', '-i', out, '-s'] + dirlist(path) + ['::/'])
+
+def str2file(path, string):
+    with open(path, 'w') as f:
+        f.write(string)
+
+def main(argv):
+
+    # parse args
+    parser = argparse.ArgumentParser(prog='mkefibootimg')
+    parser.add_argument('bootimg', metavar='boot.img', type=str, help='output boot.img')
+
+    # EFI files
+    parser.add_argument('--efi', dest='efifile', help='EFI file to boot')
+    parser.add_argument('--bootfile', dest='bootfile', help='path to EFI file within ramdisk')
+
+    # ramdisks
+    parser.add_argument('--ramdisk', dest='ramdisk', help='ramdisk to use')
+    parser.add_argument('--dir', dest='dir', help='directory to create a ramdisk from')
+
+    # args
+    parser.add_argument('--cmdline', dest='cmdline', help='cmdline used when booting the EFI')
+
+    args = parser.parse_args(argv)
+
+    # validate arguments
+    if args.ramdisk and args.dir:
+        pr_error('You can\'t specify both a file(--ramdisk) and a directory(--dir) for the ramdisk\n')
+        parser.print_help()
+        return 1
+    if args.efifile and args.bootfile:
+        pr_error('You can\'t specify both a file(--efi) and a path(--bootfile) for the EFI file\n')
+        parser.print_help()
+        return 1
+
+    # check if resources exist
+    if args.efifile and not os.path.isfile(args.efifile):
+        pr_error('File \'%s\' doesn\'t exist\n' % (args.efifile))
+        parser.print_help()
+        return 1
+    if args.ramdisk and not os.path.isfile(args.ramdisk):
+        pr_error('File \'%s\' doesn\'t exist\n' % (args.ramdisk))
+        parser.print_help()
+        return 1
+    if args.dir and not os.path.isdir(args.dir):
+        pr_error('Directory \'%s\' doesn\'t exist\n' % (args.dir))
+        parser.print_help()
+        return 1
+
+    # we need a efi file
+    if not args.efifile and not (args.bootfile and (args.ramdisk or args.dir)):
+        pr_error('You must specify either a efifile(--efifile) or a bootfile(--bootfile) and a ramdisk(--ramdisk or --dir)\n')
+        parser.print_help()
+        return 1
+
+    # check if bootfile exists
+    # XXX: we can't do this check if the user provides a prebuilt ramdisk
+    if args.dir and args.bootfile and not os.path.isfile(args.dir+'/'+args.bootfile):
+        pr_error('File \'%s\' within ramdisk doesn\'t exist\n' % (args.bootfile))
+        parser.print_help()
+        return 1        
+
+    # get kernel path
+    kernel = '/dev/null'
+    gap = 0
+    if args.efifile:
+        kernel = args.efifile
+        gap += os.path.getsize(kernel) + 64*1024
+
+    # get ramdisk path
+    ramdisk = '/dev/null'
+    if args.ramdisk:
+        ramdisk = args.ramdisk
+    elif args.dir:
+        ramdisk = args.bootimg+'-ramdisk'
+        dir2ramdisk(args.dir, ramdisk, gap)
+
+    # get cmdline
+    cmdline = ''
+    if args.cmdline:
+        cmdline = args.cmdline
+
+    # get dt
+    dt = '/dev/null'
+    if args.bootfile:
+        dt = args.bootimg+'-dt'
+        str2file(dt, args.bootfile)
+
+    # create boot image
+    subprocess.call(['mkbootimg', '--kernel', kernel, '--ramdisk', ramdisk, '--cmdline', cmdline, '--dt', dt, '-o', args.bootimg])
+
+    return 0
+
+if __name__ == '__main__':
+    try:
+        main(sys.argv[1:])
+    except SystemExit:
+        sys.exit(sys.exc_info()[1])
+    except:
+        pr_error('Error: %s' % sys.exc_info()[1])
+        raise
