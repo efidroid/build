@@ -31,13 +31,13 @@ Compile() {
     rm -Rf "$MODULE_OUT/grubrd"
     rm -f "$MODULE_OUT/grubboot.img"
 
-    qemu-arm "$HOST_GRUB_KERNEL_OUT/grub-mkimage" \
+    qemu-arm "$TARGET_GRUB_KERNEL_OUT/grub-mkimage" \
         -O arm-efi \
         -c "$GRUB_CONFIG_DIR/load.cfg" \
         -o "$MODULE_OUT/grub.efi" \
-        -d "$HOST_GRUB_KERNEL_OUT/grub-core" \
+        -d "$TARGET_GRUB_KERNEL_OUT/grub-core" \
         -p "" \
-        $(cd $HOST_GRUB_KERNEL_OUT/grub-core && find *.mod | xargs -I {} basename {} .mod | xargs)
+        $(cd $TARGET_GRUB_KERNEL_OUT/grub-core && find *.mod | xargs -I {} basename {} .mod | xargs)
 
     # directories
     mkdir "$MODULE_OUT/grubrd"
@@ -50,7 +50,7 @@ Compile() {
     cat "$MODULE_OUT/unicode_uncompressed.pf2" | gzip >"$MODULE_OUT/grubrd/fonts/unicode.pf2"
 
     # env
-    qemu-arm "$HOST_GRUB_KERNEL_OUT/grub-editenv" "$MODULE_OUT/grubrd/grubenv" create
+    qemu-arm "$TARGET_GRUB_KERNEL_OUT/grub-editenv" "$MODULE_OUT/grubrd/grubenv" create
 
     # config
     cp "$GRUB_CONFIG_DIR/grub.cfg" "$MODULE_OUT/grubrd/grub.cfg"
