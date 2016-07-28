@@ -46,7 +46,8 @@ Compile() {
     mkdir "$MODULE_OUT/grubrd/arm-efi"
 
     # font
-    grub-mkfont -s $(inch2px "0.11") -o "$MODULE_OUT/grubrd/fonts/unicode.pf2" "$GRUB_CONFIG_DIR/unifont.ttf"
+    grub-mkfont -s $(inch2px "0.11") -o "$MODULE_OUT/unicode_uncompressed.pf2" "$GRUB_CONFIG_DIR/unifont.ttf"
+    cat "$MODULE_OUT/unicode_uncompressed.pf2" | gzip >"$MODULE_OUT/grubrd/fonts/unicode.pf2"
 
     # env
     qemu-arm "$HOST_GRUB_KERNEL_OUT/grub-editenv" "$MODULE_OUT/grubrd/grubenv" create
