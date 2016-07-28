@@ -13,7 +13,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+inch2px() {
+    INCH="$1"
+    PIXEL=$(bc -l <<< "$INCH*$LCD_DENSITY" | awk '{print int($1+0.5)}')
+
+    if [ "$(($PIXEL%2))" = 1 ]; then
+	    PIXEL=$(($PIXEL+1))
+    fi
+
+    echo $PIXEL
+    return 0
+}
+
 Compile() {
+    # cleanup
+    rm -f "$MODULE_OUT/grub.efi"
+    rm -Rf "$MODULE_OUT/grubrd"
+    rm -f "$MODULE_OUT/grubboot.img"
+
     qemu-arm "$HOST_GRUB_KERNEL_OUT/grub-mkimage" \
         -O arm-efi \
         -c "$GRUB_CONFIG_DIR/load.cfg" \
@@ -21,6 +38,26 @@ Compile() {
         -d "$HOST_GRUB_KERNEL_OUT/grub-core" \
         -p "" \
         $(cd $HOST_GRUB_KERNEL_OUT/grub-core && find *.mod | xargs -I {} basename {} .mod | xargs)
+
+    # directories
+    mkdir "$MODULE_OUT/grubrd"
+    mkdir "$MODULE_OUT/grubrd/fonts"
+    mkdir "$MODULE_OUT/grubrd/locale"
+    mkdir "$MODULE_OUT/grubrd/arm-efi"
+
+    # font
+    grub-mkfont -s $(inch2px "0.11") -o "$MODULE_OUT/grubrd/fonts/unicode.pf2" "$GRUB_CONFIG_DIR/unifont.ttf"
+
+    # env
+    qemu-arm "$HOST_GRUB_KERNEL_OUT/grub-editenv" "$MODULE_OUT/grubrd/grubenv" create
+
+    # config
+    cp "$GRUB_CONFIG_DIR/grub.cfg" "$MODULE_OUT/grubrd/grub.cfg"
+
+    # all modules are builtin
+
+    # boot.img
+    mkefibootimg --efi "$MODULE_OUT/grub.efi" --dir "$MODULE_OUT/grubrd" "$MODULE_OUT/grubboot.img"
 }
 
 Clean() {
