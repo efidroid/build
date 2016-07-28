@@ -60,6 +60,7 @@ def main(argv):
     # parse args
     parser = argparse.ArgumentParser(prog='mkefibootimg')
     parser.add_argument('bootimg', metavar='boot.img', type=str, help='output boot.img')
+    parser.add_argument('--gap', dest='gap', help='additional space for the ramdisk to use', type=int)
 
     # EFI files
     parser.add_argument('--efi', dest='efifile', help='EFI file to boot')
@@ -111,9 +112,17 @@ def main(argv):
         parser.print_help()
         return 1        
 
+    # check gap
+    if args.gap and not (args.efifile or args.dir):
+        pr_error('gap only works in combination with --efi or --dir\n')
+        parser.print_help()
+        return 1
+
     # get kernel path
     kernel = '/dev/null'
     gap = 0
+    if args.gap:
+        gap += args.gap
     if args.efifile:
         kernel = args.efifile
         gap += os.path.getsize(kernel) + 64*1024
