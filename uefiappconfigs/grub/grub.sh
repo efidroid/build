@@ -58,6 +58,7 @@ Compile() {
     # all modules are builtin
 
     # boot.img
+    pr_alert "Installing: $MODULE_OUT/grubboot.img"
     mkefibootimg --efi "$MODULE_OUT/grub.efi" --dir "$MODULE_OUT/grubrd" "$MODULE_OUT/grubboot.img"
 }
 
