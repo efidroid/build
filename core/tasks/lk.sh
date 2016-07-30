@@ -58,6 +58,10 @@ if [ ! -d "$LK_DIR" ];then
     pr_fatal "LK wasn't found at $LK_DIR"
 fi
 
+if [ -n "$BOOTIMG_APPENDED_FDT" ] && [ -n "$BOOTIMG_DT" ];then
+    pr_fatal "you can't use both BOOTIMG_DT and BOOTIMG_APPENDED_FDT"
+fi
+
 LK_BINARY="$LK_OUT/build-$LK_TARGET/lk.bin"
 LK_BINARY_FINAL="$LK_OUT/lk_final.bin"
 LK_BINARY_FINAL_ORIGDTB="$LK_OUT/lk_final_origdtb.bin"
