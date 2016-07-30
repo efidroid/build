@@ -21,6 +21,7 @@ export PATH="$TOP/build/tools:$PATH"
 # add some common out directories
 export PATH="$TOP/out/host/dtbtools:$PATH"
 export PATH="$TOP/out/host/mkbootimg:$PATH"
+export PATH="$TOP/out/host/host_dtc/dtc:$PATH"
 
 croot() {
 	cd "$TOP"
