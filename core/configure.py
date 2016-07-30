@@ -341,7 +341,7 @@ def parse_config(configfile, moduledir=None):
 
                     # add lns target
                     make_add_target(configfile, targetout+'/'+generator, cfg.top+'/build/tools/lns -rf \"'+moduledir+'\" \"'+targetout+'\"',\
-                                    description='runnin lns on target \''+targetname+'\'')
+                                    description='running lns on target \''+targetname+'\'')
 
                 # add autogen target
                 if not generator=='configure':
