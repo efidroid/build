@@ -56,7 +56,7 @@ class Writer(object):
             prefix = "@"
 
         if description:
-            self.output.write('\t%s$$EFIDROID_SHELL -c \'echo -e "\\033[1;37m%s\\033[0m"\'\n' % (prefix, description))
+            self.output.write('\t%s$$EFIDROID_SHELL -c "echo -e \\\"\\033[1;37m%s\\033[0m\\\""\n' % (prefix, description.replace('"', '\\\\\\"')))
 
         for line in commands:
             self.output.write('\t%s%s\n' % (prefix, line))
