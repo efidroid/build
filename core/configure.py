@@ -507,7 +507,9 @@ def add_cmake_target(path, projecttype, modulesrc=None, maketargets=None, disabl
 
     # add clean rule
     make_add_target(path, targetname+'_clean', [
-        'cd \"'+outdir+'\" && $(MAKE) clean'
+        'if [ -d \"'+outdir+'\" ];then ' +
+        'cd \"'+outdir+'\" && $(MAKE) clean;' +
+        'fi'
     ], description='Cleaning target \''+targetname+'\'', deps=['FORCE'])
     cfg.make.dependencies('clean', targetname+'_clean')
 
