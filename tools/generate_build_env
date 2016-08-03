@@ -64,9 +64,10 @@ def main(argv):
 
     # get device list
     devices = []
-    for vendor in os.listdir(top+'/device'):
-        for device in os.listdir(top+'/device/'+vendor):
-            devices += [vendor+'/'+device]
+    if os.path.exists(top+'/device'):
+        for vendor in os.listdir(top+'/device'):
+            for device in os.listdir(top+'/device/'+vendor):
+                devices += [vendor+'/'+device]
     devices += ['CUSTOM']
 
     # device
