@@ -21,6 +21,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 int getppidex(int pid) {
     int _pid;
@@ -30,7 +31,10 @@ int getppidex(int pid) {
 
     sprintf(buf, "/proc/%d/stat", pid);
     FILE* f = fopen(buf,"r");
-    if(!f) return -1;
+    if(!f) {
+        fprintf(stderr, "can't open %s: %s\n", buf, strerror(errno));
+        return -1;
+    }
 
     if(fscanf(f, "%d %s %c %d", &_pid, buf, &state, &ppid)!=4) {
         ppid = -1;
@@ -72,7 +76,10 @@ int has_makeflags(int pid) {
     char buf[1024];
     sprintf(buf, "/proc/%d/environ", pid);
     FILE* f = fopen(buf,"r");
-    if(!f) return -1;
+    if(!f) {
+        fprintf(stderr, "can't open %s: %s\n", buf, strerror(errno));
+        return -1;
+    }
 
     char *nameval = NULL;
     size_t size = 0;
