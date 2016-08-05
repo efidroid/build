@@ -48,19 +48,6 @@ ifeq ($(WITH_KERNEL_UEFIAPI),1)
     DEFINES += LCD_VRAM_SIZE=$(LCD_VRAM_SIZE)
     CFLAGS += -DDEVICE_NVVARS_PARTITION=\"$(DEVICE_NVVARS_PARTITION)\"
 
-    # remove apps
-    MODULES := $(filter-out app/aboot,$(MODULES))
-    MODULES := $(filter-out app/clocktests,$(MODULES))
-    MODULES := $(filter-out app/nandwrite,$(MODULES))
-    MODULES := $(filter-out app/pcitests,$(MODULES))
-    MODULES := $(filter-out app/rpmbtests,$(MODULES))
-    MODULES := $(filter-out app/shell,$(MODULES))
-    MODULES := $(filter-out app/stringtests,$(MODULES))
-    MODULES := $(filter-out app/tests,$(MODULES))
-
-    # this uses timers which aren't available in UEFI
-    DEFINES := $(filter-out LONG_PRESS_POWER_ON=1,$(DEFINES))
-
     # disable LK debugging
     DEBUG := 0
 else
@@ -82,40 +69,5 @@ endif
 # optionally include device specific makefile
 -include $(EFIDROID_DEVICE_DIR)/lk_inc.mk
 
-# automatically set cflags for known configs
-ifeq ($(EMMC_BOOT),1)
-    CFLAGS += -D_EMMC_BOOT=1
-endif
-
-ifeq ($(SIGNED_KERNEL),1)
-    CFLAGS += -D_SIGNED_KERNEL=1
-endif
-
-ifeq ($(TARGET_BUILD_VARIANT),user)
-    CFLAGS += -DDISABLE_FASTBOOT_CMDS=1
-endif
-
-ifneq ($(PERSISTENT_RAM_ADDR),)
-    CFLAGS += -DPERSISTENT_RAM_ADDR=$(PERSISTENT_RAM_ADDR)
-endif
-
-ifneq ($(PERSISTENT_RAM_SIZE),)
-    CFLAGS += -DPERSISTENT_RAM_SIZE=$(PERSISTENT_RAM_SIZE)
-endif
-
-ifeq ($(WITH_DEBUG_LAST_KMSG),1)
-    CFLAGS += -DWITH_DEBUG_LAST_KMSG=1
-endif
-
-ifeq ($(WITH_KERNEL_UEFIAPI),1)
-    ifeq ($(DEBUG_ENABLE_UEFI_FBCON),1)
-        # enable FBCON
-        DEFINES += WITH_DEBUG_FBCON=1
-
-        CFLAGS += -DDEBUG_ENABLE_UEFI_FBCON=1
-    else
-        CFLAGS += -DDEBUG_ENABLE_UEFI_FBCON=0
-    endif
-endif
-
+# disable risky code and always force fastboot mode
 DEFINES += EFIDROID_SAFEBOOT=1
