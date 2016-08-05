@@ -27,6 +27,7 @@ ifeq ($(WITH_KERNEL_UEFIAPI),1)
     # remove exception related arch objects
     OBJS := $(filter-out arch/arm/exceptions.o,$(OBJS))
     OBJS := $(filter-out arch/arm/mmu.o,$(OBJS))
+    OBJS := $(filter-out arch/arm/mmu_lpae.o,$(OBJS))
     OBJS := $(filter-out arch/arm/thread.o,$(OBJS))
 
     # remove threading related kernel objects
