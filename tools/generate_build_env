@@ -19,6 +19,7 @@ import os.path
 import sys
 import os
 import argparse
+import subprocess
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../core'))
 from utils import *
@@ -53,6 +54,8 @@ def main(argv):
     parser = argparse.ArgumentParser(prog='lunch')
     parser.add_argument('--toolchain', dest='toolchain', action='store_const', const=True,
                         help='select toolchain')
+    parser.add_argument('--online', dest='online', action='store_const', const=True,
+                        help='include devices from EFIDroid repository')
     args = parser.parse_args(argv[1:])
 
     # toolchain
@@ -68,6 +71,18 @@ def main(argv):
         for vendor in os.listdir(top+'/device'):
             for device in os.listdir(top+'/device/'+vendor):
                 devices += [vendor+'/'+device]
+
+    if args.online:
+        p = subprocess.Popen(['git', 'ls-remote', '--heads', 'https://github.com/efidroid/device.git'], stdout=subprocess.PIPE)
+        data = p.communicate()[0]
+        if p.returncode != 0:
+            pr_fatal('can\'t get online devices')
+
+        for head in data.splitlines():
+            codename = head.split('refs/heads/')[1]
+            if not codename in devices:
+                devices += [codename]
+
     devices += ['CUSTOM']
 
     # device
@@ -90,6 +105,8 @@ def main(argv):
 if __name__ == '__main__':
     try:
         main(sys.argv[1:])
+    except SystemExit:
+        sys.exit(sys.exc_info()[1])
     except:
         pr_error('Error: %s' % sys.exc_info()[1])
         raise
