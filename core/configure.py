@@ -237,6 +237,7 @@ def parse_config(configfile, moduledir=None):
             configureenv = ''
             makeenv = ''
             configureflags = ''
+            generatorflags = ''
             linksource = False
             internalTarget = False
 
@@ -263,6 +264,8 @@ def parse_config(configfile, moduledir=None):
                 makeenv += config.get(section, 'makeenv')
             if config.has_option(section, 'configureflags'):
                 configureflags += config.get(section, 'configureflags')
+            if config.has_option(section, 'generatorflags'):
+                generatorflags += config.get(section, 'generatorflags')
             if config.has_option(section, 'linksource'):
                 linksource = config.get(section, 'linksource')=='1'
             if config.has_option(section, 'group'):
@@ -345,7 +348,7 @@ def parse_config(configfile, moduledir=None):
 
                 # add autogen target
                 if not generator=='configure':
-                    make_add_target(configfile, compiledir+'/configure', 'cd \"'+compiledir+'\" && ./'+generator, deps=compiledir+'/'+generator,\
+                    make_add_target(configfile, compiledir+'/configure', 'cd \"'+compiledir+'\" && ./'+generator+" "+generatorflags, deps=compiledir+'/'+generator,\
                                     description='Autoconfiguring target \''+targetname+'\'')
 
                 # add configure target
