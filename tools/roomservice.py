@@ -121,7 +121,7 @@ def get_from_manifest(devicename):
         lm = ElementTree.Element("manifest")
 
     for localpath in lm.findall("project"):
-        if re.search("android_device_.*_%s$" % device, localpath.get("name")):
+        if localpath.get("path") == "device/"+device:
             return localpath.get("path")
 
     # Devices originally from AOSP are in the main manifest...
@@ -132,7 +132,7 @@ def get_from_manifest(devicename):
         mm = ElementTree.Element("manifest")
 
     for localpath in mm.findall("project"):
-        if re.search("android_device_.*_%s$" % device, localpath.get("name")):
+        if localpath.get("path") == "device/"+device:
             return localpath.get("path")
 
     return None
