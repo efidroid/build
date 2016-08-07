@@ -711,8 +711,19 @@ def main(argv):
             raise Exception('Invalid device name')
 
         # check if device exists
-        if cfg.devicename and not os.path.isfile('device/'+cfg.devicename+'/config.ini'):
-            subprocess.call([cfg.top+"/build/tools/roomservice.py", cfg.devicename])
+        roomservicerc = 0
+        if cfg.devicename:
+            # run roomservice
+            if not os.path.isfile('device/'+cfg.devicename+'/config.ini'):
+                roomservicerc = subprocess.call([cfg.top+'/build/tools/roomservice.py', cfg.devicename])
+            else:
+                roomservicerc = subprocess.call([cfg.top+'/build/tools/roomservice.py', cfg.devicename, 'true'])
+
+            # check return code
+            if roomservicerc != 0:
+                raise Exception('roomservice error: %d' % (roomservicerc))
+
+            # check if we finally have a device dir now
             if not os.path.isfile('device/'+cfg.devicename+'/config.ini'):
                 raise Exception('Device does not exist')
 
