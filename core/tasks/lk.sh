@@ -81,6 +81,28 @@ DTBPATCHEDDIR="$LK_OUT/dtbpatched_out"
 DTIMG_PATCHED="$LK_OUT/dt_patched.img"
 FDT_PATCHED="$LK_OUT/fdt_patched.img"
 
+# pagesize
+if [ ! -z "$BOOTIMG_PAGESIZE" ];then
+    LK_MKBOOTIMG_ADDITIONAL_FLAGS="$LK_MKBOOTIMG_ADDITIONAL_FLAGS --pagesize $BOOTIMG_PAGESIZE"
+fi
+
+# additional args
+if [ ! -z "$BOOTIMG_ADDITIONAL_ARGS" ];then
+    LK_MKBOOTIMG_ADDITIONAL_FLAGS="$LK_MKBOOTIMG_ADDITIONAL_FLAGS $BOOTIMG_ADDITIONAL_ARGS"
+fi
+
+# device tree
+if [ ! -z "$BOOTIMG_DT" ];then
+    LK_MKBOOTIMG_ADDITIONAL_FLAGS_ORIGDTB="$LK_MKBOOTIMG_ADDITIONAL_FLAGS --dt $BOOTIMG_DT"
+    LK_MKBOOTIMG_ADDITIONAL_FLAGS="$LK_MKBOOTIMG_ADDITIONAL_FLAGS --dt $DTIMG_PATCHED"
+fi
+
+
+########################################
+#               COMMON                 #
+########################################
+
+# the stock bootloader needs this to retreive the appended FDT offset
 GenerateKernelHeader() {
     C="$LK_OUT/tmp.c"
     BIN="$LK_OUT/tmp"
@@ -107,29 +129,7 @@ GenerateKernelHeader() {
     "$BIN" >> "$HEADER_OUT"
 }
 
-GenerateKernelImg() {
-    if [ ! -z "$BOOTIMG_APPENDED_FDT" ];then
-        # header + LK
-        LK_SIZE="$(( 0x30 + $(stat -L -c %s $LK_BINARY) ))"
-
-        # write header
-        rm -f "$LK_BINARY_FINAL"
-        rm -f "$LK_BINARY_FINAL_ORIGDTB"
-        GenerateKernelHeader "$LK_SIZE" "$LK_BINARY_FINAL"
-
-        # write LK, duplicate for origdtb version
-        cat "$LK_BINARY" >> "$LK_BINARY_FINAL"
-        cp "$LK_BINARY_FINAL" "$LK_BINARY_FINAL_ORIGDTB"
-
-        # write fdt
-        cat "$FDT_PATCHED" >> "$LK_BINARY_FINAL"
-        cat "$BOOTIMG_APPENDED_FDT" >> "$LK_BINARY_FINAL_ORIGDTB"
-    else
-        cp "$LK_BINARY" "$LK_BINARY_FINAL"
-        cp "$LK_BINARY" "$LK_BINARY_FINAL_ORIGDTB"
-    fi
-}
-
+# pre-parse and minify devicetree
 GeneratePatchedDeviceTree() {
     if [ ! -z "$BOOTIMG_DT" ] || [ ! -z "$BOOTIMG_APPENDED_FDT" ]; then
         # cleanup
@@ -159,28 +159,76 @@ GeneratePatchedDeviceTree() {
     fi
 }
 
-# pagesize
-if [ ! -z "$BOOTIMG_PAGESIZE" ];then
-    LK_MKBOOTIMG_ADDITIONAL_FLAGS="$LK_MKBOOTIMG_ADDITIONAL_FLAGS --pagesize $BOOTIMG_PAGESIZE"
-fi
 
-# additional args
-if [ ! -z "$BOOTIMG_ADDITIONAL_ARGS" ];then
-    LK_MKBOOTIMG_ADDITIONAL_FLAGS="$LK_MKBOOTIMG_ADDITIONAL_FLAGS $BOOTIMG_ADDITIONAL_ARGS"
-fi
+########################################
+#                 LK                   #
+########################################
 
-# device tree
-if [ ! -z "$BOOTIMG_DT" ];then
-    LK_MKBOOTIMG_ADDITIONAL_FLAGS_ORIGDTB="$LK_MKBOOTIMG_ADDITIONAL_FLAGS --dt $BOOTIMG_DT"
-    LK_MKBOOTIMG_ADDITIONAL_FLAGS="$LK_MKBOOTIMG_ADDITIONAL_FLAGS --dt $DTIMG_PATCHED"
-fi
+CompileLKKernelFinal() {
+    if [ ! -z "$BOOTIMG_APPENDED_FDT" ];then
+        # header + LK
+        LK_SIZE="$(( 0x30 + $(stat -L -c %s $LK_BINARY) ))"
 
-CompileLK() {
+        # write header
+        rm -f "$LK_BINARY_FINAL"
+        rm -f "$LK_BINARY_FINAL_ORIGDTB"
+        GenerateKernelHeader "$LK_SIZE" "$LK_BINARY_FINAL"
+
+        # write LK, duplicate for origdtb version
+        cat "$LK_BINARY" >> "$LK_BINARY_FINAL"
+        cp "$LK_BINARY_FINAL" "$LK_BINARY_FINAL_ORIGDTB"
+
+        # write fdt
+        cat "$FDT_PATCHED" >> "$LK_BINARY_FINAL"
+        cat "$BOOTIMG_APPENDED_FDT" >> "$LK_BINARY_FINAL_ORIGDTB"
+    else
+        cp "$LK_BINARY" "$LK_BINARY_FINAL"
+        cp "$LK_BINARY" "$LK_BINARY_FINAL_ORIGDTB"
+    fi
+}
+
+CompileLKKernel() {
+    mkdir -p "$LK_OUT"
+    "$EFIDROID_SHELL" -c "$LK_ENV_NOUEFI \"$MAKEFORWARD\" \"$EFIDROID_MAKE\" -C \"$LK_DIR\" $LK_TARGET"
+    GeneratePatchedDeviceTree
+    CompileLKKernelFinal
+}
+
+CompileLKBootImage() {
+    pr_alert "Installing: $TARGET_OUT/lk.img"
+    set -x
+	"$HOST_MKBOOTIMG_OUT/mkbootimg" \
+		--kernel "$LK_BINARY_FINAL" \
+		--ramdisk /dev/null \
+		--base "$BOOTIMG_BASE" \
+		$LK_MKBOOTIMG_ADDITIONAL_FLAGS \
+		-o "$TARGET_OUT/lk.img"
+    set +x
+
+    if [ ! -z "$BOOTIMG_DT" ] || [ ! -z "$BOOTIMG_APPENDED_FDT" ]; then
+        pr_alert "Installing: $TARGET_OUT/lk_origdtb.img"
+        set -x
+	    "$HOST_MKBOOTIMG_OUT/mkbootimg" \
+		    --kernel "$LK_BINARY_FINAL_ORIGDTB" \
+		    --ramdisk /dev/null \
+		    --base "$BOOTIMG_BASE" \
+		    $LK_MKBOOTIMG_ADDITIONAL_FLAGS_ORIGDTB \
+		    -o "$TARGET_OUT/lk_origdtb.img"
+        set +x
+    fi
+}
+
+
+########################################
+#                UEFI                  #
+########################################
+
+CompileLKUEFIKernel() {
     mkdir -p "$LK_OUT"
     "$EFIDROID_SHELL" -c "$LK_ENV \"$MAKEFORWARD\" \"$EFIDROID_MAKE\" -C \"$LK_DIR\" $LK_TARGET"
 }
 
-CompileLKEDK2() {
+CompileLKUEFIKernelFinal() {
     C="$LK_OUT/tmp.c"
     BIN="$LK_OUT/tmp"
     LKEDK2BIN="$LK_OUT/build-$LK_TARGET/lk-edk2.bin"
@@ -226,33 +274,51 @@ CompileLKEDK2() {
     fi
 }
 
-CompileLKSideload() {
+CompileUEFIBootImage() {
     # generate meta data
     "$TOP/build/tools/create_efidroid_metadata" "$DEVICE" > "$TARGET_OUT/efidroid_meta.bin"
 
-    pr_alert "Installing: $TARGET_OUT/lk_sideload.img"
-    set -x
-	"$HOST_MKBOOTIMG_OUT/mkbootimg" \
-		--kernel "$LK_BINARY_FINAL" \
-		--ramdisk /dev/null \
-		--base "$BOOTIMG_BASE" \
-		$LK_MKBOOTIMG_ADDITIONAL_FLAGS \
-		-o "$TARGET_OUT/lk_sideload.img"
-    set +x
-    cat "$TARGET_OUT/efidroid_meta.bin" >> "$TARGET_OUT/lk_sideload.img"
-
-    pr_alert "Installing: $TARGET_OUT/lk_sideload_recovery.img"
-    set -x
-	"$HOST_MKBOOTIMG_OUT/mkbootimg" \
-		--kernel "$LK_BINARY_FINAL" \
-		--ramdisk /dev/null \
-		--base "$BOOTIMG_BASE" \
-        --cmdline "uefi.bootmode=recovery" \
-		$LK_MKBOOTIMG_ADDITIONAL_FLAGS \
-		-o "$TARGET_OUT/lk_sideload_recovery.img"
-    set +x
-    cat "$TARGET_OUT/efidroid_meta.bin" >> "$TARGET_OUT/lk_sideload_recovery.img"
+    for part in $DEVICE_UEFI_PARTITIONS; do
+        pr_alert "Installing: $TARGET_OUT/uefi_$part.img"
+        set -x
+	    "$HOST_MKBOOTIMG_OUT/mkbootimg" \
+		    --kernel "$LK_BINARY_FINAL" \
+		    --ramdisk /dev/null \
+		    --base "$BOOTIMG_BASE" \
+            --cmdline "uefi.bootpart=$part" \
+		    $LK_MKBOOTIMG_ADDITIONAL_FLAGS \
+		    -o "$TARGET_OUT/uefi_$part.img"
+        set +x
+        cat "$TARGET_OUT/efidroid_meta.bin" >> "$TARGET_OUT/uefi_$part.img"
+    done
 }
+
+
+########################################
+#                 OTA                  #
+########################################
+
+BuildOtaPackage() {
+    # cleanup
+    rm -Rf "$MODULE_OUT/*"
+
+    # copy UEFI partition images
+    for part in $DEVICE_UEFI_PARTITIONS; do
+        cp "$TARGET_OUT/uefi_$part.img" "$MODULE_OUT/$part.img"
+    done
+
+    # create zip
+    ZIPNAME="$TARGET_OUT/otapackage-$(date +'%Y%m%d').zip"
+    cd "$MODULE_OUT" &&
+        zip -r "$ZIPNAME" .
+
+    pr_alert "Installing: $ZIPNAME"
+}
+
+
+########################################
+#              CLEANUP                 #
+########################################
 
 Clean() {
     "$EFIDROID_SHELL" -c "$LK_ENV \"$MAKEFORWARD\" \"$EFIDROID_MAKE\" -C \"$LK_DIR\" $LK_TARGET clean"
@@ -260,48 +326,4 @@ Clean() {
 
 DistClean() {
     rm -Rf $LK_OUT/*
-}
-
-CompileLKNoUEFI() {
-    mkdir -p "$LK_OUT"
-    "$EFIDROID_SHELL" -c "$LK_ENV_NOUEFI \"$MAKEFORWARD\" \"$EFIDROID_MAKE\" -C \"$LK_DIR\" $LK_TARGET"
-    GeneratePatchedDeviceTree
-    GenerateKernelImg
-}
-
-CompileLKSideloadNoUEFI() {
-    pr_alert "Installing: $TARGET_OUT/lk_nouefi_sideload.img"
-    set -x
-	"$HOST_MKBOOTIMG_OUT/mkbootimg" \
-		--kernel "$LK_BINARY_FINAL" \
-		--ramdisk /dev/null \
-		--base "$BOOTIMG_BASE" \
-		$LK_MKBOOTIMG_ADDITIONAL_FLAGS \
-		-o "$TARGET_OUT/lk_nouefi_sideload.img"
-    set +x
-
-    if [ ! -z "$BOOTIMG_DT" ] || [ ! -z "$BOOTIMG_APPENDED_FDT" ]; then
-        pr_alert "Installing: $TARGET_OUT/lk_nouefi_sideload_origdtb.img"
-        set -x
-	    "$HOST_MKBOOTIMG_OUT/mkbootimg" \
-		    --kernel "$LK_BINARY_FINAL_ORIGDTB" \
-		    --ramdisk /dev/null \
-		    --base "$BOOTIMG_BASE" \
-		    $LK_MKBOOTIMG_ADDITIONAL_FLAGS_ORIGDTB \
-		    -o "$TARGET_OUT/lk_nouefi_sideload_origdtb.img"
-        set +x
-    fi
-}
-
-BuildOtaPackage() {
-    rm -Rf "$MODULE_OUT/*"
-    cp "$TARGET_OUT/lk_sideload.img" "$MODULE_OUT/boot.img"
-    cp "$TARGET_OUT/lk_sideload_recovery.img" "$MODULE_OUT/recovery.img"
-
-    ZIPNAME="$TARGET_OUT/otapackage-$(date +'%Y%m%d').zip"
-
-    cd "$MODULE_OUT" &&
-        zip -r "$ZIPNAME" .
-
-    pr_alert "Installing: $ZIPNAME"
 }

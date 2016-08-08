@@ -109,3 +109,11 @@ class FSTab:
                 return [entry.blk_device, path]
 
         return None
+
+    def getUEFIPartitionNameList(self):
+        rc = []
+        for entry in self.entries:
+            if 'uefi' in entry.fs_options:
+                rc.append(entry.mount_point[1:])
+
+        return rc

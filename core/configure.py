@@ -759,6 +759,11 @@ def main(argv):
             raise Exception('fstab doesn\'t have a esp partition')
 
         setvar('DEVICE_DIR', cfg.top+'/device/'+cfg.devicename);
+
+        uefiparts = fstab.getUEFIPartitionNameList()
+        if len(uefiparts) < 1:
+            raise Exception('fstab doesn\'t have any uefi partitions')
+        setvar('DEVICE_UEFI_PARTITIONS', ' '.join(uefiparts))
     else:
         cfg.variableinc = cfg.out+'/variables_host.mk'
         cfg.configinclude_name = cfg.out+'/config_host'
