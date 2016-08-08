@@ -79,7 +79,9 @@ def main(argv):
 
     # build mkbootimg
     if not os.path.isfile(UNPACKBOOTIMG):
-        subprocess.call(["make", "host_mkbootimg"])
+        rc = subprocess.call(["make", "host_mkbootimg"])
+        if rc != 0:
+            raise Exception('build error: %u' % (rc))
         if not os.path.isfile(UNPACKBOOTIMG):
             raise Exception('can\'t find unpackbootimg')
 
@@ -133,7 +135,9 @@ def main(argv):
         pass
 
     # unpack boot image
-    subprocess.call([UNPACKBOOTIMG, '-i', bootimg, '-o', OUT], stdout=subprocess.PIPE)
+    rc = subprocess.call([UNPACKBOOTIMG, '-i', bootimg, '-o', OUT], stdout=subprocess.PIPE)
+    if rc != 0:
+        raise Exception('unpackbootimg error: %u' % (rc))
     
     BOOTIMGPREFIX = OUT+'/'+os.path.basename(bootimg)+'-'
 
