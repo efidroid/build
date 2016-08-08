@@ -90,5 +90,6 @@
 [Components]
 
 [BuildOptions]
+  GCC:*_*_*_CC_FLAGS      = -nostdinc -nostdlib
   GCC:*_*_*_CXX_FLAGS     = -nostdinc -nostdlib
 
