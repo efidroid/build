@@ -48,8 +48,12 @@ def dir2ramdisk(path, out, gap=0):
     if os.path.exists(out):
         os.remove(out)
 
-    subprocess.call(['mkdosfs', '-F', '12', '-C', out, str(blocks)], stdout=open('/dev/null', 'w'))
-    subprocess.call(['mcopy', '-i', out, '-s'] + dirlist(path) + ['::/'])
+    rc = subprocess.call(['mkdosfs', '-F', '12', '-C', out, str(blocks)], stdout=open('/dev/null', 'w'))
+    if rc != 0:
+        raise Exception('mkdosfs error: %u' % (rc))
+    rc = subprocess.call(['mcopy', '-i', out, '-s'] + dirlist(path) + ['::/'])
+    if rc != 0:
+        raise Exception('mcopy error: %u' % (rc))
 
 def str2file(path, string):
     with open(path, 'w') as f:
@@ -147,7 +151,9 @@ def main(argv):
         str2file(dt, args.bootfile)
 
     # create boot image
-    subprocess.call(['mkbootimg', '--kernel', kernel, '--ramdisk', ramdisk, '--cmdline', cmdline, '--dt', dt, '-o', args.bootimg])
+    rc = subprocess.call(['mkbootimg', '--kernel', kernel, '--ramdisk', ramdisk, '--cmdline', cmdline, '--dt', dt, '-o', args.bootimg])
+    if rc != 0:
+        raise Exception('mkbootimg error: %u' % (rc))
 
     return 0
 
