@@ -51,6 +51,23 @@ endif
 # disable target display driver
 ifeq ($(DISPLAY_2NDSTAGE),1)
     OBJS := $(filter-out target/$(TARGET)/target_display.o,$(OBJS))
+
+    # detect MDP version
+    ifneq ($(filter platform/msm_shared/mdp3.o,$(OBJS)),)
+        DEFINES += WITH_LIB_2NDSTAGE_DISPLAY_MDP3=1
+    endif
+    ifneq ($(filter platform/msm_shared/mdp4.o,$(OBJS)),)
+        DEFINES += WITH_LIB_2NDSTAGE_DISPLAY_MDP4=1
+    endif
+    ifneq ($(filter platform/msm_shared/mdp5.o,$(OBJS)),)
+        DEFINES += WITH_LIB_2NDSTAGE_DISPLAY_MDP5=1
+    endif
+
+    # add our modules
+    MODULES += \
+        $(EFIDROID_TOP)/uefi/lkmodules/shared/lib/2ndstage_display
+
+    DEFINES += WITH_LIB_2NDSTAGE_DISPLAY=1
 endif
 
 # automatically set cflags for known configs
