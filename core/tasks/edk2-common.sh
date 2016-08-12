@@ -118,7 +118,11 @@ EDK2Setup() {
     ln -s "$TOP/modules" "$EDK2_OUT/EFIDroidModules"
 
     # (re)compile BaseTools
-    MAKEFLAGS= "$EFIDROID_MAKE" -C "$EDK2_OUT/BaseTools"
+    "$EFIDROID_SHELL" -c "\
+        unset ARCH && \
+        unset MAKEFLAGS && \
+        \"$EFIDROID_MAKE\" -C \"$EDK2_OUT/BaseTools\" \
+    "
 }
 
 CompileEDK2() {
