@@ -329,7 +329,7 @@ def parse_config(configfile, moduledir=None):
                 elif os.path.isfile(moduledir+'/configure'):
                     generator = 'configure'
                 else:
-                    raise Exception('no generator found')
+                    raise Exception('no generator found for '+moduledir)
 
                 # add CC and CXX environment variables
                 generic_env = ''
@@ -707,7 +707,7 @@ def main(argv):
     if cfg.devicename:
         tmp = cfg.devicename.split('/')
         if len(tmp) != 2:
-            raise Exception('Invalid device name')
+            raise Exception('Invalid device name: '+cfg.devicename)
 
         # check if device exists
         roomservicerc = 0
@@ -724,7 +724,7 @@ def main(argv):
 
             # check if we finally have a device dir now
             if not os.path.isfile('device/'+cfg.devicename+'/config.ini'):
-                raise Exception('Device does not exist')
+                raise Exception('Device \''+cfg.devicename+'\' does not exist')
 
         setvar('DEVICE', cfg.devicename)
         setvar('DEVICEVENDOR', tmp[0])
