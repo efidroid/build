@@ -687,7 +687,6 @@ def main(argv):
         pass
 
     # basic variables
-    setvar('builddir', cfg.out)
     setvar('OUT', cfg.out)
     setvar('TOP', cfg.top)
     setvar('HOST_OUT', getvar('OUT')+'/host')
@@ -727,18 +726,16 @@ def main(argv):
             if not os.path.isfile('device/'+cfg.devicename+'/config.ini'):
                 raise Exception('Device does not exist')
 
-        cfg.devicenamenice = cfg.devicename.replace('/','-')
-        cfg.variableinc = cfg.out+'/variables_'+cfg.devicenamenice+'.mk'
-
-        cfg.configinclude_name = cfg.out+'/config_'+cfg.devicenamenice
-        cfg.buildfname = cfg.out+'/build_'+cfg.devicenamenice+'.mk'
-
         setvar('DEVICE', cfg.devicename)
         setvar('DEVICEVENDOR', tmp[0])
         setvar('DEVICENAME', tmp[1])
         setvar('TARGET_OUT', cfg.out+'/target/'+cfg.devicename)
         setvar('UEFIRD_DIR', getvar('TARGET_OUT')+'/uefird')
         setvar('UEFIRD_CPIO', getvar('UEFIRD_DIR')+'.cpio')
+
+        cfg.devicenamenice = cfg.devicename.replace('/','-')
+        cfg.configinclude_name = getvar('TARGET_OUT')+'/config'
+        cfg.buildfname = getvar('TARGET_OUT')+'/build.mk'
 
         # parse fstab
         setvar('DEVICE_FSTAB', cfg.top+'/device/'+cfg.devicename+'/fstab.multiboot')
@@ -764,10 +761,17 @@ def main(argv):
         if len(uefiparts) < 1:
             raise Exception('fstab doesn\'t have any uefi partitions')
         setvar('DEVICE_UEFI_PARTITIONS', ' '.join(uefiparts))
+
+        # create target dir
+        if not os.path.isdir(getvar('TARGET_OUT')):
+            os.makedirs(getvar('TARGET_OUT'))
     else:
-        cfg.variableinc = cfg.out+'/variables_host.mk'
-        cfg.configinclude_name = cfg.out+'/config_host'
-        cfg.buildfname = cfg.out+'/build_host.mk'
+        cfg.configinclude_name = getvar('HOST_OUT')+'/config'
+        cfg.buildfname = getvar('HOST_OUT')+'/build.mk'
+
+    # create host dir
+    if not os.path.isdir(getvar('HOST_OUT')):
+        os.makedirs(getvar('HOST_OUT'))
 
     # open output files
     cfg.configinclude_sh = open(cfg.configinclude_name+'.sh', "w")
@@ -784,7 +788,8 @@ def main(argv):
     setvar('HOSTTYPE', hosttype)
 
     # include file
-    cfg.make.include(cfg.variableinc)
+    cfg.configinclude_mk = cfg.configinclude_name+'.mk'
+    cfg.make.include(cfg.configinclude_mk)
     cfg.make.newline()
 
     # add force target
@@ -965,7 +970,7 @@ def main(argv):
 
     # generate includes file
     genvarinc()
-    makefile = open(cfg.variableinc, "w")
+    makefile = open(cfg.configinclude_mk, "w")
     makefile.write(makeoutvars.getvalue())
     makefile.close()
     makeoutvars.close()
