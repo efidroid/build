@@ -45,9 +45,9 @@ $(MAKECMDGOALS) all: makeforward makeforward_pipes
 	\
 	# run build \
 	if [ "$(DEVICEID)" == "" ];then \
-		$(MAKE) -f out/build_host.mk $(MAKECMDGOALS); \
+		$(MAKE) -f out/host/build.mk $(MAKECMDGOALS); \
 	else \
-		$(MAKE) -f out/build_$(subst /,-,$(DEVICEID)).mk $(MAKECMDGOALS); \
+		$(MAKE) -f out/target/$(DEVICEID)/build.mk $(MAKECMDGOALS); \
 	fi; \
 	\
 	# compute and show build time \
