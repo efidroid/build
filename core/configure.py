@@ -68,6 +68,15 @@ def expandmodulevars(string, module, projecttype):
 
     return None
 
+def expandmodulevars_novars(string, module_out, module_src):
+
+    if module_out and module_src:
+        string = string.replace('$(%s)' % 'MODULE_OUT', module_out)
+        string = string.replace('$(%s)' % 'MODULE_SRC', module_src)
+        return string
+
+    return None
+
 def evaluatevars():
     # replace variables
     processed = 1
@@ -289,6 +298,10 @@ def parse_config(configfile, moduledir=None):
                 targetout = getvar('TARGET_OUT')+'/'+outdir
             elif targetcategory=='host':
                 targetout = getvar('HOST_OUT')+'/'+outdir
+
+            # expand some of the options
+            configureflags = expandmodulevars_novars(configureflags, targetout, moduledir)
+            generatorflags = expandmodulevars_novars(generatorflags, targetout, moduledir)
 
             # add rule
             command = ''
