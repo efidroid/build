@@ -130,7 +130,7 @@ CompileEDK2() {
     DEFINES="$2"
 
     # get number of jobs
-    MAKEPATH=$($MAKEFORWARD_PIPES)
+    MAKEPATH=$($MAKEFORWARD)
     if [ -p "$MAKEPATH/3" ];then
         plussigns=$(timeout -k 1 1 cat "$MAKEPATH/3" ; exit 0)
         numjobs=$(($(echo -n $plussigns | wc -c) + 1))

@@ -34,7 +34,7 @@ export PATH := $(PWD)/build/tools:$(PATH)
 export PATH := $(PWD)/out/host/host_dtc/dtc:$(PATH)
 
 .PHONY: $(MAKECMDGOALS) all
-$(MAKECMDGOALS) all: makeforward makeforward_pipes
+$(MAKECMDGOALS) all: makeforward
 	@python ./build/core/configure.py
 	
 	@echo -n "" > out/buildtime_variables.sh
@@ -79,9 +79,3 @@ out/host/makeforward: build/tools/makeforward.c
 	@mkdir -p out/host
 	@gcc -Wall -Wextra -Wshadow -Werror $< -o $@
 makeforward: out/host/makeforward
-
-# MAKEFORWARD_PIPES
-out/host/makeforward_pipes: build/tools/makeforward_pipes.c
-	@mkdir -p out/host
-	@gcc -Wall -Wextra -Wshadow -Werror $< -o $@
-makeforward_pipes: out/host/makeforward_pipes

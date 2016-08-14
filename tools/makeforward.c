@@ -43,7 +43,6 @@ out:
     return pid;
 }
 
-
 int getppidex(int pid) {
     int _pid;
     char buf[256];
@@ -122,12 +121,6 @@ int has_makeflags(int pid) {
 int main(int argc, char** argv) {
     char buf[PATH_MAX];
 
-    // check arguments
-    if(argc<=1) {
-        fprintf(stderr, "No arguments given!\n");
-        exit(-1);
-    }
-
     // check if any of our parents is 'make'
     int pid = getpidproc();
     if(has_makeflags(pid)!=1) {
@@ -149,15 +142,24 @@ int main(int argc, char** argv) {
         exit(-1);
     }
 
-    // connect jobserver pipes
-    snprintf(buf, sizeof(buf), "/proc/%d/fd/%d", pid, 3);
-    open(buf, O_RDONLY);    
-    snprintf(buf, sizeof(buf), "/proc/%d/fd/%d", pid, 4);
-    open(buf, O_WRONLY);
+    // check arguments
+    if(argc<=1) {
+        // print path to the make process' fd's
+        snprintf(buf, sizeof(buf), "/proc/%d/fd", pid);
+        printf("%s", buf);
+        return 0;
+    }
+    else {
+        // connect jobserver pipes
+        snprintf(buf, sizeof(buf), "/proc/%d/fd/%d", pid, 3);
+        open(buf, O_RDONLY);
+        snprintf(buf, sizeof(buf), "/proc/%d/fd/%d", pid, 4);
+        open(buf, O_WRONLY);
 
-    // run requested binary
-    int rc = execvp(argv[1], argv+1);
+        // run requested binary
+        int rc = execvp(argv[1], argv+1);
 
-    fprintf(stderr, "execve returned! %d\n", rc);
-    return -1;
+        fprintf(stderr, "execve returned! %d\n", rc);
+        return -1;
+    }
 }

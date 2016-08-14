@@ -704,7 +704,6 @@ def main(argv):
     setvar('TOP', cfg.top)
     setvar('HOST_OUT', getvar('OUT')+'/host')
     setvar('MAKEFORWARD', getvar('HOST_OUT')+'/makeforward')
-    setvar('MAKEFORWARD_PIPES', getvar('HOST_OUT')+'/makeforward_pipes')
     setvar('BUILDTYPE', cfg.buildtype)
 
     # get target arch
