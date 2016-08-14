@@ -23,6 +23,26 @@
 #include <string.h>
 #include <errno.h>
 
+int getpidproc(void) {
+    int pid;
+
+    FILE* f = fopen("/proc/self/stat","r");
+    if(!f) {
+        fprintf(stderr, "can't open /proc/self/stat: %s\n", strerror(errno));
+        return -1;
+    }
+
+    if(fscanf(f, "%d", &pid)!=1) {
+        pid = -1;
+        goto out;
+    }
+
+out:
+    fclose(f);
+
+    return pid;
+}
+
 int getppidex(int pid) {
     int _pid;
     char buf[256];
@@ -102,8 +122,8 @@ int main(void) {
     char buf[PATH_MAX];
 
     // check if any of our parents is 'make'
-    int pid = getpid();
-    if(!has_makeflags(pid)) {
+    int pid = getpidproc();
+    if(has_makeflags(pid)!=1) {
         fprintf(stderr, "Not running in a make context!\n");
         exit(-1);
     }
