@@ -23,16 +23,17 @@
 #include <string.h>
 #include <errno.h>
 
-int getpidproc(void) {
+int getpidproc(void)
+{
     int pid;
 
-    FILE* f = fopen("/proc/self/stat","r");
-    if(!f) {
+    FILE *f = fopen("/proc/self/stat","r");
+    if (!f) {
         fprintf(stderr, "can't open /proc/self/stat: %s\n", strerror(errno));
         return -1;
     }
 
-    if(fscanf(f, "%d", &pid)!=1) {
+    if (fscanf(f, "%d", &pid)!=1) {
         pid = -1;
         goto out;
     }
@@ -43,20 +44,21 @@ out:
     return pid;
 }
 
-int getppidex(int pid) {
+int getppidex(int pid)
+{
     int _pid;
     char buf[256];
     char state;
     int ppid;
 
     sprintf(buf, "/proc/%d/stat", pid);
-    FILE* f = fopen(buf,"r");
-    if(!f) {
+    FILE *f = fopen(buf,"r");
+    if (!f) {
         fprintf(stderr, "can't open %s: %s\n", buf, strerror(errno));
         return -1;
     }
 
-    if(fscanf(f, "%d %s %c %d", &_pid, buf, &state, &ppid)!=4) {
+    if (fscanf(f, "%d %s %c %d", &_pid, buf, &state, &ppid)!=4) {
         ppid = -1;
         goto out;
     }
@@ -67,89 +69,91 @@ out:
     return ppid;
 }
 
-ssize_t getenvvar(char **lineptr, size_t *n, FILE *stream) {
-    if(*lineptr==NULL) {
+ssize_t getenvvar(char **lineptr, size_t *n, FILE *stream)
+{
+    if (*lineptr==NULL) {
         *n = 100;
         *lineptr = malloc(*n);
     }
-    
+
     size_t num = 0;
     int c;
-    while((c=fgetc(stream))!=EOF) {
-        if(num+1>*n) {
+    while ((c=fgetc(stream))!=EOF) {
+        if (num+1>*n) {
             *lineptr = realloc(*lineptr, ++(*n));
-            if(!(*lineptr)) break;
+            if (!(*lineptr)) break;
         }
 
         (*lineptr)[num++] = (char)c;
-        if(c==0) break;
+        if (c==0) break;
     }
 
-    if(c==EOF && c && num)
+    if (c==EOF && c && num)
         (*lineptr)[num++] = 0;
 
     return num;
 }
 
-int has_makeflags(int pid) {
+int has_makeflags(int pid)
+{
     int rc = 0;
     char buf[1024];
     sprintf(buf, "/proc/%d/environ", pid);
-    FILE* f = fopen(buf,"r");
-    if(!f) {
+    FILE *f = fopen(buf,"r");
+    if (!f) {
         fprintf(stderr, "can't open %s: %s\n", buf, strerror(errno));
         return -1;
     }
 
     char *nameval = NULL;
     size_t size = 0;
-    const char* needle = "MAKEFLAGS=";
-    while(getenvvar(&nameval, &size, f)>0) {
-        if(!strncmp(nameval, needle, strlen(needle))) {
+    const char *needle = "MAKEFLAGS=";
+    while (getenvvar(&nameval, &size, f)>0) {
+        if (!strncmp(nameval, needle, strlen(needle))) {
             rc = 1;
             break;
         }
     }
 
-    if(nameval)
+    if (nameval)
         free(nameval);
 
     fclose(f);
     return rc;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv)
+{
     char buf[PATH_MAX];
 
     // check if any of our parents is 'make'
     int pid = getpidproc();
-    if(has_makeflags(pid)!=1) {
+    if (has_makeflags(pid)!=1) {
         fprintf(stderr, "Not running in a make context!\n");
         exit(-1);
     }
 
     // get first parent without MAKEFLAGS
     int found = 0;
-    while((pid=getppidex(pid))>=0) {
-        if(has_makeflags(pid)!=1) {
+    while ((pid=getppidex(pid))>=0) {
+        if (has_makeflags(pid)!=1) {
             found = 1;
             break;
         }
     }
 
-    if(found==0) {
+    if (found==0) {
         fprintf(stderr, "make not found!\n");
         exit(-1);
     }
 
     // check arguments
-    if(argc<=1) {
+    if (argc<=1) {
         // print path to the make process' fd's
         snprintf(buf, sizeof(buf), "/proc/%d/fd", pid);
         printf("%s", buf);
         return 0;
-    }
-    else {
+    } else {
         // connect jobserver pipes
         snprintf(buf, sizeof(buf), "/proc/%d/fd/%d", pid, 3);
         open(buf, O_RDONLY);
