@@ -40,6 +40,11 @@ Compile() {
     fi
 
     "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$MODULE_DIR" $BB_ARGS all
+
+    # libbusybox.a
+    "${GCC_LINUX_TARGET_PREFIX}ar" rcs "$MODULE_OUT/libbusybox.a"  $(find "$MODULE_OUT" -name "*.o" | grep -v "/scripts/" | grep -v "built-in.o" | xargs)
+    "${GCC_LINUX_TARGET_PREFIX}objcopy" --redefine-sym main=busybox_main "$MODULE_OUT/libbusybox.a"
+    "${GCC_LINUX_TARGET_PREFIX}objcopy" --redefine-sym xmkstemp=busybox_xmkstemp "$MODULE_OUT/libbusybox.a"
 }
 
 Clean() {
