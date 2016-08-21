@@ -114,6 +114,9 @@ class FSTab:
         rc = []
         for entry in self.entries:
             if 'uefi' in entry.fs_options:
+                if entry.fs_type != 'emmc':
+                    raise Exception('UEFI partition %s is not of type emmc' % (entry.blk_device))
+
                 rc.append(entry.mount_point[1:])
 
         return rc
