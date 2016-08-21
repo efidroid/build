@@ -348,6 +348,7 @@ def parse_config(configfile, moduledir=None):
                 generic_env = ''
                 if targetcategory == 'target':
                     generic_env += ' CC="'+getvar('GCC_LINUX_TARGET_NAME')+'-gcc" CXX="'+getvar('GCC_LINUX_TARGET_NAME')+'-g++"'
+                    generic_env += ' PKG_CONFIG_DIR= PKG_CONFIG_LIBDIR= PKG_CONFIG_SYSROOT_DIR='
                 configureenv += generic_env
                 makeenv += generic_env
 
