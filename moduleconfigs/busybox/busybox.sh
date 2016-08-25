@@ -66,6 +66,7 @@ CompileAndroidApp() {
         EnableConfig CONFIG_KILL
         EnableConfig CONFIG_BASE64
         EnableConfig CONFIG_RM
+        EnableConfig CONFIG_REALPATH
 
         # blkid
         EnableConfig CONFIG_BLKID
