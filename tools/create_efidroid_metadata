@@ -83,13 +83,13 @@ def main(argv):
     out(struct.pack('<L', device_name_len))
 
     # write device name offset
-    out(struct.pack('<L', 32))
+    out(struct.pack('<L', 8 + 8*4))
 
     # write manifest size
     out(struct.pack('<L', len(manifest_data)+1))
 
     # write manifest name offset
-    out(struct.pack('<L', 32 + device_name_len))
+    out(struct.pack('<L', 8 + 8*4 + device_name_len))
 
     # write device name
     out_str(device_name, pad=True);
