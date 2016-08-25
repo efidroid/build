@@ -110,7 +110,7 @@ def main(argv):
 
     print('Metadata version: %u' % (ff_version))
     print('EFIDroid version: %s' % getEFIDroidReleaseVersionString(efidroid_version))
-    print('Build time: %s' % (time.ctime(timestamp)))
+    print('Build time: %s (%u)' % (time.ctime(timestamp), timestamp))
     print('EFI Specification: %u.%u' % ((efispec_version>>16)&0xffff, efispec_version&0xffff))
 
     # get devicename
