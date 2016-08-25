@@ -308,7 +308,7 @@ BuildOtaPackage() {
     done
 
     # create zip
-    ZIPNAME="$TARGET_OUT/otapackage-$(date +'%Y%m%d').zip"
+    ZIPNAME="$TARGET_OUT/otapackage-$(date +'%Y%m%d')-${DEVICE/\//_}.zip"
     cd "$MODULE_OUT" &&
         zip -r "$ZIPNAME" .
 
