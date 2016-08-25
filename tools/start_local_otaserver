@@ -15,9 +15,9 @@
 # limitations under the License.
 
 # get arguments
-SERVER_IP="$1"
-if [ "$SERVER_IP" == "" ];then
-    echo "You need to provide IP:PORT to bind the server to"
+SERVER_PORT="$1"
+if [ "$SERVER_PORT" == "" ];then
+    echo "Usage: start_localserver PORT"
     exit 1    
 fi
 if [ "$TOP" == "" ];then
@@ -41,4 +41,4 @@ ln -s "$TOP/device" "$SERVER_ROOT/device"
 
 # start server
 cd "$SERVER_ROOT"
-php -S "$SERVER_IP"
+python -m SimpleHTTPServer "$SERVER_PORT"
