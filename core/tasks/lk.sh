@@ -197,7 +197,7 @@ CompileLKKernel() {
 CompileLKBootImage() {
     pr_alert "Installing: $TARGET_OUT/lk.img"
     set -x
-	"$HOST_MKBOOTIMG_OUT/mkbootimg" \
+	"$TOP/build/tools/mkbootimg" \
 		--kernel "$LK_BINARY_FINAL" \
 		--ramdisk /dev/null \
 		--base "$BOOTIMG_BASE" \
@@ -208,7 +208,7 @@ CompileLKBootImage() {
     if [ ! -z "$BOOTIMG_DT" ] || [ ! -z "$BOOTIMG_APPENDED_FDT" ]; then
         pr_alert "Installing: $TARGET_OUT/lk_origdtb.img"
         set -x
-	    "$HOST_MKBOOTIMG_OUT/mkbootimg" \
+	    "$TOP/build/tools/mkbootimg" \
 		    --kernel "$LK_BINARY_FINAL_ORIGDTB" \
 		    --ramdisk /dev/null \
 		    --base "$BOOTIMG_BASE" \
@@ -281,7 +281,7 @@ CompileUEFIBootImage() {
     for part in $DEVICE_UEFI_PARTITIONS; do
         pr_alert "Installing: $TARGET_OUT/uefi_$part.img"
         set -x
-	    "$HOST_MKBOOTIMG_OUT/mkbootimg" \
+	    "$TOP/build/tools/mkbootimg" \
 		    --kernel "$LK_BINARY_FINAL" \
 		    --ramdisk /dev/null \
 		    --base "$BOOTIMG_BASE" \

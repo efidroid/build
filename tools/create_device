@@ -40,7 +40,7 @@ except ImportError:
     import configparser as ConfigParser
 
 OUT = 'out/tmp/'
-UNPACKBOOTIMG = 'out/host/mkbootimg/unpackbootimg'
+UNPACKBOOTIMG = 'build/tools/unpackbootimg'
 BOOTIMGPREFIX = None
 
 def inputex(msg):
@@ -76,14 +76,6 @@ def main(argv):
     bootimg = argv[0]
     if not os.path.isfile(bootimg):
         raise Exception('Can\'t find '+bootimg)
-
-    # build mkbootimg
-    if not os.path.isfile(UNPACKBOOTIMG):
-        rc = subprocess.call(["make", "host_mkbootimg"])
-        if rc != 0:
-            raise Exception('build error: %u' % (rc))
-        if not os.path.isfile(UNPACKBOOTIMG):
-            raise Exception('can\'t find unpackbootimg')
 
     # get devicename
     devicename = inputex('Device name (vendor/codename): ')
