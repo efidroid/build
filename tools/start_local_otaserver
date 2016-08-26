@@ -39,6 +39,9 @@ ln -s "$TOP/ota" "$SERVER_ROOT/ota/master"
 # device
 ln -s "$TOP/device" "$SERVER_ROOT/device"
 
+# build dir
+ln -s "$TOP/out/target" "$SERVER_ROOT/builds"
+
 # start server
 cd "$SERVER_ROOT"
 python -m SimpleHTTPServer "$SERVER_PORT"
