@@ -19,6 +19,7 @@ from argparse import ArgumentParser, FileType
 from os import rename
 from os.path import basename
 from struct import unpack, calcsize
+import zlib
 
 class Bunch:
     def __init__(self, **kwds):
@@ -119,6 +120,28 @@ def fix_ramdisk_extension(filename):
     else:
         rename(filename, filename+'.gz')
 
+def is_gzip_package(filename):
+    bytes = []
+    with open(filename, 'rb') as f:
+        data = f.read(3)
+        if(len(data))!=3:
+            return False
+        bytes = unpack('BBB', data)
+
+    return bytes[0]==0x1f and bytes[1]==0x8b and bytes[2]==0x08
+
+def is_arm64(filename):
+    data = None
+    with open(filename, 'rb') as f:
+        fmt = '2I6Q2I'
+        size = calcsize(fmt)
+        buf = f.read(size)
+        if(len(buf))!=size:
+            return False
+        data = unpack(fmt, buf)
+
+    return data[8]==0x644D5241
+
 def write_data(args, header, off):
     file_prefix = args.output
     if file_prefix and file_prefix[-1]!='/':
@@ -143,6 +166,39 @@ def write_data(args, header, off):
     write_input_to_file(args, file_prefix+'dt', header.dt_size)
 
     fix_ramdisk_extension(file_prefix+'ramdisk')
+
+    if is_gzip_package(file_prefix+'zImage'):
+        with open(file_prefix+'zImage', 'rb') as f_in:
+            # seek past gzip header
+            f_in.seek(10)
+
+            # write uncompressed zImage
+            with open(file_prefix+'zImage.gunzip', 'wb') as f_out:
+                decomp = zlib.decompressobj(-15)
+                f_out.write(decomp.decompress(f_in.read()))
+
+            # write fdt
+            with open(file_prefix+'zImage.fdt', 'wb') as f_out:
+                f_out.write(decomp.unused_data[8:])
+
+    elif not is_arm64(file_prefix+'zImage'):
+        with open(file_prefix+'zImage', 'rb') as f_in:
+            # get kernel size
+            f_in.seek(0x28)
+            unpacked = auto_unpack('2I', f_in)
+            zimage_start = unpacked[0]
+            zimage_end = unpacked[1]
+            zimage_size = zimage_end - zimage_start;
+
+            if zimage_size<header.kernel_size:
+                # write zImage
+                f_in.seek(0)
+                with open(file_prefix+'zImage.real', 'wb') as f_out:
+                    f_out.write(f_in.read(zimage_size))
+
+                # write fdt
+                with open(file_prefix+'zImage.fdt', 'wb') as f_out:
+                    f_out.write(f_in.read())
 
 def main():
     args = parse_cmdline()
