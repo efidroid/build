@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+include $(EFIDROID_TOP)/build/core/compilescript_inc.mk
+
 ifeq ($(WITH_KERNEL_UEFIAPI),1)
     # remove all apps
     MODULES := $(filter-out app/aboot,$(MODULES))
@@ -48,6 +50,12 @@ endif
 # optionally include device specific makefile
 -include $(EFIDROID_DEVICE_DIR)/lk_inc_post.mk
 
+ifeq ($(DISPLAY_2NDSTAGE_DTB),1)
+ifeq ($(DISPLAY_2NDSTAGE),1)
+$(call pr_fatal,You can't specify both DISPLAY_2NDSTAGE and DISPLAY_2NDSTAGE_DTB)
+endif
+endif
+
 # disable target display driver
 ifeq ($(DISPLAY_2NDSTAGE),1)
     OBJS := $(filter-out target/$(TARGET)/target_display.o,$(OBJS))
@@ -68,6 +76,14 @@ ifeq ($(DISPLAY_2NDSTAGE),1)
         $(EFIDROID_TOP)/uefi/lkmodules/shared/lib/2ndstage_display
 
     DEFINES += WITH_LIB_2NDSTAGE_DISPLAY=1
+endif
+
+ifeq ($(DISPLAY_2NDSTAGE_DTB),1)
+    # add our modules
+    MODULES += \
+        $(EFIDROID_TOP)/uefi/lkmodules/shared/lib/2ndstage_display_dtb
+
+    DEFINES += WITH_LIB_2NDSTAGE_DISPLAY_DTB=1
 endif
 
 # automatically set cflags for known configs
