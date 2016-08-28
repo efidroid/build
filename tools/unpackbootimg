@@ -68,14 +68,18 @@ def read_header(args, off):
     os_version = unpacked[10]>>11
     os_patch_level = unpacked[10]&0x7ff
 
-    a = (os_version>>14)&0x7f
-    b = (os_version>>7)&0x7f
-    c = os_version&0x7f
-    parsed.os_version = '%d.%d.%d' % (a,b,c)
+    parsed.os_version = None
+    if os_version != 0:
+        a = (os_version>>14)&0x7f
+        b = (os_version>>7)&0x7f
+        c = os_version&0x7f
+        parsed.os_version = '%d.%d.%d' % (a,b,c)
 
-    y = (os_patch_level>>4) + 2000
-    m = os_patch_level&0xf
-    parsed.os_patch_level = '%04d-%02d-%02d' % (y,m,0)
+    parsed.os_patch_level = None
+    if os_patch_level != 0:
+        y = (os_patch_level>>4) + 2000
+        m = os_patch_level&0xf
+        parsed.os_patch_level = '%04d-%02d-%02d' % (y,m,0)
 
     return parsed
 
@@ -155,8 +159,10 @@ def write_data(args, header, off):
     write_str_to_file(file_prefix+'tags_offset', '%08x' % (header.tags_addr - header.kernel_addr + 0x00008000))
     write_str_to_file(file_prefix+'pagesize', '%d' % header.pagesize)
     write_str_to_file(file_prefix+'name', header.name)
-    write_str_to_file(file_prefix+'os_version', header.os_version)
-    write_str_to_file(file_prefix+'os_patch_level', header.os_patch_level)
+    if header.os_version:
+        write_str_to_file(file_prefix+'os_version', header.os_version)
+    if header.os_patch_level:
+        write_str_to_file(file_prefix+'os_patch_level', header.os_patch_level)
 
     seek_padding(args.input, header.headersz, args.pagesize)
 
