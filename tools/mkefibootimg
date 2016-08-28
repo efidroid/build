@@ -151,7 +151,10 @@ def main(argv):
         str2file(dt, args.bootfile)
 
     # create boot image
-    rc = subprocess.call(['mkbootimg', '--kernel', kernel, '--ramdisk', ramdisk, '--cmdline', cmdline, '--dt', dt, '-o', args.bootimg])
+    mkbootimgargs = ['mkbootimg', '--kernel', kernel, '--ramdisk', ramdisk, '--dt', dt, '-o', args.bootimg]
+    if cmdline != '':
+        mkbootimgargs += ['--cmdline', cmdline]
+    rc = subprocess.call(mkbootimgargs)
     if rc != 0:
         raise Exception('mkbootimg error: %u' % (rc))
 
