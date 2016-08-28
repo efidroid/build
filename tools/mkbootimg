@@ -21,6 +21,15 @@ from struct import pack
 from hashlib import sha1
 import sys
 import re
+import os
+
+REPACK_TYPE_FILE = 0
+REPACK_TYPE_VALUE_STR = 1
+REPACK_TYPE_VALUE_HEX = 2
+
+class Bunch:
+    def __init__(self, **kwds):
+        self.__dict__.update(kwds)
 
 def filesize(f):
     if f is None:
@@ -127,6 +136,82 @@ def parse_os_patch_level(x):
         return (y << 4) | m
     return 0
 
+def try_repack(name, args, dst, rtype):
+    # abort if the argument does already exist and is not 'None'
+    if hasattr(args, dst) and getattr(args, dst):
+        return
+
+    value = None
+    if os.path.isfile(name):
+        if rtype==REPACK_TYPE_FILE:
+            value = name
+        else:
+            with open(name, 'r') as f:
+                value = f.read()
+
+            if rtype==REPACK_TYPE_VALUE_HEX:
+                value = '0x'+value
+
+    if value:
+        print('set %s to %s' % (dst, value))
+
+    setattr(args, dst, value)
+
+def parse_repack():
+    # let the original parser print the usage
+    globalargs = sys.argv[1:]
+    if '-h' in globalargs or '--help' in globalargs:
+        return globalargs
+
+    # parse arguments which we support replacements for
+    parser = ArgumentParser()
+    parser.add_argument('--kernel')
+    parser.add_argument('--ramdisk')
+    parser.add_argument('--second')
+    parser.add_argument('--cmdline')
+    parser.add_argument('--base')
+    parser.add_argument('--kernel_offset')
+    parser.add_argument('--ramdisk_offset')
+    parser.add_argument('--second_offset')
+    parser.add_argument('--os_version')
+    parser.add_argument('--os_patch_level')
+    parser.add_argument('--tags_offset')
+    parser.add_argument('--board')
+    parser.add_argument('--pagesize')
+    parser.add_argument('--dt')
+    parser.add_argument('-r', '--repack')
+    args, newargs = parser.parse_known_args()
+    prefix = args.repack
+
+    # apply overrides
+    if prefix:
+        try_repack(prefix+'zImage', args, 'kernel', REPACK_TYPE_FILE)
+        try_repack(prefix+'ramdisk.lz4', args, 'ramdisk', REPACK_TYPE_FILE)
+        try_repack(prefix+'ramdisk.gz', args, 'ramdisk', REPACK_TYPE_FILE)
+        try_repack(prefix+'second', args, 'second', REPACK_TYPE_FILE)
+        try_repack(prefix+'cmdline', args, 'cmdline', REPACK_TYPE_VALUE_STR)
+        try_repack(prefix+'base', args, 'base', REPACK_TYPE_VALUE_HEX)
+        try_repack(prefix+'kernel_offset', args, 'kernel_offset', REPACK_TYPE_VALUE_HEX)
+        try_repack(prefix+'ramdisk_offset', args, 'ramdisk_offset', REPACK_TYPE_VALUE_HEX)
+        try_repack(prefix+'second_offset', args, 'second_offset', REPACK_TYPE_VALUE_HEX)
+        try_repack(prefix+'os_version', args, 'os_version', REPACK_TYPE_VALUE_STR)
+        try_repack(prefix+'os_patch_level', args, 'os_patch_level', REPACK_TYPE_VALUE_STR)
+        try_repack(prefix+'tags_offset', args, 'tags_offset', REPACK_TYPE_VALUE_HEX)
+        try_repack(prefix+'board', args, 'board', REPACK_TYPE_VALUE_STR)
+        try_repack(prefix+'pagesize', args, 'pagesize', REPACK_TYPE_VALUE_STR)
+        try_repack(prefix+'dt', args, 'dt', REPACK_TYPE_FILE)
+
+    # rebuild args
+    for name in vars(args):
+        if name == 'repack':
+            continue
+
+        value = getattr(args, name)
+        if value:
+            newargs += ['--'+name, value]
+
+    return newargs
+
 def parse_cmdline():
     parser = ArgumentParser()
     parser.add_argument('--kernel', help='path to the kernel', type=FileType('rb'),
@@ -154,7 +239,9 @@ def parse_cmdline():
     parser.add_argument('--dt', help='path to the device tree image', type=FileType('rb'))
     parser.add_argument('-o', '--output', help='output file name', type=FileType('wb'),
                         required=True)
-    return parser.parse_args()
+    # this can never happen, it's for the usage/help text only
+    parser.add_argument('-r', '--repack', help='path to the unpackbootimg output directory')
+    return parser.parse_args(parse_repack())
 
 
 def write_data(args):
