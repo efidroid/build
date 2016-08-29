@@ -23,7 +23,7 @@ export PATH="$TOP/out/host/dtbtools:$PATH"
 export PATH="$TOP/out/host/host_dtc/dtc:$PATH"
 
 croot() {
-	cd "$TOP"
+    cd "$TOP"
 }
 
 mkefidroid() {
