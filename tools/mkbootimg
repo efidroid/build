@@ -22,6 +22,7 @@ from hashlib import sha1
 import sys
 import re
 import os
+import ctypes
 
 REPACK_TYPE_FILE = 0
 REPACK_TYPE_VALUE_STR = 1
@@ -58,16 +59,16 @@ def write_header(args):
     BOOT_MAGIC = 'ANDROID!'.encode()
     args.output.write(pack('8s', BOOT_MAGIC))
     args.output.write(pack('10I',
-        filesize(args.kernel),                          # size in bytes
-        args.base + args.kernel_offset,                 # physical load addr
-        filesize(args.ramdisk),                         # size in bytes
-        args.base + args.ramdisk_offset,                # physical load addr
-        filesize(args.second),                          # size in bytes
-        args.base + args.second_offset,                 # physical load addr
-        args.base + args.tags_offset,                   # physical addr for kernel tags
-        args.pagesize,                                  # flash page size we assume
-        filesize(args.dt),                              # size in bytes
-        (args.os_version << 11) | args.os_patch_level)) # os version and patch level
+        ctypes.c_uint(filesize(args.kernel)).value,                          # size in bytes
+        ctypes.c_uint(args.base + args.kernel_offset).value,                 # physical load addr
+        ctypes.c_uint(filesize(args.ramdisk)).value,                         # size in bytes
+        ctypes.c_uint(args.base + args.ramdisk_offset).value,                # physical load addr
+        ctypes.c_uint(filesize(args.second)).value,                          # size in bytes
+        ctypes.c_uint(args.base + args.second_offset).value,                 # physical load addr
+        ctypes.c_uint(args.base + args.tags_offset).value,                   # physical addr for kernel tags
+        ctypes.c_uint(args.pagesize).value,                                  # flash page size we assume
+        ctypes.c_uint(filesize(args.dt)).value,                              # size in bytes
+        ctypes.c_uint((args.os_version << 11) | args.os_patch_level).value)) # os version and patch level
     args.output.write(pack('16s', args.board.encode())) # asciiz product name
     args.output.write(pack('512s', args.cmdline[:512].encode()))
 
