@@ -26,10 +26,10 @@ git log --oneline --no-merges "$RANGEOTHER" > "$TMPFILE"
 
 while read line; do
     #echo "Checking: $line"
-	commitmsg=$(echo $line | cut -d' ' -f2-)
-	matchcount="$(git log --oneline --no-merges "$RANGETHIS" | grep -cF "${commitmsg}")"
+    commitmsg=$(echo $line | cut -d' ' -f2-)
+    matchcount="$(git log --oneline --no-merges "$RANGETHIS" | grep -cF "${commitmsg}")"
 
-	if [ $matchcount -eq 0 ];then
-		echo "$line"
-	fi
+    if [ $matchcount -eq 0 ];then
+        echo "$line"
+    fi
 done < "$TMPFILE"

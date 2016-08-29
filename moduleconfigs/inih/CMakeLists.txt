@@ -8,5 +8,5 @@ add_library(inih STATIC
     ${MODULE_SRC}/ini.c
 )
 set_property(TARGET inih PROPERTY INCLUDE_DIRECTORIES
-	${MODULE_SRC}
+    ${MODULE_SRC}
 )

@@ -140,9 +140,9 @@ CompileEDK2() {
 
     # compile EDKII
     "$EFIDROID_SHELL" -c "\
-	    cd "$EDK2_OUT" && \
-		    source edksetup.sh && \
-		    $EDK2_ENV build -n$numjobs -b ${EDK2_BUILD_TYPE} -a ${EDK2_ARCH} -t ${EDK2_COMPILER} -p ${PROJECTCONFIG} \
+        cd "$EDK2_OUT" && \
+            source edksetup.sh && \
+            $EDK2_ENV build -n$numjobs -b ${EDK2_BUILD_TYPE} -a ${EDK2_ARCH} -t ${EDK2_COMPILER} -p ${PROJECTCONFIG} \
                 ${DEFINES} \
     " 2> >(\
     while read line; do \
@@ -162,7 +162,7 @@ CompileEDK2() {
 EDK2Shell() {
     "$EFIDROID_SHELL" -c "\
         cd \"$EDK2_OUT\" && \
-		    source edksetup.sh && \
-		    $EDK2_ENV \"$EFIDROID_SHELL\" \
+            source edksetup.sh && \
+            $EDK2_ENV \"$EFIDROID_SHELL\" \
     "
 }

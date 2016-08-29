@@ -18,7 +18,7 @@ inch2px() {
     PIXEL=$(bc -l <<< "$INCH*$LCD_DENSITY" | awk '{print int($1+0.5)}')
 
     if [ "$(($PIXEL%2))" = 1 ]; then
-	    PIXEL=$(($PIXEL+1))
+        PIXEL=$(($PIXEL+1))
     fi
 
     echo $PIXEL

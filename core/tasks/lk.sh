@@ -197,23 +197,23 @@ CompileLKKernel() {
 CompileLKBootImage() {
     pr_alert "Installing: $TARGET_OUT/lk.img"
     set -x
-	"$TOP/build/tools/mkbootimg" \
-		--kernel "$LK_BINARY_FINAL" \
-		--ramdisk /dev/null \
-		--base "$BOOTIMG_BASE" \
-		$LK_MKBOOTIMG_ADDITIONAL_FLAGS \
-		-o "$TARGET_OUT/lk.img"
+    "$TOP/build/tools/mkbootimg" \
+        --kernel "$LK_BINARY_FINAL" \
+        --ramdisk /dev/null \
+        --base "$BOOTIMG_BASE" \
+        $LK_MKBOOTIMG_ADDITIONAL_FLAGS \
+        -o "$TARGET_OUT/lk.img"
     set +x
 
     if [ ! -z "$BOOTIMG_DT" ] || [ ! -z "$BOOTIMG_APPENDED_FDT" ]; then
         pr_alert "Installing: $TARGET_OUT/lk_origdtb.img"
         set -x
-	    "$TOP/build/tools/mkbootimg" \
-		    --kernel "$LK_BINARY_FINAL_ORIGDTB" \
-		    --ramdisk /dev/null \
-		    --base "$BOOTIMG_BASE" \
-		    $LK_MKBOOTIMG_ADDITIONAL_FLAGS_ORIGDTB \
-		    -o "$TARGET_OUT/lk_origdtb.img"
+        "$TOP/build/tools/mkbootimg" \
+            --kernel "$LK_BINARY_FINAL_ORIGDTB" \
+            --ramdisk /dev/null \
+            --base "$BOOTIMG_BASE" \
+            $LK_MKBOOTIMG_ADDITIONAL_FLAGS_ORIGDTB \
+            -o "$TARGET_OUT/lk_origdtb.img"
         set +x
     fi
 }
@@ -281,13 +281,13 @@ CompileUEFIBootImage() {
     for part in $DEVICE_UEFI_PARTITIONS; do
         pr_alert "Installing: $TARGET_OUT/uefi_$part.img"
         set -x
-	    "$TOP/build/tools/mkbootimg" \
-		    --kernel "$LK_BINARY_FINAL" \
-		    --ramdisk /dev/null \
-		    --base "$BOOTIMG_BASE" \
+        "$TOP/build/tools/mkbootimg" \
+            --kernel "$LK_BINARY_FINAL" \
+            --ramdisk /dev/null \
+            --base "$BOOTIMG_BASE" \
             --cmdline "uefi.bootpart=$part" \
-		    $LK_MKBOOTIMG_ADDITIONAL_FLAGS \
-		    -o "$TARGET_OUT/uefi_$part.img"
+            $LK_MKBOOTIMG_ADDITIONAL_FLAGS \
+            -o "$TARGET_OUT/uefi_$part.img"
         set +x
         cat "$TARGET_OUT/efidroid_meta.bin" >> "$TARGET_OUT/uefi_$part.img"
     done
