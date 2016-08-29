@@ -20,6 +20,7 @@ from os import rename
 from os.path import basename
 from struct import unpack, calcsize
 import zlib
+import ctypes
 
 class Bunch:
     def __init__(self, **kwds):
@@ -153,11 +154,11 @@ def write_data(args, header, off):
     file_prefix += basename(args.input.name) + '-'
 
     write_str_to_file(file_prefix+'cmdline', header.cmdline)
-    write_str_to_file(file_prefix+'base', '%08x' % (header.kernel_addr - 0x00008000))
-    write_str_to_file(file_prefix+'ramdisk_offset', '%08x' % (header.ramdisk_addr - header.kernel_addr + 0x00008000))
-    write_str_to_file(file_prefix+'second_offset', '%08x' % (header.second_addr - header.kernel_addr + 0x00008000))
-    write_str_to_file(file_prefix+'tags_offset', '%08x' % (header.tags_addr - header.kernel_addr + 0x00008000))
-    write_str_to_file(file_prefix+'pagesize', '%d' % header.pagesize)
+    write_str_to_file(file_prefix+'base', '%08x' % ctypes.c_uint(header.kernel_addr - 0x00008000).value)
+    write_str_to_file(file_prefix+'ramdisk_offset', '%08x' % ctypes.c_uint(header.ramdisk_addr - header.kernel_addr + 0x00008000).value)
+    write_str_to_file(file_prefix+'second_offset', '%08x' % ctypes.c_uint(header.second_addr - header.kernel_addr + 0x00008000).value)
+    write_str_to_file(file_prefix+'tags_offset', '%08x' % ctypes.c_uint(header.tags_addr - header.kernel_addr + 0x00008000).value)
+    write_str_to_file(file_prefix+'pagesize', '%d' % ctypes.c_uint(header.pagesize).value)
     write_str_to_file(file_prefix+'name', header.name)
     if header.os_version:
         write_str_to_file(file_prefix+'os_version', header.os_version)
@@ -212,13 +213,13 @@ def main():
     header = read_header(args, off)
 
     print('BOARD_KERNEL_CMDLINE %s' % header.cmdline)
-    print('BOARD_KERNEL_BASE %08x' % (header.kernel_addr - 0x00008000))
-    print('BOARD_RAMDISK_OFFSET %08x' % (header.ramdisk_addr - header.kernel_addr + 0x00008000))
-    print('BOARD_SECOND_OFFSET %08x' % (header.second_addr - header.kernel_addr + 0x00008000))
-    print('BOARD_TAGS_OFFSET %08x' % (header.tags_addr - header.kernel_addr + 0x00008000))
-    print('BOARD_PAGE_SIZE %d' % header.pagesize)
-    print('BOARD_SECOND_SIZE %d' % header.second_size)
-    print('BOARD_DT_SIZE %d' % header.dt_size)
+    print('BOARD_KERNEL_BASE %08x' % ctypes.c_uint(header.kernel_addr - 0x00008000).value)
+    print('BOARD_RAMDISK_OFFSET %08x' % ctypes.c_uint(header.ramdisk_addr - header.kernel_addr + 0x00008000).value)
+    print('BOARD_SECOND_OFFSET %08x' % ctypes.c_uint(header.second_addr - header.kernel_addr + 0x00008000).value)
+    print('BOARD_TAGS_OFFSET %08x' % ctypes.c_uint(header.tags_addr - header.kernel_addr + 0x00008000).value)
+    print('BOARD_PAGE_SIZE %d' % ctypes.c_uint(header.pagesize).value)
+    print('BOARD_SECOND_SIZE %d' % ctypes.c_uint(header.second_size).value)
+    print('BOARD_DT_SIZE %d' % ctypes.c_uint(header.dt_size).value)
 
     if args.pagesize == 0:
         args.pagesize = header.pagesize
