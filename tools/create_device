@@ -138,12 +138,31 @@ def main(argv):
     config.optionxform = str
     config.add_section('variables')
 
+    # get base and offsets
+    base = int(getbootimgarg('kernel_offset'), 16)
+    kernel_offset = int(getbootimgarg('kernel_offset'), 16)
+    ramdisk_offset = int(getbootimgarg('ramdisk_offset'), 16)
+    second_offset = int(getbootimgarg('second_offset'), 16)
+    tags_offset = int(getbootimgarg('tags_offset'), 16)
+
+    # generate mkbootimg args
+    additionalargs = ''
+    if kernel_offset  != 0x00008000:
+        additionalargs += ('--kernel_offset 0x%08x' % kernel_offset)
+    if ramdisk_offset != 0x01000000:
+        additionalargs += ('--ramdisk_offset 0x%08x' % ramdisk_offset)
+    if second_offset  != 0x00f00000:
+        additionalargs += ('--second_offset 0x%08x' % second_offset)
+    if tags_offset    != 0x00000100:
+        additionalargs += ('--tags_offset 0x%08x' % tags_offset)
+
     config.set('variables', 'DEVICE_NAME', devicedesc);
     config.set('variables', 'LK_TARGET', lktarget);
-    config.set('variables', 'LK_BASE', "0x%08x" % (int(getbootimgarg('base'), 16)+0x8000));
-    config.set('variables', 'BOOTIMG_BASE', '0x'+getbootimgarg('base'));
+    config.set('variables', 'LK_BASE', "0x%08x" % (base+kernel_offset));
+    config.set('variables', 'BOOTIMG_BASE', '0x%08x' % (base));
     config.set('variables', 'BOOTIMG_PAGESIZE', getbootimgarg('pagesize'));
-    config.set('variables', 'BOOTIMG_ADDITIONAL_ARGS', '--ramdisk_offset 0x'+getbootimgarg('ramdisk_offset')+' --tags_offset 0x'+getbootimgarg('tags_offset'));
+    if additionalargs != '':
+        config.set('variables', 'BOOTIMG_ADDITIONAL_ARGS', additionalargs);
     config.set('variables', 'LCD_DENSITY', lcd_density);
 
     if os.path.isfile(BOOTIMGPREFIX+'zImage.fdt'):
