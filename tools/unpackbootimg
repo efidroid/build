@@ -86,7 +86,9 @@ def read_header(args, off):
 
     # find common base of all loading addresses
     parsed.base = min(parsed.kernel_addr, parsed.ramdisk_addr, parsed.second_addr, parsed.tags_addr)
-    parsed.base = ROUNDDOWN(parsed.base, 0x8000)
+    parsed.base = ROUNDDOWN(parsed.base, parsed.pagesize)
+    if (parsed.base&0xffff) == 0x8000:
+        parsed.base -= 0x8000
 
     # calculate offsets relative to base
     parsed.kernel_offset = parsed.kernel_addr - parsed.base
