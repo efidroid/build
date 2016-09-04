@@ -93,18 +93,25 @@ def main(argv):
     for filename in os.listdir('bootloader/lk/common/LA.BF64/project'):
         if not re.match('msm.*\.mk|mdm.*\.mk', filename):
             continue
+
         name = os.path.basename(filename)
         name = os.path.splitext(name)[0]
         targets.append(name)
 
     # print available targets
     pr_warning('Available targets:')
-    for i in range(0, len(targets)):
+    i = 0
+    while i<len(targets):
         target = targets[i]
         part = targets[i:]
+
+        # ensure that 'part' has at least 4 elements
         while len(part)<4:
             part.append('')
+
         print("{: >24} {: >24} {: >24} {: >24}".format(*part))
+
+        i+=4
 
     # get target
     lktarget = None
