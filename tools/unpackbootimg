@@ -21,6 +21,13 @@ from os.path import basename, exists
 from struct import unpack, calcsize
 import zlib
 
+HAS_ELFTOOLS = True
+try:
+    from elftools.elf.elffile import ELFFile
+    from elftools.elf.sections import SymbolTableSection
+except:
+    HAS_ELFTOOLS = False
+
 def ROUNDDOWN(number, alignment):
     return ((number) & ~((alignment)-1))
 
@@ -43,8 +50,7 @@ def get_magic_off(f):
             print('Android magic found at: %d' % i)
             return i
 
-    print('Android boot magic not found.');
-    exit(1)
+    return -1
 
 def read_header(args, off):
     args.input.seek(off)
@@ -52,6 +58,7 @@ def read_header(args, off):
     unpacked = auto_unpack(fmt, args.input)
 
     parsed = Bunch()
+    parsed.type = 'android'
     parsed.headersz = calcsize(fmt)
     parsed.magic = unpacked[0]
     parsed.kernel_size = unpacked[1]
@@ -84,17 +91,55 @@ def read_header(args, off):
         m = os_patch_level&0xf
         parsed.os_patch_level = '%04d-%02d-%02d' % (y,m,0)
 
-    # find common base of all loading addresses
-    parsed.base = min(parsed.kernel_addr, parsed.ramdisk_addr, parsed.second_addr, parsed.tags_addr)
-    parsed.base = ROUNDDOWN(parsed.base, parsed.pagesize)
-    if (parsed.base&0xffff) == 0x8000:
-        parsed.base -= 0x8000
+    return parsed
 
-    # calculate offsets relative to base
-    parsed.kernel_offset = parsed.kernel_addr - parsed.base
-    parsed.ramdisk_offset = parsed.ramdisk_addr - parsed.base
-    parsed.second_offset = parsed.second_addr - parsed.base
-    parsed.tags_offset = parsed.tags_addr - parsed.base
+def parse_elf(stream):
+    try:
+        elffile = ELFFile(stream)
+    except:
+        print('Android boot magic not found.')
+        exit(1)
+
+    parsed = Bunch()
+    parsed.type = 'elf'
+    parsed.kernel_size = 0
+    parsed.kernel_addr = 0
+    parsed.ramdisk_size = 0
+    parsed.ramdisk_addr = 0
+    parsed.second_size = 0
+    parsed.second_addr = 0
+    parsed.tags_addr = 0
+    parsed.pagesize = 2048
+    parsed.dt_size = 0
+    parsed.name = ''
+    parsed.cmdline = ''
+    parsed.id = ''
+    parsed.os_version = None
+    parsed.os_patch_level = None
+
+    for i in range(elffile['e_phnum']):
+        stream.seek(elffile['e_phoff'] + i * elffile['e_phentsize'])
+        phdr = elffile.structs.Elf_Phdr.parse_stream(stream)
+
+        if i==0:
+            parsed.kernel_file_offset = phdr['p_offset']
+            parsed.kernel_size = phdr['p_filesz']
+            parsed.kernel_addr = phdr['p_paddr']
+        elif i==1:
+            parsed.ramdisk_file_offset = phdr['p_offset']
+            parsed.ramdisk_size = phdr['p_filesz']
+            parsed.ramdisk_addr = phdr['p_paddr']
+        elif i==2:
+            parsed.dt_file_offset = phdr['p_offset']
+            parsed.dt_size = phdr['p_filesz']
+            parsed.tags_addr = phdr['p_paddr']
+
+    for i in range(elffile['e_shnum']):
+        stream.seek(elffile['e_shoff'] + i * elffile['e_shentsize'])
+        shdr = elffile.structs.Elf_Shdr.parse_stream(stream)
+
+        stream.seek(shdr['sh_offset'])
+        parsed.cmdline = stream.read(shdr['sh_size'])[8:].partition(b'\0')[0].decode()
 
     return parsed
 
@@ -183,12 +228,21 @@ def write_data(args, header, off):
     if header.os_patch_level:
         write_str_to_file(file_prefix+'os_patch_level', header.os_patch_level)
 
-    seek_padding(args.input, header.headersz, args.pagesize)
+    if header.type=='android':
+        seek_padding(args.input, header.headersz, args.pagesize)
+        write_input_to_file(args, file_prefix+'zImage', header.kernel_size)
+        write_input_to_file(args, file_prefix+'ramdisk', header.ramdisk_size)
+        write_input_to_file(args, file_prefix+'second', header.second_size)
+        write_input_to_file(args, file_prefix+'dt', header.dt_size)
+    elif header.type=='elf':
+        args.input.seek(header.kernel_file_offset)
+        write_input_to_file(args, file_prefix+'zImage', header.kernel_size)
 
-    write_input_to_file(args, file_prefix+'zImage', header.kernel_size)
-    write_input_to_file(args, file_prefix+'ramdisk', header.ramdisk_size)
-    write_input_to_file(args, file_prefix+'second', header.second_size)
-    write_input_to_file(args, file_prefix+'dt', header.dt_size)
+        args.input.seek(header.ramdisk_file_offset)
+        write_input_to_file(args, file_prefix+'ramdisk', header.ramdisk_size)
+
+        args.input.seek(header.dt_file_offset)
+        write_input_to_file(args, file_prefix+'dt', header.dt_size)
 
     fix_ramdisk_extension(file_prefix+'ramdisk')
 
@@ -229,7 +283,24 @@ def write_data(args, header, off):
 def main():
     args = parse_cmdline()
     off = get_magic_off(args.input)
-    header = read_header(args, off)
+    if off >= 0:
+        header = read_header(args, off)
+    else:
+        off = 0
+        args.input.seek(off)
+        header = parse_elf(args.input)
+
+    # find common base of all loading addresses
+    header.base = min(header.kernel_addr, header.ramdisk_addr, header.second_addr, header.tags_addr)
+    header.base = ROUNDDOWN(header.base, header.pagesize)
+    if (header.base&0xffff) == 0x8000:
+        header.base -= 0x8000
+
+    # calculate offsets relative to base
+    header.kernel_offset = header.kernel_addr - header.base
+    header.ramdisk_offset = header.ramdisk_addr - header.base
+    header.second_offset = header.second_addr - header.base
+    header.tags_offset = header.tags_addr - header.base
 
     print('BOARD_KERNEL_CMDLINE %s' % header.cmdline)
     print('BOARD_KERNEL_BASE %08x' % header.kernel_offset)
