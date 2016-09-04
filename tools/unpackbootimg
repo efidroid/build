@@ -16,8 +16,8 @@
 from __future__ import print_function
 from sys import exit
 from argparse import ArgumentParser, FileType
-from os import rename
-from os.path import basename
+from os import rename, makedirs
+from os.path import basename, exists
 from struct import unpack, calcsize
 import zlib
 
@@ -94,7 +94,7 @@ def parse_cmdline():
     parser = ArgumentParser()
     parser.add_argument('-i', '--input', help='input file name', type=FileType('rb'),
                         required=True)
-    parser.add_argument('-o', '--output', help='output directory', default='')
+    parser.add_argument('-o', '--output', help='output directory', default='./')
     parser.add_argument('--pagesize', help='page size', type=parse_int,
                         choices=[2**i for i in range(11,15)], default=0)
     return parser.parse_args()
@@ -151,6 +151,9 @@ def write_data(args, header, off):
     if file_prefix and file_prefix[-1]!='/':
         file_prefix += '/'
     file_prefix += basename(args.input.name) + '-'
+
+    if not exists(args.output):
+        makedirs(args.output)
 
     write_str_to_file(file_prefix+'cmdline', header.cmdline)
     write_str_to_file(file_prefix+'base', '%08x' % (header.kernel_addr - 0x00008000))
