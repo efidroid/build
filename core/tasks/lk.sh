@@ -59,10 +59,6 @@ if [ ! -d "$LK_DIR" ];then
     pr_fatal "LK wasn't found at $LK_DIR"
 fi
 
-if [ -n "$BOOTIMG_APPENDED_FDT" ] && [ -n "$BOOTIMG_DT" ];then
-    pr_fatal "you can't use both BOOTIMG_DT and BOOTIMG_APPENDED_FDT"
-fi
-
 LK_BINARY="$LK_OUT/build-$LK_TARGET/lk.bin"
 LK_BINARY_FINAL="$LK_OUT/lk_final.bin"
 LK_BINARY_FINAL_ORIGDTB="$LK_OUT/lk_final_origdtb.bin"
@@ -77,7 +73,9 @@ QCDTEXTRACT="$HOST_DTBTOOLS_OUT/qcdtextract"
 FDTEXTRACT="$HOST_DTBTOOLS_OUT/fdtextract"
 DTBTOOL="$HOST_DTBTOOLS_OUT/dtbtool"
 DTBDIR="$LK_OUT/dtb_out"
+FDTDIR="$LK_OUT/fdt_out"
 DTBPATCHEDDIR="$LK_OUT/dtbpatched_out"
+FDTPATCHEDDIR="$LK_OUT/fdtpatched_out"
 DTIMG_PATCHED="$LK_OUT/dt_patched.img"
 FDT_PATCHED="$LK_OUT/fdt_patched.img"
 
@@ -131,31 +129,38 @@ GenerateKernelHeader() {
 
 # pre-parse and minify devicetree
 GeneratePatchedDeviceTree() {
-    if [ ! -z "$BOOTIMG_DT" ] || [ ! -z "$BOOTIMG_APPENDED_FDT" ]; then
+    if [ ! -z "$BOOTIMG_DT" ]; then
         # cleanup
         rm -Rf "$DTBDIR"
         mkdir -p "$DTBDIR"
         rm -Rf "$DTBPATCHEDDIR"
         mkdir -p "$DTBPATCHEDDIR"
 
-        if [ ! -z "$BOOTIMG_DT" ];then
-            # extract QCDT
-            "$QCDTEXTRACT" "$BOOTIMG_DT" "$DTBDIR"
-        elif [ ! -z "$BOOTIMG_APPENDED_FDT" ];then
-            # extract FDT
-            "$FDTEXTRACT" "$BOOTIMG_APPENDED_FDT" "$DTBDIR"
-        fi
+        # extract QCDT
+        "$QCDTEXTRACT" "$BOOTIMG_DT" "$DTBDIR"
 
         # generate patched dtb's
         "$DTBEFIDROIDIFY" "$DTBDIR" "$DTBPATCHEDDIR"
 
-        if [ ! -z "$BOOTIMG_DT" ];then
-            # generate new dt.img
-            "$DTBTOOL" -o "$DTIMG_PATCHED" "$DTBPATCHEDDIR/"
-        elif [ ! -z "$BOOTIMG_APPENDED_FDT" ];then
-            # create new fdt.img
-            cat "$DTBPATCHEDDIR/"* > "$FDT_PATCHED"
-        fi
+        # generate new dt.img
+        "$DTBTOOL" -o "$DTIMG_PATCHED" "$DTBPATCHEDDIR/"
+    fi
+
+    if [ ! -z "$BOOTIMG_APPENDED_FDT" ]; then
+        # cleanup
+        rm -Rf "$FDTDIR"
+        mkdir -p "$FDTDIR"
+        rm -Rf "$FDTPATCHEDDIR"
+        mkdir -p "$FDTPATCHEDDIR"
+
+        # extract FDT
+        "$FDTEXTRACT" "$BOOTIMG_APPENDED_FDT" "$FDTDIR"
+
+        # generate patched dtb's
+        "$DTBEFIDROIDIFY" "$FDTDIR" "$FDTPATCHEDDIR"
+
+        # create new fdt.img
+        cat "$FDTPATCHEDDIR/"* > "$FDT_PATCHED"
     fi
 }
 
