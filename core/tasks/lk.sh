@@ -95,6 +95,11 @@ if [ ! -z "$BOOTIMG_DT" ];then
     LK_MKBOOTIMG_ADDITIONAL_FLAGS="$LK_MKBOOTIMG_ADDITIONAL_FLAGS --dt $DTIMG_PATCHED"
 fi
 
+DTBEFIDROIDIFY_REMOVE_NODES="1"
+if [ "$BOOTIMG_DT_KEEP_NODES" == "1" ];then
+    DTBEFIDROIDIFY_REMOVE_NODES="0"
+fi
+
 
 ########################################
 #               COMMON                 #
@@ -140,7 +145,7 @@ GeneratePatchedDeviceTree() {
         "$QCDTEXTRACT" "$BOOTIMG_DT" "$DTBDIR"
 
         # generate patched dtb's
-        "$DTBEFIDROIDIFY" "$DTBDIR" "$DTBPATCHEDDIR"
+        "$DTBEFIDROIDIFY" "$DTBDIR" "$DTBPATCHEDDIR" "$DTBEFIDROIDIFY_REMOVE_NODES"
 
         # generate new dt.img
         "$DTBTOOL" -o "$DTIMG_PATCHED" "$DTBPATCHEDDIR/"
@@ -157,7 +162,7 @@ GeneratePatchedDeviceTree() {
         "$FDTEXTRACT" "$BOOTIMG_APPENDED_FDT" "$FDTDIR"
 
         # generate patched dtb's
-        "$DTBEFIDROIDIFY" "$FDTDIR" "$FDTPATCHEDDIR"
+        "$DTBEFIDROIDIFY" "$FDTDIR" "$FDTPATCHEDDIR" "$DTBEFIDROIDIFY_REMOVE_NODES"
 
         # create new fdt.img
         cat "$FDTPATCHEDDIR/"* > "$FDT_PATCHED"
