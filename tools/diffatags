@@ -15,7 +15,10 @@
 # limitations under the License.
 
 DTSOUT="$1"
-DTBPATCHOUT="$TOP/out/target/$DEVICEID/lk_nouefi/dtbpatched_out"
+DTBPATCHOUT="$TOP/out/target/$DEVICEID/lk_kernel/dtbpatched_out"
+if [ -f "$DTBPATCHOUT" ];then
+    DTBPATCHOUT="$TOP/out/target/$DEVICEID/lk_kernel/fdtpatched_out"
+fi
 
 set -e
 
