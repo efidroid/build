@@ -30,6 +30,7 @@ DEBUG := 1
 MODULES += \
     $(EFIDROID_TOP)/uefi/lkmodules/shared/fastboot \
     $(EFIDROID_TOP)/uefi/lkmodules/shared/lib/base64 \
+    $(EFIDROID_TOP)/uefi/lkmodules/shared/lib/hex2unsigned \
     $(EFIDROID_TOP)/uefi/lkmodules/shared/lib/atagparse
 
 DEFINES += WITH_FASTBOOT_EXT=1
