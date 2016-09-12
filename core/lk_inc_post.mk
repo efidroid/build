@@ -99,10 +99,6 @@ ifeq ($(TARGET_BUILD_VARIANT),user)
     CFLAGS += -DDISABLE_FASTBOOT_CMDS=1
 endif
 
-ifeq ($(WITH_DEBUG_LAST_KMSG),1)
-    CFLAGS += -DWITH_DEBUG_LAST_KMSG=1
-endif
-
 ifeq ($(WITH_KERNEL_UEFIAPI),1)
     ifeq ($(DEBUG_ENABLE_UEFI_FBCON),1)
         # enable FBCON
