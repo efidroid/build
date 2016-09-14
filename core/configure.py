@@ -625,6 +625,7 @@ def setup_toolchain(toolchain):
     filename = urllib.unquote(os.path.basename(urlparse(toolchain['src']).path))
     downloadfile = cachedir+'/'+filename
     if not os.path.isfile(downloadfile) or not sha1(downloadfile)==toolchain['sha1']:
+        pr_alert('Downloading toolhain \'%s\' ...' % filename)
         p = subprocess.Popen(['curl', '-L', '-o', downloadfile, toolchain['src']])
         p.communicate()
         if p.returncode:
