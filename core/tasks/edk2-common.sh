@@ -117,6 +117,13 @@ EDK2Setup() {
     rm -f "$EDK2_OUT/EFIDroidModules"
     ln -s "$TOP/modules" "$EDK2_OUT/EFIDroidModules"
 
+    # symlink uefi/lkl
+    rm -f "$EDK2_OUT/EFIDroidLKL"
+    ln -s "$TARGET_LKL_KERNEL_OUT/install" "$EDK2_OUT/EFIDroidLKL"
+
+    rm -f "$EDK2_OUT/EFIDroidLKLPriv"
+    ln -s "$TOP/uefi/lkl/tools/lkl" "$EDK2_OUT/EFIDroidLKLPriv"
+
     # (re)compile BaseTools
     "$EFIDROID_SHELL" -c "\
         unset ARCH && \
