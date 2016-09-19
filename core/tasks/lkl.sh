@@ -20,7 +20,7 @@ LKL_INSTALL="$MODULE_OUT/install"
 # ARM
 LKL_CFLAGS="$LKL_CFLAGS -mlittle-endian -mabi=aapcs -march=armv7-a -mthumb -mfloat-abi=soft -mword-relocations"
 
-LKL_CFLAGS="$LKL_CFLAGS -ffunction-sections -fdata-sections"
+LKL_CFLAGS="$LKL_CFLAGS -ffunction-sections -fdata-sections -fno-PIC"
 
 export ARCH="lkl"
 export KBUILD_OUTPUT="$LKL_OUT"
