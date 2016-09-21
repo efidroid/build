@@ -347,7 +347,7 @@ def parse_config(configfile, moduledir=None):
                 # add CC and CXX environment variables
                 generic_env = ''
                 if targetcategory == 'target':
-                    generic_env += ' CC="'+getvar('GCC_LINUX_TARGET_NAME')+'-gcc" CXX="'+getvar('GCC_LINUX_TARGET_NAME')+'-g++"'
+                    generic_env += ' CC="'+getvar('GCC_LINUX_TARGET_PREFIX')+'gcc" CXX="'+getvar('GCC_LINUX_TARGET_PREFIX')+'g++"'
                     generic_env += ' PKG_CONFIG_DIR= PKG_CONFIG_LIBDIR= PKG_CONFIG_SYSROOT_DIR='
                 configureenv += generic_env
                 makeenv += generic_env
@@ -366,7 +366,7 @@ def parse_config(configfile, moduledir=None):
                                     description='Autoconfiguring target \''+targetname+'\'')
 
                 # add configure target
-                if targetcategory=='target':
+                if targetcategory=='target' and getvar('GCC_LINUX_TARGET_NAME')!='native':
                     configureflags += ' --host '+getvar('GCC_LINUX_TARGET_NAME')
                 commands = [
                     'mkdir -p \"'+targetout+'\"',
@@ -658,10 +658,14 @@ def setup_toolchain_variables(prefix, toolchain):
         v = expandvars_ex(toolchain, v)
         toolchain[k] = v
 
-    if 'path' in toolchain:
-        setvar(prefix+'_PATH', toolchain['path'])
-    setvar(prefix+'_NAME', toolchain['name'])
-    setvar(prefix+'_PREFIX', toolchain['prefix'])
+    if toolchain['name'] == 'native':
+        setvar(prefix+'_NAME', 'native')
+        setvar(prefix+'_PREFIX', '')
+    else:
+        if 'path' in toolchain:
+            setvar(prefix+'_PATH', toolchain['path'])
+        setvar(prefix+'_NAME', toolchain['name'])
+        setvar(prefix+'_PREFIX', toolchain['prefix'])
 
 def main(argv):
     # get devicename
@@ -825,18 +829,23 @@ def main(argv):
        toolchain_name_gcc_none = os.environ['EFIDROID_TOOLCHAIN_NAME_GCC_NONE']
     pr_alert('Toolchain-NONE: '+toolchain_name_gcc_none)
 
-    # build toolchain id's
-    toolchain_id_linux = 'gcc_linux_'+getvar('EFIDROID_TARGET_ARCH')+'_'+toolchain_name_gcc_linux
-    toolchain_id_none  = 'gcc_none_' +getvar('EFIDROID_TARGET_ARCH')+'_'+toolchain_name_gcc_none
+    if toolchain_name_gcc_linux == 'native':
+        cfg.toolchain_gcc_linux = cfg.toolchains['native']
+    else:
+        toolchain_id_linux = 'gcc_linux_'+getvar('EFIDROID_TARGET_ARCH')+'_'+toolchain_name_gcc_linux
+        if not toolchain_id_linux in cfg.toolchains:
+            raise Exception(getvar('EFIDROID_TARGET_ARCH')+' Toolchain \''+toolchain_name_gcc_linux+'\' doesn\'t support gcc_linux')
 
-    # check if toolchains are available
-    if not toolchain_id_linux in cfg.toolchains:
-        raise Exception('Toolchain \''+toolchain_name_gcc_linux+'\' doesn\'t support gcc_linux')
-    if not toolchain_id_none  in cfg.toolchains:
-        raise Exception('Toolchain \''+toolchain_name_gcc_none+'\' doesn\'t support gcc_none')
+        cfg.toolchain_gcc_linux = cfg.toolchains[toolchain_id_linux]
 
-    cfg.toolchain_gcc_linux = cfg.toolchains[toolchain_id_linux]
-    cfg.toolchain_gcc_none  = cfg.toolchains[toolchain_id_none]
+    if toolchain_name_gcc_none == 'native':
+        cfg.toolchain_gcc_none = cfg.toolchains['native']
+    else:
+        toolchain_id_none  = 'gcc_none_' +getvar('EFIDROID_TARGET_ARCH')+'_'+toolchain_name_gcc_none
+        if not toolchain_id_none  in cfg.toolchains:
+            raise Exception(getvar('EFIDROID_TARGET_ARCH')+' Toolchain \''+toolchain_name_gcc_none+'\' doesn\'t support gcc_none')
+
+        cfg.toolchain_gcc_none  = cfg.toolchains[toolchain_id_none]
 
     # setup variables needed by our modules
     setup_toolchain_variables('GCC_LINUX_TARGET', cfg.toolchain_gcc_linux)
