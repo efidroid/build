@@ -18,9 +18,13 @@ LKL_OUT="$MODULE_OUT/out"
 LKL_INSTALL="$MODULE_OUT/install"
 
 # ARM
-LKL_CFLAGS="$LKL_CFLAGS -mlittle-endian -mabi=aapcs -march=armv7-a -mthumb -mfloat-abi=soft -mword-relocations"
+if [ "$EFIDROID_TARGET_ARCH" == "arm" ];then
+    LKL_CFLAGS="$LKL_CFLAGS -mlittle-endian -mabi=aapcs -march=armv7-a -mthumb -mfloat-abi=soft -mword-relocations -fno-short-enums"
+elif [ "$EFIDROID_TARGET_ARCH" == "x86_64" ];then
+    LKL_CFLAGS="$LKL_CFLAGS -mno-red-zone -mno-stack-arg-probe -m64 -maccumulate-outgoing-args -mcmodel=small -fpie -fno-asynchronous-unwind-tables"
+fi
 
-LKL_CFLAGS="$LKL_CFLAGS -ffunction-sections -fdata-sections -fno-PIC -fshort-wchar -fno-short-enums"
+LKL_CFLAGS="$LKL_CFLAGS -ffunction-sections -fdata-sections -fno-PIC -fshort-wchar"
 
 export ARCH="lkl"
 export KBUILD_OUTPUT="$LKL_OUT"
