@@ -118,3 +118,7 @@ ifeq ($(WITH_DEBUG_RAM_CONSOLE),1)
     MODULES += \
         $(EFIDROID_TOP)/uefi/lkmodules/shared/lib/pram
 endif
+
+ifneq ($(DEVICE_DEFAULT_FDT_PARSER),)
+    CFLAGS += -DDEVICE_DEFAULT_FDT_PARSER=\"$(DEVICE_DEFAULT_FDT_PARSER)\"
+endif
