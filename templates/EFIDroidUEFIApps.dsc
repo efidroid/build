@@ -30,7 +30,7 @@
   # Common Libraries
   #
   BaseLib|MdePkg/Library/BaseLib/BaseLib.inf
-  BaseMemoryLib|MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf
+  BaseMemoryLib|MdePkg/Library/BaseMemoryLibOptDxe/BaseMemoryLibOptDxe.inf
   UefiLib|MdePkg/Library/UefiLib/UefiLib.inf
   PrintLib|MdePkg/Library/BasePrintLib/BasePrintLib.inf
   PcdLib|MdePkg/Library/BasePcdLibNull/BasePcdLibNull.inf
