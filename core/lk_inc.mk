@@ -51,6 +51,12 @@ ifeq ($(WITH_KERNEL_UEFIAPI),1)
 
     # disable LK debugging
     DEBUG := 0
+
+    # add libboot includes
+    LIBBOOT_DIR := $(EFIDROID_TOP)/modules/libboot
+    INCLUDES += -I$(LIBBOOT_DIR)/include
+    INCLUDES += -I$(LIBBOOT_DIR)/include_private
+    INCLUDES += -I$(EFIDROID_TOP)/uefi/lkmodules/shared/lib/boot/include
 else
     DEFINES += WITH_DEBUG_LOG_BUF=1
 
