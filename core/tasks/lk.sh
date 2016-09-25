@@ -100,6 +100,11 @@ if [ "$BOOTIMG_DT_KEEP_NODES" == "1" ];then
     DTBEFIDROIDIFY_REMOVE_NODES="0"
 fi
 
+DTBEFIDROIDIFY_DT_PARSER="qcom"
+if [ "$BOOTIMG_DT_PARSER" != "" ];then
+    DTBEFIDROIDIFY_DT_PARSER="$BOOTIMG_DT_PARSER"
+fi
+
 
 ########################################
 #               COMMON                 #
@@ -145,7 +150,7 @@ GeneratePatchedDeviceTree() {
         "$QCDTEXTRACT" "$BOOTIMG_DT" "$DTBDIR"
 
         # generate patched dtb's
-        "$DTBEFIDROIDIFY" "$DTBDIR" "$DTBPATCHEDDIR" "$DTBEFIDROIDIFY_REMOVE_NODES"
+        "$DTBEFIDROIDIFY" "$DTBDIR" "$DTBPATCHEDDIR" "$DTBEFIDROIDIFY_REMOVE_NODES" "$DTBEFIDROIDIFY_DT_PARSER"
 
         # generate new dt.img
         "$DTBTOOL" -o "$DTIMG_PATCHED" "$DTBPATCHEDDIR/"
@@ -162,7 +167,7 @@ GeneratePatchedDeviceTree() {
         "$FDTEXTRACT" "$BOOTIMG_APPENDED_FDT" "$FDTDIR"
 
         # generate patched dtb's
-        "$DTBEFIDROIDIFY" "$FDTDIR" "$FDTPATCHEDDIR" "$DTBEFIDROIDIFY_REMOVE_NODES"
+        "$DTBEFIDROIDIFY" "$FDTDIR" "$FDTPATCHEDDIR" "$DTBEFIDROIDIFY_REMOVE_NODES" "$DTBEFIDROIDIFY_DT_PARSER"
 
         # create new fdt.img
         cat "$FDTPATCHEDDIR/"* > "$FDT_PATCHED"
