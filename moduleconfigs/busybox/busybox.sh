@@ -67,6 +67,7 @@ CompileAndroidApp() {
         EnableConfig CONFIG_BASE64
         EnableConfig CONFIG_RM
         EnableConfig CONFIG_REALPATH
+        EnableConfig CONFIG_TRUNCATE
 
         # blkid
         EnableConfig CONFIG_BLKID
