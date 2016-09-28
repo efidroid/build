@@ -501,6 +501,7 @@ def add_cmake_target(path, projecttype, modulesrc=None, maketargets=None, disabl
         cmakeargs += ' -DCMAKE_CXX_COMPILER='+prefix+'g++'
         cmakeargs += ' -DCMAKE_LINKER='+prefix+'ld'
         cmakeargs += ' -DCMAKE_OBJCOPY='+prefix+'objcopy'
+        cmakeargs += ' -DCMAKE_EXE_LINKER_FLAGS=\"-static\"'
         cmakeargs += ' -DCMAKE_TOOLCHAIN_FILE='+getvar('TARGET_OUT')+'/toolchain.cmake'
     elif projecttype == 'host':
         cmakeargs += ' -DCMAKE_TOOLCHAIN_FILE='+getvar('HOST_OUT')+'/toolchain.cmake'
