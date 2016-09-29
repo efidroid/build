@@ -33,20 +33,41 @@ Compile() {
         pr_fatal "invalid selinux target $MODULE_NAME"
     fi
 
-    "$TOP/build/tools/lns" -rf "$SELINUX_SRC/libsepol/" "$MODULE_OUT"
+    MODTIME=0
+    LIBFILE_COMPILE="$MODULE_OUT/libsepol/src/libsepol.a"
+    LIBFILE_INSTALL="$MODULE_OUT/install/lib/libsepol$LIB_SUFFIX.a"
+
+    # link sources
+    if [ ! -d "$SELINUX_SRC/libsepol/" ];then
+        "$TOP/build/tools/lns" -rf "$SELINUX_SRC/libsepol/" "$MODULE_OUT"
+    fi
+
+    # get modification time
+    if [ -f "$LIBFILE_COMPILE" ];then
+        MODTIME=$(stat -c %Y "$LIBFILE_COMPILE")
+    fi
+
+    # make
     "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$MODULE_OUT/libsepol" $SELINUX_MAKE_ARGS all
 
-    LIBFILE="$MODULE_OUT/install/lib/libsepol$LIB_SUFFIX.a"
-    mkdir -p "$MODULE_OUT/install/lib"
-    cp "$MODULE_OUT/libsepol/src/libsepol.a" "$LIBFILE"
+    # check if the lib was modified
+    MODTIME_NEW=$(stat -c %Y "$LIBFILE_COMPILE")
+    if [ "$MODTIME_NEW" -gt "$MODTIME" ];then
+        # copy lib
+        mkdir -p "$MODULE_OUT/install/lib"
+        cp "$LIBFILE_COMPILE" "$LIBFILE_INSTALL"
 
-    "${GCC_LINUX_TARGET_PREFIX}objdump" -t "$LIBFILE" | awk '$2 == "g"' | awk "{ print \$6 \" selinux${LIB_SUFFIX}_\" \$6}" > "$MODULE_OUT/redefine.syms"
-    "${GCC_LINUX_TARGET_PREFIX}objcopy" --redefine-syms "$MODULE_OUT/redefine.syms" "$LIBFILE"
+        # add prefix to all global symbols
+        "${GCC_LINUX_TARGET_PREFIX}objdump" -t "$LIBFILE_INSTALL" | awk '$2 == "g"' | awk "{ print \$6 \" selinux${LIB_SUFFIX}_\" \$6}" > "$MODULE_OUT/redefine.syms"
+        "${GCC_LINUX_TARGET_PREFIX}objcopy" --redefine-syms "$MODULE_OUT/redefine.syms" "$LIBFILE_INSTALL"
 
-    pr_alert "Installing: $LIBFILE"
+        # show path
+        pr_alert "Installing: $LIBFILE_INSTALL"
 
-    mkdir -p "$MODULE_OUT/install/include"
-    "$TOP/build/tools/headers_install" -j8 -s "selinux${LIB_SUFFIX}" -p "selinux${LIB_SUFFIX}" -r "$MODULE_OUT/redefine.syms" "$SELINUX_SRC/libsepol/include/" "$MODULE_OUT/install/include"
+        # install headers
+        mkdir -p "$MODULE_OUT/install/include"
+        "$TOP/build/tools/headers_install" -j8 -s "selinux${LIB_SUFFIX}" -p "selinux${LIB_SUFFIX}" -r "$MODULE_OUT/redefine.syms" "$SELINUX_SRC/libsepol/include/" "$MODULE_OUT/install/include"
+    fi
 }
 
 Clean() {
