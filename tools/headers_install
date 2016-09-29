@@ -124,7 +124,6 @@ for root, dirnames, filenames in os.walk(srctree):
     for filename in filenames:
         headers.add(os.path.join(relroot, filename))
         includes.add(os.path.join(relroot, filename))
-        print(os.path.join(relroot, filename))
 
 new_headers = set()
 
