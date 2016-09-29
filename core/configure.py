@@ -895,6 +895,9 @@ def main(argv):
                 add_cmake_target(moduledir, 'host')
 
             elif not os.path.isfile(moduleconfigfile):
+                if moduledir.startswith("modules/selinux_"):
+                    continue
+
                 pr_warning('Unknown make system in '+moduledir+'\nYou can manually specify it in '+moduleconfigfile)
                 continue
 
