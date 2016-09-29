@@ -176,8 +176,8 @@ def gen_toolchains():
         for include in o.includes:
             inlcudesstr += ' \"'+include+'\"'
 
-        inc_expanded = expandmodulevars(inlcudesstr, o.target, 'host')
-        file_expanded = expandmodulevars(o.filename, o.target, 'host')
+        inc_expanded = expandmodulevars(expandvars(inlcudesstr), o.target, 'host')
+        file_expanded = expandmodulevars(expandvars(o.filename), o.target, 'host')
         if not inc_expanded==None and not file_expanded==None:
             f = fHost
             f.write('if(NOT "${EFIDROID_TARGET}" STREQUAL "'+o.target+'")\n')
@@ -189,8 +189,8 @@ def gen_toolchains():
             f.write('\n')
 
         if cfg.devicename:
-            inc_expanded = expandmodulevars(inlcudesstr, o.target, 'target')
-            file_expanded = expandmodulevars(o.filename, o.target, 'target')
+            inc_expanded = expandmodulevars(expandvars(inlcudesstr), o.target, 'target')
+            file_expanded = expandmodulevars(expandvars(o.filename), o.target, 'target')
             if not inc_expanded==None and not file_expanded==None:
                 f = fTarget
                 f.write('if(NOT "${EFIDROID_TARGET}" STREQUAL "'+o.target+'")\n')
