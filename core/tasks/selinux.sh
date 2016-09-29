@@ -19,9 +19,34 @@ SELINUX_MAKE_ARGS="$SELINUX_MAKE_ARGS CC=${GCC_LINUX_TARGET_PREFIX}gcc"
 SELINUX_MAKE_ARGS="$SELINUX_MAKE_ARGS CXX=${GCC_LINUX_TARGET_PREFIX}g++"
 SELINUX_MAKE_ARGS="$SELINUX_MAKE_ARGS CFLAGS=\"-Wno-sign-compare\""
 
+SELINUX_SRC=""
+LIB_SUFFIX=""
+
 Compile() {
-    "$TOP/build/tools/lns" -rf "$MODULE_DIR/libsepol/" "$MODULE_OUT"
+    if [ "$MODULE_NAME" == "target_libsepol6" ];then
+        SELINUX_SRC="$TOP/modules/selinux_6"
+        LIB_SUFFIX="6"
+    elif [ "$MODULE_NAME" == "target_libsepol7" ];then
+        SELINUX_SRC="$TOP/modules/selinux_7"
+        LIB_SUFFIX="7"
+    else
+        pr_fatal "invalid selinux target $MODULE_NAME"
+    fi
+
+    "$TOP/build/tools/lns" -rf "$SELINUX_SRC/libsepol/" "$MODULE_OUT"
     "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$MODULE_OUT/libsepol" $SELINUX_MAKE_ARGS all
+
+    LIBFILE="$MODULE_OUT/install/lib/libsepol$LIB_SUFFIX.a"
+    mkdir -p "$MODULE_OUT/install/lib"
+    cp "$MODULE_OUT/libsepol/src/libsepol.a" "$LIBFILE"
+
+    "${GCC_LINUX_TARGET_PREFIX}objdump" -t "$LIBFILE" | awk '$2 == "g"' | awk "{ print \$6 \" selinux${LIB_SUFFIX}_\" \$6}" > "$MODULE_OUT/redefine.syms"
+    "${GCC_LINUX_TARGET_PREFIX}objcopy" --redefine-syms "$MODULE_OUT/redefine.syms" "$LIBFILE"
+
+    pr_alert "Installing: $LIBFILE"
+
+    mkdir -p "$MODULE_OUT/install/include"
+    "$TOP/build/tools/headers_install" -j8 -s "selinux${LIB_SUFFIX}" -p "selinux${LIB_SUFFIX}" -r "$MODULE_OUT/redefine.syms" "$SELINUX_SRC/libsepol/include/" "$MODULE_OUT/install/include"
 }
 
 Clean() {
