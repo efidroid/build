@@ -208,6 +208,187 @@ def gen_toolchains():
     toolchain_write_footer(fHost)
     fHost.close()
 
+def process_target_section(configfile, moduledir, config, section):
+    targetname = section.split('.', 1)[1]
+    targetname_id = targetname.upper()
+    targettype = config.get(section, 'type')
+    targetrule = targetname+'_rule'
+    targetdir  = os.path.abspath(os.path.dirname(configfile))
+    targetdeps = []
+    targetcompilefn = 'EFIDroidCompile'
+    targetforcecompile = True
+    targetcategory = section.split('.', 1)[0]
+    targetout = None
+    outdir = targetname
+    maketargets = []
+    configureenv = ''
+    makeenv = ''
+    configureflags = ''
+    generatorflags = ''
+    linksource = False
+    internalTarget = False
+
+    if not moduledir:
+        moduledir = targetdir
+    else:
+        moduledir = os.path.abspath(moduledir)
+
+    if config.has_option(section, 'dependencies'):
+        targetdeps = targetdeps + config.get(section, 'dependencies').split()
+    if config.has_option(section, 'compilefunction'):
+        targetcompilefn = config.get(section, 'compilefunction')
+    if config.has_option(section, 'forcecompile'):
+        targetforcecompile = config.get(section, 'forcecompile')=='1'
+    if config.has_option(section, 'category'):
+        targetcategory = config.get(section, 'category')
+    if config.has_option(section, 'subtargets'):
+        subtargets = config.get(section, 'subtargets').split()
+    if config.has_option(section, 'maketargets'):
+        maketargets += config.get(section, 'maketargets').split()
+    if config.has_option(section, 'configureenv'):
+        configureenv += config.get(section, 'configureenv')
+    if config.has_option(section, 'makeenv'):
+        makeenv += config.get(section, 'makeenv')
+    if config.has_option(section, 'configureflags'):
+        configureflags += config.get(section, 'configureflags')
+    if config.has_option(section, 'generatorflags'):
+        generatorflags += config.get(section, 'generatorflags')
+    if config.has_option(section, 'linksource'):
+        linksource = config.get(section, 'linksource')=='1'
+    if config.has_option(section, 'group'):
+        internalTarget = config.get(section, 'group')=='internal'
+
+    # validate category
+    if not targetcategory=='target' and not targetcategory=='host':
+        raise Exception('Invalid category \''+targetcategory+'\' in '+configfile)
+
+    if targetforcecompile:
+        targetdeps += ['FORCE']
+
+    # skip device targets if we're building in host-only mode
+    if not cfg.devicename and targetcategory=='target':
+        return
+
+    if config.has_option(section, 'outdir'):
+        outdir = config.get(section, 'outdir')
+
+    if targetcategory=='target':
+        targetout = getvar('TARGET_OUT')+'/'+outdir
+    elif targetcategory=='host':
+        targetout = getvar('HOST_OUT')+'/'+outdir
+
+    # expand some of the options
+    configureflags = expandmodulevars_novars(configureflags, targetout, moduledir)
+    generatorflags = expandmodulevars_novars(generatorflags, targetout, moduledir)
+
+    # add rule
+    command = ''
+    if targettype == 'script':
+        targetscriptfile = config.get(section, 'scriptfile')
+        command = 'build/tools/runscript "'+\
+                   cfg.out+'" "'+cfg.configinclude_name+'" "'+targetdir+'/'+targetscriptfile+'"'+\
+                   ' "'+targetcategory+'" "'+targetname+'" "'+targetout+'" "'+moduledir+'"'
+
+        # add build target
+        make_add_target(configfile, targetname, command+' '+targetcompilefn, deps=targetdeps,\
+                        description='Compiling target \''+targetname+'\'')
+
+        # add clean target
+        make_add_target(configfile, targetname+'_clean', command+' Clean', deps=['FORCE'],\
+                        description='Cleaning target \''+targetname+'\'')
+        cfg.make.dependencies('clean', targetname+'_clean')
+
+        # add distclean target
+        make_add_target(configfile, targetname+'_distclean', command+' DistClean',\
+                        description='Dist-Cleaning target \''+targetname+'\'')
+        cfg.make.dependencies('distclean', targetname+'_distclean')
+
+        # add help entry
+        if config.has_option(section, 'help'):
+            addhelp(targetname, config.get(section, 'help'), internal=internalTarget)
+        else:
+            addhelp(targetname, '\''+targetcategory+'/'+targettype+'\' target', internal=internalTarget)
+
+    elif targettype == 'autoconf':
+        generator = None
+        if os.path.isfile(moduledir+'/autogen.sh'):
+            generator = 'autogen.sh'
+        elif os.path.isfile(moduledir+'/makeconf.sh'):
+            generator = 'makeconf.sh'
+        elif os.path.isfile(moduledir+'/bootstrap'):
+            generator = 'bootstrap'
+        elif os.path.isfile(moduledir+'/configure'):
+            generator = 'configure'
+        else:
+            raise Exception('no generator found for '+moduledir)
+
+        # add CC and CXX environment variables
+        generic_env = ''
+        if targetcategory == 'target':
+            generic_env += ' CC="'+getvar('GCC_LINUX_TARGET_PREFIX')+'gcc" CXX="'+getvar('GCC_LINUX_TARGET_PREFIX')+'g++"'
+            generic_env += ' PKG_CONFIG_DIR= PKG_CONFIG_LIBDIR= PKG_CONFIG_SYSROOT_DIR='
+        configureenv += generic_env
+        makeenv += generic_env
+
+        compiledir = moduledir
+        if linksource:
+            compiledir = targetout
+
+            # add lns target
+            make_add_target(configfile, targetout+'/'+generator, cfg.top+'/build/tools/lns -rf \"'+moduledir+'\" \"'+targetout+'\"',\
+                            description='running lns on target \''+targetname+'\'')
+
+        # add autogen target
+        if not generator=='configure':
+            make_add_target(configfile, compiledir+'/configure', 'cd \"'+compiledir+'\" && ./'+generator+" "+generatorflags, deps=compiledir+'/'+generator,\
+                            description='Autoconfiguring target \''+targetname+'\'')
+
+        # add configure target
+        if targetcategory=='target' and getvar('GCC_LINUX_TARGET_NAME')!='native':
+            configureflags += ' --host '+getvar('GCC_LINUX_TARGET_NAME')
+        commands = [
+            'mkdir -p \"'+targetout+'\"',
+            'cd \"'+targetout+'\" && '+configureenv+' \"'+compiledir+'/configure\" '+configureflags
+        ]
+        make_add_target(configfile, targetout+'/Makefile', commands, deps=compiledir+'/configure',\
+                        description='Configuring target \''+targetname+'\'')
+
+        # add make target
+        make_add_target(configfile, targetname, 'cd \"'+targetout+'\" && '+makeenv+' $(MAKE) '+(' '.join(maketargets)), \
+                        deps=targetdeps+[targetout+'/Makefile'], description='Compiling target \''+targetname+'\'')
+
+        # add clean target
+        make_add_target(configfile, targetname+'_clean', '[ -f \"'+targetout+'\" ] && cd \"'+targetout+'\" && [ -f Makefile ] && $(MAKE) clean || true',\
+                        deps=['FORCE'], description='Cleaning target \''+targetname+'\'')
+        cfg.make.dependencies('clean', targetname+'_clean')
+
+        # add distclean target
+        make_add_target(configfile, targetname+'_distclean', '[ -f \"'+targetout+'\" ] && cd \"'+targetout+'\" && [ -f Makefile ] && $(MAKE) distclean || true', \
+                        deps=[targetname+'_clean'], description='Dist-Cleaning target \''+targetname+'\'')
+        cfg.make.dependencies('distclean', targetname+'_distclean')
+
+        # add help entry
+        if config.has_option(section, 'help'):
+            addhelp(targetname, config.get(section, 'help'), internal=internalTarget)
+        else:
+            addhelp(targetname, '\''+targetcategory+'/'+targettype+'\' target', internal=internalTarget)
+
+    elif targettype == 'cmake':
+        add_cmake_target(os.path.dirname(configfile), targetcategory, moduledir, maketargets=maketargets, disableprefix=True)
+        cfg.make.dependencies(targetname, targetdeps)
+
+    elif targettype == 'command':
+        command = expandvars(config.get(section, 'command'))
+         # add make target
+        make_add_target(configfile, targetname, command, deps=targetdeps, description='Compiling target \''+targetname+'\'')
+
+    else:
+        raise Exception('Invalid target type \''+targettype+'\' in '+configfile)
+
+    # set target variables            
+    setvar(targetname_id+'_CONFIG_DIR', targetdir)
+    define_target_vars(targetname, targetcategory, moduledir)
+
 def parse_config(configfile, moduledir=None):
     cfg.make.comment(configfile)
 
@@ -230,186 +411,8 @@ def parse_config(configfile, moduledir=None):
             for (name, value) in config.items(section):
                 cfg.toolchains[identifier][name] = value
 
-        elif section.startswith('target.') or section.startswith('host.'):
-            targetname = section.split('.', 1)[1]
-            targetname_id = targetname.upper()
-            targettype = config.get(section, 'type')
-            targetrule = targetname+'_rule'
-            targetdir  = os.path.abspath(os.path.dirname(configfile))
-            targetdeps = []
-            targetcompilefn = 'EFIDroidCompile'
-            targetforcecompile = True
-            targetcategory = section.split('.', 1)[0]
-            targetout = None
-            outdir = targetname
-            maketargets = []
-            configureenv = ''
-            makeenv = ''
-            configureflags = ''
-            generatorflags = ''
-            linksource = False
-            internalTarget = False
-
-            if not moduledir:
-                moduledir = targetdir
-            else:
-                moduledir = os.path.abspath(moduledir)
-
-            if config.has_option(section, 'dependencies'):
-                targetdeps = targetdeps + config.get(section, 'dependencies').split()
-            if config.has_option(section, 'compilefunction'):
-                targetcompilefn = config.get(section, 'compilefunction')
-            if config.has_option(section, 'forcecompile'):
-                targetforcecompile = config.get(section, 'forcecompile')=='1'
-            if config.has_option(section, 'category'):
-                targetcategory = config.get(section, 'category')
-            if config.has_option(section, 'subtargets'):
-                subtargets = config.get(section, 'subtargets').split()
-            if config.has_option(section, 'maketargets'):
-                maketargets += config.get(section, 'maketargets').split()
-            if config.has_option(section, 'configureenv'):
-                configureenv += config.get(section, 'configureenv')
-            if config.has_option(section, 'makeenv'):
-                makeenv += config.get(section, 'makeenv')
-            if config.has_option(section, 'configureflags'):
-                configureflags += config.get(section, 'configureflags')
-            if config.has_option(section, 'generatorflags'):
-                generatorflags += config.get(section, 'generatorflags')
-            if config.has_option(section, 'linksource'):
-                linksource = config.get(section, 'linksource')=='1'
-            if config.has_option(section, 'group'):
-                internalTarget = config.get(section, 'group')=='internal'
-
-            # validate category
-            if not targetcategory=='target' and not targetcategory=='host':
-                raise Exception('Invalid category \''+targetcategory+'\' in '+configfile)
-
-            if targetforcecompile:
-                targetdeps += ['FORCE']
-
-            # skip device targets if we're building in host-only mode
-            if not cfg.devicename and targetcategory=='target':
-                continue
-
-            if config.has_option(section, 'outdir'):
-                outdir = config.get(section, 'outdir')
-
-            if targetcategory=='target':
-                targetout = getvar('TARGET_OUT')+'/'+outdir
-            elif targetcategory=='host':
-                targetout = getvar('HOST_OUT')+'/'+outdir
-
-            # expand some of the options
-            configureflags = expandmodulevars_novars(configureflags, targetout, moduledir)
-            generatorflags = expandmodulevars_novars(generatorflags, targetout, moduledir)
-
-            # add rule
-            command = ''
-            if targettype == 'script':
-                targetscriptfile = config.get(section, 'scriptfile')
-                command = 'build/tools/runscript "'+\
-                           cfg.out+'" "'+cfg.configinclude_name+'" "'+targetdir+'/'+targetscriptfile+'"'+\
-                           ' "'+targetcategory+'" "'+targetname+'" "'+targetout+'" "'+moduledir+'"'
-
-                # add build target
-                make_add_target(configfile, targetname, command+' '+targetcompilefn, deps=targetdeps,\
-                                description='Compiling target \''+targetname+'\'')
-
-                # add clean target
-                make_add_target(configfile, targetname+'_clean', command+' Clean', deps=['FORCE'],\
-                                description='Cleaning target \''+targetname+'\'')
-                cfg.make.dependencies('clean', targetname+'_clean')
-
-                # add distclean target
-                make_add_target(configfile, targetname+'_distclean', command+' DistClean',\
-                                description='Dist-Cleaning target \''+targetname+'\'')
-                cfg.make.dependencies('distclean', targetname+'_distclean')
-
-                # add help entry
-                if config.has_option(section, 'help'):
-                    addhelp(targetname, config.get(section, 'help'), internal=internalTarget)
-                else:
-                    addhelp(targetname, '\''+targetcategory+'/'+targettype+'\' target', internal=internalTarget)
-
-            elif targettype == 'autoconf':
-                generator = None
-                if os.path.isfile(moduledir+'/autogen.sh'):
-                    generator = 'autogen.sh'
-                elif os.path.isfile(moduledir+'/makeconf.sh'):
-                    generator = 'makeconf.sh'
-                elif os.path.isfile(moduledir+'/bootstrap'):
-                    generator = 'bootstrap'
-                elif os.path.isfile(moduledir+'/configure'):
-                    generator = 'configure'
-                else:
-                    raise Exception('no generator found for '+moduledir)
-
-                # add CC and CXX environment variables
-                generic_env = ''
-                if targetcategory == 'target':
-                    generic_env += ' CC="'+getvar('GCC_LINUX_TARGET_PREFIX')+'gcc" CXX="'+getvar('GCC_LINUX_TARGET_PREFIX')+'g++"'
-                    generic_env += ' PKG_CONFIG_DIR= PKG_CONFIG_LIBDIR= PKG_CONFIG_SYSROOT_DIR='
-                configureenv += generic_env
-                makeenv += generic_env
-
-                compiledir = moduledir
-                if linksource:
-                    compiledir = targetout
-
-                    # add lns target
-                    make_add_target(configfile, targetout+'/'+generator, cfg.top+'/build/tools/lns -rf \"'+moduledir+'\" \"'+targetout+'\"',\
-                                    description='running lns on target \''+targetname+'\'')
-
-                # add autogen target
-                if not generator=='configure':
-                    make_add_target(configfile, compiledir+'/configure', 'cd \"'+compiledir+'\" && ./'+generator+" "+generatorflags, deps=compiledir+'/'+generator,\
-                                    description='Autoconfiguring target \''+targetname+'\'')
-
-                # add configure target
-                if targetcategory=='target' and getvar('GCC_LINUX_TARGET_NAME')!='native':
-                    configureflags += ' --host '+getvar('GCC_LINUX_TARGET_NAME')
-                commands = [
-                    'mkdir -p \"'+targetout+'\"',
-                    'cd \"'+targetout+'\" && '+configureenv+' \"'+compiledir+'/configure\" '+configureflags
-                ]
-                make_add_target(configfile, targetout+'/Makefile', commands, deps=compiledir+'/configure',\
-                                description='Configuring target \''+targetname+'\'')
-
-                # add make target
-                make_add_target(configfile, targetname, 'cd \"'+targetout+'\" && '+makeenv+' $(MAKE) '+(' '.join(maketargets)), \
-                                deps=targetdeps+[targetout+'/Makefile'], description='Compiling target \''+targetname+'\'')
-
-                # add clean target
-                make_add_target(configfile, targetname+'_clean', '[ -f \"'+targetout+'\" ] && cd \"'+targetout+'\" && [ -f Makefile ] && $(MAKE) clean || true',\
-                                deps=['FORCE'], description='Cleaning target \''+targetname+'\'')
-                cfg.make.dependencies('clean', targetname+'_clean')
-
-                # add distclean target
-                make_add_target(configfile, targetname+'_distclean', '[ -f \"'+targetout+'\" ] && cd \"'+targetout+'\" && [ -f Makefile ] && $(MAKE) distclean || true', \
-                                deps=[targetname+'_clean'], description='Dist-Cleaning target \''+targetname+'\'')
-                cfg.make.dependencies('distclean', targetname+'_distclean')
-
-                # add help entry
-                if config.has_option(section, 'help'):
-                    addhelp(targetname, config.get(section, 'help'), internal=internalTarget)
-                else:
-                    addhelp(targetname, '\''+targetcategory+'/'+targettype+'\' target', internal=internalTarget)
-
-            elif targettype == 'cmake':
-                add_cmake_target(os.path.dirname(configfile), targetcategory, moduledir, maketargets=maketargets, disableprefix=True)
-                cfg.make.dependencies(targetname, targetdeps)
-
-            elif targettype == 'command':
-                command = expandvars(config.get(section, 'command'))
-                 # add make target
-                make_add_target(configfile, targetname, command, deps=targetdeps, description='Compiling target \''+targetname+'\'')
-
-            else:
-                raise Exception('Invalid target type \''+targettype+'\' in '+configfile)
-
-            # set target variables            
-            setvar(targetname_id+'_CONFIG_DIR', targetdir)
-            define_target_vars(targetname, targetcategory, moduledir)
+        elif section.startswith('target.'):
+            process_target_section(configfile, moduledir, config, section)
 
         elif section.startswith('library.'):
             libname = section.split('.', 1)[1]
@@ -426,8 +429,11 @@ def parse_config(configfile, moduledir=None):
 
         elif section.startswith('uefird.'):
             idx = section.split('.', 1)[1]
-            source = config.get(section, 'source').replace('$(%s)' % 'MODULE_SRC', cfg.top+'/'+moduledir)
+            source = config.get(section, 'source')
             destination = config.get(section, 'destination')
+
+            if moduledir:
+                source = source.replace('$(%s)' % 'MODULE_SRC', cfg.top+'/'+moduledir)
 
             targetname = 'uefird_'+idx
             targetdeps = ['FORCE']
