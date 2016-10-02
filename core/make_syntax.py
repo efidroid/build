@@ -25,6 +25,8 @@ class Writer(object):
         self.output = output
         self.width = width
         self.hidecommands = hidecommands
+        self.dependencies_list = {}
+        self.targets_list = []
         self.target('default', phony=True)
         self.newline()
 
@@ -46,6 +48,9 @@ class Writer(object):
         deps = as_list(deps)
         commands = as_command_list(commands)
 
+        if name in self.targets_list:
+            raise Exception('Duplicate target \''+name+'\'')
+
         if phony:
             self._line('.PHONY: %s' % name)
         self._line('%s: %s' % (name,
@@ -61,19 +66,45 @@ class Writer(object):
         for line in commands:
             self.output.write('\t%s%s\n' % (prefix, line))
 
+        self.targets_list += [name]
+        self.dependencies(name, deps, nocode=True)
+
     def include(self, path):
         self._line('include %s' % path)
 
     def default(self, deps):
         self.dependencies('default', deps)
 
-    def dependencies(self, name, deps):
-        self._line('%s: %s' % (name, ' '.join(as_list(deps))))
+    def dependencies(self, name, deps, nocode=False):
+        depsarr = as_list(deps)
+
+        # check if the target exists
+        if not name in self.targets_list:
+            if not (name=='clean' or name=='distclean'):
+                raise Exception('target \''+name+'\' doesn\'t exist (yet)')
+
+        # write dependency to makefile
+        if not nocode:
+            self._line('%s: %s' % (name, ' '.join(depsarr)))
+
+        # add dependency to list
+        if not name in self.dependencies_list:
+            self.dependencies_list[name] = []
+        self.dependencies_list[name] += depsarr
 
     def _line(self, text, indent=0):
         """Write 'text' word-wrapped at self.width characters."""
         leading_space = '  ' * indent
         self.output.write(leading_space + text + '\n')
+
+    def check_dependencies(self):
+        for target in self.dependencies_list:
+            if not target in self.targets_list:
+                raise Exception('defined dependencies for non-existend target \''+target+'\'')
+
+            for dep in self.dependencies_list[target]:
+                if not dep in self.targets_list:
+                    raise Exception('target \''+target+'\' depends on non-existend target \''+dep+'\'')
 
     def close(self):
         self.output.close()

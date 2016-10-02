@@ -119,7 +119,7 @@ EDK2Setup() {
 
     # symlink uefi/lkl
     rm -f "$EDK2_OUT/EFIDroidLKL"
-    ln -s "$TARGET_LKL_KERNEL_OUT/install" "$EDK2_OUT/EFIDroidLKL"
+    ln -s "$LKL_KERNEL_OUT/install" "$EDK2_OUT/EFIDroidLKL"
 
     rm -f "$EDK2_OUT/EFIDroidLKLPriv"
     ln -s "$TOP/uefi/lkl/tools/lkl" "$EDK2_OUT/EFIDroidLKLPriv"

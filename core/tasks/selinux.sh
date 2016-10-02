@@ -13,20 +13,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-SELINUX_MAKE_ARGS="$SELINUX_MAKE_ARGS AR=${GCC_LINUX_TARGET_PREFIX}ar"
-SELINUX_MAKE_ARGS="$SELINUX_MAKE_ARGS AS=${GCC_LINUX_TARGET_PREFIX}as"
-SELINUX_MAKE_ARGS="$SELINUX_MAKE_ARGS CC=${GCC_LINUX_TARGET_PREFIX}gcc"
-SELINUX_MAKE_ARGS="$SELINUX_MAKE_ARGS CXX=${GCC_LINUX_TARGET_PREFIX}g++"
+SELINUX_MAKE_ARGS=""
 SELINUX_MAKE_ARGS="$SELINUX_MAKE_ARGS CFLAGS=\"-Wno-sign-compare\""
+
+if [ "$MODULE_TYPE" == "target" ];then
+    SELINUX_MAKE_ARGS="$SELINUX_MAKE_ARGS AR=${GCC_LINUX_TARGET_PREFIX}ar"
+    SELINUX_MAKE_ARGS="$SELINUX_MAKE_ARGS AS=${GCC_LINUX_TARGET_PREFIX}as"
+    SELINUX_MAKE_ARGS="$SELINUX_MAKE_ARGS CC=${GCC_LINUX_TARGET_PREFIX}gcc"
+    SELINUX_MAKE_ARGS="$SELINUX_MAKE_ARGS CXX=${GCC_LINUX_TARGET_PREFIX}g++"
+    GCC_PREFIX="${GCC_LINUX_TARGET_PREFIX}"
+else
+    GCC_PREFIX=""
+fi
 
 SELINUX_SRC=""
 LIB_SUFFIX=""
 
 Compile() {
-    if [ "$MODULE_NAME" == "target_libsepol6" ];then
+    if [ "$MODULE_NAME" == "target_libsepol6" ] || [ "$MODULE_NAME" == "host_libsepol6" ];then
         SELINUX_SRC="$TOP/modules/selinux_6"
         LIB_SUFFIX="6"
-    elif [ "$MODULE_NAME" == "target_libsepol7" ];then
+    elif [ "$MODULE_NAME" == "target_libsepol7" ] || [ "$MODULE_NAME" == "host_libsepol7" ];then
         SELINUX_SRC="$TOP/modules/selinux_7"
         LIB_SUFFIX="7"
     else
@@ -38,7 +45,7 @@ Compile() {
     LIBFILE_INSTALL="$MODULE_OUT/install/lib/libsepol$LIB_SUFFIX.a"
 
     # link sources
-    if [ ! -d "$SELINUX_SRC/libsepol/" ];then
+    if [ ! -d "$MODULE_OUT/libsepol/" ];then
         "$TOP/build/tools/lns" -rf "$SELINUX_SRC/libsepol/" "$MODULE_OUT"
     fi
 
@@ -58,8 +65,8 @@ Compile() {
         cp "$LIBFILE_COMPILE" "$LIBFILE_INSTALL"
 
         # add prefix to all global symbols
-        "${GCC_LINUX_TARGET_PREFIX}objdump" -t "$LIBFILE_INSTALL" | awk '$2 == "g"' | awk "{ print \$6 \" selinux${LIB_SUFFIX}_\" \$6}" > "$MODULE_OUT/redefine.syms"
-        "${GCC_LINUX_TARGET_PREFIX}objcopy" --redefine-syms "$MODULE_OUT/redefine.syms" "$LIBFILE_INSTALL"
+        "${GCC_PREFIX}objdump" -t "$LIBFILE_INSTALL" | awk '$2 == "g"' | awk "{ print \$6 \" selinux${LIB_SUFFIX}_\" \$6}" > "$MODULE_OUT/redefine.syms"
+        "${GCC_PREFIX}objcopy" --redefine-syms "$MODULE_OUT/redefine.syms" "$LIBFILE_INSTALL"
 
         # show path
         pr_alert "Installing: $LIBFILE_INSTALL"

@@ -13,17 +13,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-BB_ARGS="ARCH=arm CROSS_COMPILE=$GCC_LINUX_TARGET_PREFIX O=$MODULE_OUT"
+if [ "$MODULE_TYPE" == "target" ];then
+    GCC_PREFIX="${GCC_LINUX_TARGET_PREFIX}"
+    E2FSPROGS_OUT="$TARGET_E2FSPROGS_OUT"
+else
+    GCC_PREFIX=""
+    E2FSPROGS_OUT="$HOST_E2FSPROGS_OUT"
+fi
 
 Compile() {
-   "${GCC_LINUX_TARGET_PREFIX}ar" rcs "$MODULE_OUT/libmke2fs.a" \
-        "$TARGET_E2FSPROGS_OUT/misc/mke2fs.o" \
-        "$TARGET_E2FSPROGS_OUT/misc/util.o" \
-        "$TARGET_E2FSPROGS_OUT/misc/default_profile.o" \
-        "$TARGET_E2FSPROGS_OUT/misc/mk_hugefiles.o" \
-        "$TARGET_E2FSPROGS_OUT/misc/create_inode.o"
+   "${GCC_PREFIX}ar" rcs "$MODULE_OUT/libmke2fs.a" \
+        "$E2FSPROGS_OUT/misc/mke2fs.o" \
+        "$E2FSPROGS_OUT/misc/util.o" \
+        "$E2FSPROGS_OUT/misc/default_profile.o" \
+        "$E2FSPROGS_OUT/misc/mk_hugefiles.o" \
+        "$E2FSPROGS_OUT/misc/create_inode.o"
 
-    "${GCC_LINUX_TARGET_PREFIX}objcopy" --redefine-sym main=mke2fs_main "$MODULE_OUT/libmke2fs.a"
+    "${GCC_PREFIX}objcopy" --redefine-sym main=mke2fs_main "$MODULE_OUT/libmke2fs.a"
 }
 
 Clean() {

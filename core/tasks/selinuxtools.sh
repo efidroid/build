@@ -13,15 +13,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+SELINUX_SRC=""
+SELINUX_MAKE_ARGS=""
+
 Compile() {
-    "$TOP/build/tools/lns" -rf "$MODULE_DIR/" "$MODULE_OUT"
-    "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$MODULE_OUT/dtc" $DTC_MAKE_ARGS
+    SELINUX_SRC="$TOP/modules/selinux_7"
+
+    # link sources
+    if [ ! -d "$MODULE_OUT/libselinux/" ];then
+        "$TOP/build/tools/lns" -rf "$SELINUX_SRC/libselinux/" "$MODULE_OUT"
+    fi
+
+    # make
+    "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$MODULE_OUT/libselinux" $SELINUX_MAKE_ARGS all
 }
 
 Clean() {
-    if [ -f "$MODULE_OUT/dtc" ];then 
-        "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$MODULE_OUT/dtc" $DTC_MAKE_ARGS clean
-    fi
+    "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$MODULE_OUT/libselinux" $SELINUX_MAKE_ARGS clean
 }
 
 DistClean() {

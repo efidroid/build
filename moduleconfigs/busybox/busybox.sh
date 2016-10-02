@@ -13,7 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-BB_ARGS="ARCH=arm CROSS_COMPILE=$GCC_LINUX_TARGET_PREFIX O=$MODULE_OUT"
+BB_ARGS="O=$MODULE_OUT"
+
+if [ "$MODULE_TYPE" == "target" ];then
+    BB_ARGS="$BB_ARGS ARCH=arm CROSS_COMPILE=$GCC_LINUX_TARGET_PREFIX"
+    GCC_PREFIX="${GCC_LINUX_TARGET_PREFIX}"
+else
+    GCC_PREFIX=""
+fi
 
 EnableConfig() {
     sed -i "s/# $1 is not set/$1=y/g" "$MODULE_OUT/.config"
@@ -42,9 +49,9 @@ Compile() {
     "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$MODULE_DIR" $BB_ARGS all
 
     # libbusybox.a
-    "${GCC_LINUX_TARGET_PREFIX}ar" rcs "$MODULE_OUT/libbusybox.a"  $(find "$MODULE_OUT" -name "*.o" | grep -v "/scripts/" | grep -v "built-in.o" | xargs)
-    "${GCC_LINUX_TARGET_PREFIX}objcopy" --redefine-sym main=busybox_main "$MODULE_OUT/libbusybox.a"
-    "${GCC_LINUX_TARGET_PREFIX}objcopy" --redefine-sym xmkstemp=busybox_xmkstemp "$MODULE_OUT/libbusybox.a"
+    "${GCC_PREFIX}ar" rcs "$MODULE_OUT/libbusybox.a"  $(find "$MODULE_OUT" -name "*.o" | grep -v "/scripts/" | grep -v "built-in.o" | xargs)
+    "${GCC_PREFIX}objcopy" --redefine-sym main=busybox_main "$MODULE_OUT/libbusybox.a"
+    "${GCC_PREFIX}objcopy" --redefine-sym xmkstemp=busybox_xmkstemp "$MODULE_OUT/libbusybox.a"
 }
 
 CompileAndroidApp() {

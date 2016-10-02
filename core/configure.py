@@ -121,17 +121,6 @@ def addhelp(name, text, internal=False):
         'internal':internal
     })
 
-def define_target_vars(name, projecttype, src):
-    name_upper = name.upper()
-
-    # set target variables            
-    if projecttype=='target':
-        setvar('TARGET_'+name_upper+'_OUT', getvar('TARGET_OUT')+'/'+name)
-        setvar('TARGET_'+name_upper+'_SRC', src)
-    elif projecttype=='host':
-        setvar('HOST_'+name_upper+'_OUT', getvar('HOST_OUT')+'/'+name)
-        setvar('HOST_'+name_upper+'_SRC', src)
-
 def register_library(target, name, filename, includes, static=True):
     o = Bunch()
     o.name = name
@@ -176,6 +165,7 @@ def gen_toolchains():
         for include in o.includes:
             inlcudesstr += ' \"'+include+'\"'
 
+        success = False;
         inc_expanded = expandmodulevars(expandvars(inlcudesstr), o.target, 'host')
         file_expanded = expandmodulevars(expandvars(o.filename), o.target, 'host')
         if not inc_expanded==None and not file_expanded==None:
@@ -187,6 +177,7 @@ def gen_toolchains():
                 f.write('include_directories('+inc_expanded+')\n')
             f.write('endif()\n\n')
             f.write('\n')
+            success = True
 
         if cfg.devicename:
             inc_expanded = expandmodulevars(expandvars(inlcudesstr), o.target, 'target')
@@ -200,6 +191,10 @@ def gen_toolchains():
                     f.write('include_directories('+inc_expanded+')\n')
                 f.write('endif()\n\n')
                 f.write('\n')
+                success = True
+
+        if not success:
+            raise Exception('library %s depends on non-existend target %s' % (o.name, o.target))
 
     if cfg.devicename:
         toolchain_write_footer(fTarget)
@@ -208,7 +203,7 @@ def gen_toolchains():
     toolchain_write_footer(fHost)
     fHost.close()
 
-def process_target_section(configfile, moduledir, config, section):
+def add_ini_target(moduletype, configfile, moduledir, config, section, uefiapp=False):
     targetname = section.split('.', 1)[1]
     targetname_id = targetname.upper()
     targettype = config.get(section, 'type')
@@ -217,7 +212,6 @@ def process_target_section(configfile, moduledir, config, section):
     targetdeps = []
     targetcompilefn = 'EFIDroidCompile'
     targetforcecompile = True
-    targetcategory = section.split('.', 1)[0]
     targetout = None
     outdir = targetname
     maketargets = []
@@ -227,11 +221,7 @@ def process_target_section(configfile, moduledir, config, section):
     generatorflags = ''
     linksource = False
     internalTarget = False
-
-    if not moduledir:
-        moduledir = targetdir
-    else:
-        moduledir = os.path.abspath(moduledir)
+    noprefix = False
 
     if config.has_option(section, 'dependencies'):
         targetdeps = targetdeps + config.get(section, 'dependencies').split()
@@ -239,8 +229,6 @@ def process_target_section(configfile, moduledir, config, section):
         targetcompilefn = config.get(section, 'compilefunction')
     if config.has_option(section, 'forcecompile'):
         targetforcecompile = config.get(section, 'forcecompile')=='1'
-    if config.has_option(section, 'category'):
-        targetcategory = config.get(section, 'category')
     if config.has_option(section, 'subtargets'):
         subtargets = config.get(section, 'subtargets').split()
     if config.has_option(section, 'maketargets'):
@@ -258,23 +246,35 @@ def process_target_section(configfile, moduledir, config, section):
     if config.has_option(section, 'group'):
         internalTarget = config.get(section, 'group')=='internal'
 
-    # validate category
-    if not targetcategory=='target' and not targetcategory=='host':
-        raise Exception('Invalid category \''+targetcategory+'\' in '+configfile)
+    if uefiapp:
+        noprefix = True
+    else:
+        if config.has_option(section, 'noprefix'):
+            noprefix = config.get(section, 'noprefix')=='1'
+
+    # validate target name
+    if targetname.startswith(moduletype+'_'):
+        pr_fatal('invalid prefix in target name %s' % targetname)
+
+    # add moduletype prefix to target name
+    if not noprefix:
+        targetname = moduletype+'_'+targetname
+
+    # get moduledir
+    if not moduledir:
+        moduledir = targetdir
+    else:
+        moduledir = os.path.abspath(moduledir)
 
     if targetforcecompile:
         targetdeps += ['FORCE']
 
-    # skip device targets if we're building in host-only mode
-    if not cfg.devicename and targetcategory=='target':
-        return
-
     if config.has_option(section, 'outdir'):
         outdir = config.get(section, 'outdir')
 
-    if targetcategory=='target':
+    if moduletype=='target':
         targetout = getvar('TARGET_OUT')+'/'+outdir
-    elif targetcategory=='host':
+    elif moduletype=='host':
         targetout = getvar('HOST_OUT')+'/'+outdir
 
     # expand some of the options
@@ -285,29 +285,33 @@ def process_target_section(configfile, moduledir, config, section):
     command = ''
     if targettype == 'script':
         targetscriptfile = config.get(section, 'scriptfile')
+        targetscriptfile_abs = targetdir+'/'+targetscriptfile
+        if not os.path.isfile(targetscriptfile_abs):
+            raise Exception('%s: \'%s\' doesn\'t exist' % (configfile, targetscriptfile_abs))
+
         command = 'build/tools/runscript "'+\
-                   cfg.out+'" "'+cfg.configinclude_name+'" "'+targetdir+'/'+targetscriptfile+'"'+\
-                   ' "'+targetcategory+'" "'+targetname+'" "'+targetout+'" "'+moduledir+'"'
+                   cfg.out+'" "'+cfg.configinclude_name+'" "'+targetscriptfile_abs+'"'+\
+                   ' "'+moduletype+'" "'+targetname+'" "'+targetout+'" "'+moduledir+'"'
 
         # add build target
         make_add_target(configfile, targetname, command+' '+targetcompilefn, deps=targetdeps,\
-                        description='Compiling target \''+targetname+'\'')
+                        description='Compiling target \''+targetname+'\'', moduletype=moduletype)
 
         # add clean target
         make_add_target(configfile, targetname+'_clean', command+' Clean', deps=['FORCE'],\
-                        description='Cleaning target \''+targetname+'\'')
+                        description='Cleaning target \''+targetname+'\'', moduletype=moduletype)
         cfg.make.dependencies('clean', targetname+'_clean')
 
         # add distclean target
         make_add_target(configfile, targetname+'_distclean', command+' DistClean',\
-                        description='Dist-Cleaning target \''+targetname+'\'')
+                        description='Dist-Cleaning target \''+targetname+'\'', moduletype=moduletype)
         cfg.make.dependencies('distclean', targetname+'_distclean')
 
         # add help entry
         if config.has_option(section, 'help'):
             addhelp(targetname, config.get(section, 'help'), internal=internalTarget)
         else:
-            addhelp(targetname, '\''+targetcategory+'/'+targettype+'\' target', internal=internalTarget)
+            addhelp(targetname, '\''+moduletype+'/'+targettype+'\' target', internal=internalTarget)
 
     elif targettype == 'autoconf':
         generator = None
@@ -324,7 +328,7 @@ def process_target_section(configfile, moduledir, config, section):
 
         # add CC and CXX environment variables
         generic_env = ''
-        if targetcategory == 'target':
+        if moduletype == 'target':
             generic_env += ' CC="'+getvar('GCC_LINUX_TARGET_PREFIX')+'gcc" CXX="'+getvar('GCC_LINUX_TARGET_PREFIX')+'g++"'
             generic_env += ' PKG_CONFIG_DIR= PKG_CONFIG_LIBDIR= PKG_CONFIG_SYSROOT_DIR='
         configureenv += generic_env
@@ -336,63 +340,130 @@ def process_target_section(configfile, moduledir, config, section):
 
             # add lns target
             make_add_target(configfile, targetout+'/'+generator, cfg.top+'/build/tools/lns -rf \"'+moduledir+'\" \"'+targetout+'\"',\
-                            description='running lns on target \''+targetname+'\'')
+                            description='running lns on target \''+targetname+'\'', moduletype=moduletype)
 
         # add autogen target
         if not generator=='configure':
             make_add_target(configfile, compiledir+'/configure', 'cd \"'+compiledir+'\" && ./'+generator+" "+generatorflags, deps=compiledir+'/'+generator,\
-                            description='Autoconfiguring target \''+targetname+'\'')
+                            description='Autoconfiguring target \''+targetname+'\'', moduletype=moduletype)
 
         # add configure target
-        if targetcategory=='target' and getvar('GCC_LINUX_TARGET_NAME')!='native':
+        if moduletype=='target' and getvar('GCC_LINUX_TARGET_NAME')!='native':
             configureflags += ' --host '+getvar('GCC_LINUX_TARGET_NAME')
         commands = [
             'mkdir -p \"'+targetout+'\"',
             'cd \"'+targetout+'\" && '+configureenv+' \"'+compiledir+'/configure\" '+configureflags
         ]
         make_add_target(configfile, targetout+'/Makefile', commands, deps=compiledir+'/configure',\
-                        description='Configuring target \''+targetname+'\'')
+                        description='Configuring target \''+targetname+'\'', moduletype=moduletype)
 
         # add make target
         make_add_target(configfile, targetname, 'cd \"'+targetout+'\" && '+makeenv+' $(MAKE) '+(' '.join(maketargets)), \
-                        deps=targetdeps+[targetout+'/Makefile'], description='Compiling target \''+targetname+'\'')
+                        deps=targetdeps+[targetout+'/Makefile'], description='Compiling target \''+targetname+'\'', moduletype=moduletype)
 
         # add clean target
         make_add_target(configfile, targetname+'_clean', '[ -f \"'+targetout+'\" ] && cd \"'+targetout+'\" && [ -f Makefile ] && $(MAKE) clean || true',\
-                        deps=['FORCE'], description='Cleaning target \''+targetname+'\'')
+                        deps=['FORCE'], description='Cleaning target \''+targetname+'\'', moduletype=moduletype)
         cfg.make.dependencies('clean', targetname+'_clean')
 
         # add distclean target
         make_add_target(configfile, targetname+'_distclean', '[ -f \"'+targetout+'\" ] && cd \"'+targetout+'\" && [ -f Makefile ] && $(MAKE) distclean || true', \
-                        deps=[targetname+'_clean'], description='Dist-Cleaning target \''+targetname+'\'')
+                        deps=[targetname+'_clean'], description='Dist-Cleaning target \''+targetname+'\'', moduletype=moduletype)
         cfg.make.dependencies('distclean', targetname+'_distclean')
 
         # add help entry
         if config.has_option(section, 'help'):
             addhelp(targetname, config.get(section, 'help'), internal=internalTarget)
         else:
-            addhelp(targetname, '\''+targetcategory+'/'+targettype+'\' target', internal=internalTarget)
+            addhelp(targetname, '\''+moduletype+'/'+targettype+'\' target', internal=internalTarget)
 
     elif targettype == 'cmake':
-        add_cmake_target(os.path.dirname(configfile), targetcategory, moduledir, maketargets=maketargets, disableprefix=True)
-        cfg.make.dependencies(targetname, targetdeps)
+        add_cmake_target(os.path.dirname(configfile), moduletype, moduledir, moduledeps=targetdeps, maketargets=maketargets)
 
     elif targettype == 'command':
         command = expandvars(config.get(section, 'command'))
          # add make target
-        make_add_target(configfile, targetname, command, deps=targetdeps, description='Compiling target \''+targetname+'\'')
+        make_add_target(configfile, targetname, command, deps=targetdeps, description='Compiling target \''+targetname+'\'', moduletype=moduletype)
 
     else:
         raise Exception('Invalid target type \''+targettype+'\' in '+configfile)
 
     # set target variables            
     setvar(targetname_id+'_CONFIG_DIR', targetdir)
-    define_target_vars(targetname, targetcategory, moduledir)
+    setvar(targetname.upper()+'_OUT', targetout)
+    setvar(targetname.upper()+'_SRC', moduledir)
 
-def parse_config(configfile, moduledir=None):
+def process_target_section(configfile, moduledir, config, section, uefiapp=False):
+    moduletypes = []
+
+    if uefiapp:
+        moduletypes.append('target')
+    else:
+        moduletypes.append('target')
+        moduletypes.append('host')
+
+        if config.has_option(section, 'moduletypes'):
+            moduletypes = config.get(section, 'moduletypes').split()
+
+    for moduletype in moduletypes:
+        # validate moduletype
+        if not moduletype=='target' and not moduletype=='host':
+            raise Exception('Invalid module type \''+moduletype+'\' in '+configfile)
+
+        # skip device targets if we're building in host-only mode
+        if not cfg.devicename and moduletype=='target':
+            continue
+
+        add_ini_target(moduletype, configfile, moduledir, config, section, uefiapp=uefiapp)
+
+class CheckingRawConfigParser(ConfigParser.RawConfigParser):
+    def __init__(self, *args, **kwargs):
+        ConfigParser.RawConfigParser.__init__(self, *args, **kwargs)
+
+        self.used_options = {}
+
+    def get(self, *args, **kwargs):
+        section = args[0]
+        option = args[1]
+
+        if not section in self.used_options:
+            self.used_options[section] = [];
+
+        self.used_options[section] += [option]
+
+        return ConfigParser.RawConfigParser.get(self, *args, **kwargs)
+
+    def get_unused_options(self, section):
+        arr = []
+
+        if not section in self.used_options:
+            self.used_options[section] = [];
+
+        for item in self.items(section):
+            if not item[0] in self.used_options[section]:
+                arr += [item[0]]
+
+        return arr
+
+    def check_unused_options(self, section, configfile):
+        if section == 'variables':
+            return
+        if section == 'parseopts':
+            return
+        if section.startswith('toolchain.'):
+            return
+
+        unused_options = self.get_unused_options(section)
+        for option in unused_options:
+            pr_error('unused option \''+option+'\' in section \''+section+'\' of '+configfile)
+
+        if len(unused_options)>0:
+            raise Exception('')
+
+def parse_config(configfile, moduledir=None, moduledeps=[], uefiapp=False):
     cfg.make.comment(configfile)
 
-    config = ConfigParser.RawConfigParser(allow_no_value=True)
+    config = CheckingRawConfigParser(allow_no_value=True)
     config.optionxform = str
     config.read(configfile)
 
@@ -412,7 +483,7 @@ def parse_config(configfile, moduledir=None):
                 cfg.toolchains[identifier][name] = value
 
         elif section.startswith('target.'):
-            process_target_section(configfile, moduledir, config, section)
+            process_target_section(configfile, moduledir, config, section, uefiapp=uefiapp)
 
         elif section.startswith('library.'):
             libname = section.split('.', 1)[1]
@@ -458,18 +529,7 @@ def parse_config(configfile, moduledir=None):
         else:
             raise Exception('Invalid section \''+section+'\' in '+configfile)
 
-    cfg.make.newline()
-
-def parse_deps(configfile):
-    cfg.make.comment(configfile)
-
-    config = ConfigParser.RawConfigParser(allow_no_value=True)
-    config.optionxform = str
-    config.read(configfile)
-
-    for targetname in config.sections():
-        for (name, value) in config.items(targetname):
-            cfg.make.dependencies(targetname, name)
+        config.check_unused_options(section, configfile)
 
     cfg.make.newline()
 
@@ -486,7 +546,7 @@ def cfg_parse_opts(configfile):
 
     return opts
 
-def add_cmake_target(path, projecttype, modulesrc=None, maketargets=None, disableprefix=False):
+def add_cmake_target(path, projecttype, modulesrc=None, maketargets=None, disableprefix=False, moduledeps=[]):
     cfg.make.comment(path)
 
     dirname = os.path.basename(os.path.normpath(path))
@@ -494,7 +554,7 @@ def add_cmake_target(path, projecttype, modulesrc=None, maketargets=None, disabl
         targetname = dirname
     else:
         targetname = projecttype+'_'+dirname
-    targetdeps = ['FORCE']
+    targetdeps = ['FORCE'] + moduledeps
     cmakeargs = ''
 
     if projecttype == 'target':
@@ -519,14 +579,16 @@ def add_cmake_target(path, projecttype, modulesrc=None, maketargets=None, disabl
     if modulesrc:
         cmakeargs += ' -DMODULE_SRC='+os.path.abspath(modulesrc)
 
-    define_target_vars(dirname, projecttype, os.path.abspath(path))
+    if projecttype=='target':
+        outdir = getvar('TARGET_OUT')+'/'+dirname
+    elif projecttype=='host':
+        outdir = getvar('HOST_OUT')+'/'+dirname
 
     # add rule
-    outdir = getvar(projecttype.upper()+'_'+dirname.upper()+'_OUT')
     make_add_target(path, targetname, [
         'mkdir -p \"'+outdir+'\"',
         'cd \"'+outdir+'\" && cmake '+cmakeargs+' '+os.path.abspath(path)+' && $(MAKE)'
-    ], description='Compiling target \''+targetname+'\'', deps=targetdeps)
+    ], description='Compiling target \''+targetname+'\'', deps=targetdeps, moduletype=projecttype)
     addhelp(targetname, 'CMake target')
 
     # add clean rule
@@ -534,23 +596,26 @@ def add_cmake_target(path, projecttype, modulesrc=None, maketargets=None, disabl
         'if [ -d \"'+outdir+'\" ];then ' +
         'cd \"'+outdir+'\" && $(MAKE) clean;' +
         'fi'
-    ], description='Cleaning target \''+targetname+'\'', deps=['FORCE'])
+    ], description='Cleaning target \''+targetname+'\'', deps=['FORCE'], moduletype=projecttype)
     cfg.make.dependencies('clean', targetname+'_clean')
 
     # add distclean rule
     make_add_target(path, targetname+'_distclean', [
         'rm -Rf \"'+outdir+'\"'
-    ], description='Dist-Cleaning target \''+targetname+'\'')
+    ], description='Dist-Cleaning target \''+targetname+'\'', moduletype=projecttype)
     cfg.make.dependencies('distclean', targetname+'_distclean')
 
     cfg.make.newline()
 
-def add_uefiapp_target(path):
+    setvar(targetname.upper()+'_OUT', outdir)
+    setvar(targetname.upper()+'_SRC', os.path.abspath(path))
+
+def add_uefiapp_target(path, moduledeps=[]):
     cfg.make.comment(path)
 
     dirname = os.path.basename(os.path.normpath(path))
     targetname = 'uefiapp_'+dirname
-    targetdeps = ['FORCE']
+    targetdeps = ['FORCE'] + moduledeps
 
     scriptfile  = os.path.abspath('build/core/tasks/edk2-appbase.sh')
     targetout  = os.path.abspath(getvar('TARGET_COMMON_OUT')+'/'+targetname)
@@ -562,32 +627,67 @@ def add_uefiapp_target(path):
 
     # add build target
     make_add_target(path, targetname, command+' '+targetcompilefn, deps=targetdeps,\
-                    description='Compiling target \''+targetname+'\'')
+                    description='Compiling target \''+targetname+'\'', moduletype='target')
     addhelp(targetname, 'UEFIApp target')
 
     # add clean target
     make_add_target(path, targetname+'_clean', command+' Clean', deps=['FORCE'],\
-                    description='Cleaning target \''+targetname+'\'')
+                    description='Cleaning target \''+targetname+'\'', moduletype='target')
     cfg.make.dependencies('clean', targetname+'_clean')
 
     # add distclean target
     make_add_target(path, targetname+'_distclean', command+' DistClean',\
-                    description='Dist-Cleaning target \''+targetname+'\'')
+                    description='Dist-Cleaning target \''+targetname+'\'', moduletype='target')
     cfg.make.dependencies('distclean', targetname+'_distclean')
 
     cfg.make.newline()
 
-def make_add_target(source, name, commands=None, deps=None, phony=False, description=None):
+def make_add_target(source, name, commands=None, deps=None, phony=False, description=None, moduletype=None):
     if name in cfg.targets:
-        raise Exception('Duplicate target \''+name+'\' in '+source+'\nPreviously defined in '+cfg.targets[name])
+        raise Exception('Duplicate target \''+name+'\' in '+source+'\nPreviously defined in '+cfg.targets[name]['source'])
 
     if not deps:
         deps = []
     if not isinstance(deps, list):
         deps = [deps]
 
-    cfg.make.target(name, commands, deps, phony, description)
-    cfg.targets[name] = source
+    cfg.make.target(name, commands, [], phony, description)
+    cfg.targets[name] = {
+        'source':source,
+        'deps':deps,
+        'moduletype':moduletype,
+    }
+
+def make_add_dependencies():
+    for name in cfg.targets:
+        info = cfg.targets[name]
+        deps = []
+
+        for dep in info['deps']:
+            # ignore explicit deps
+            if dep.startswith('target_') or dep.startswith('host_') or dep=='FORCE' or info['moduletype']==None:
+                deps.append(dep)
+                continue
+
+            # if the target exists, use it
+            if dep in cfg.targets:
+                deps.append(dep)
+                continue
+
+            # this should be an error, but since make_syntax checks this anyway, we add it as is
+            newdepname = info['moduletype'] + '_' + dep
+            if not newdepname in cfg.targets:
+                deps.append(dep)
+                continue
+
+            # add the new depname
+            depinfo = cfg.targets[newdepname]
+            deps.append(newdepname)
+
+        if len(deps)==0:
+            continue
+
+        cfg.make.dependencies(name, deps)
 
 def partitionpath2name(part):
     tmp = part.split('/by-name/')
@@ -673,6 +773,60 @@ def setup_toolchain_variables(prefix, toolchain):
             setvar(prefix+'_PATH', toolchain['path'])
         setvar(prefix+'_NAME', toolchain['name'])
         setvar(prefix+'_PREFIX', toolchain['prefix'])
+
+def process_module(moduledir, uefiapp=False):
+    dirname = os.path.basename(os.path.normpath(moduledir))
+    if uefiapp:
+        moduleconfigfile = 'build/uefiappconfigs/'+dirname+'/EFIDroid.ini'
+    else:
+        moduleconfigfile = 'build/moduleconfigs/'+dirname+'/EFIDroid.ini'
+    moduleefidroidini = moduledir+'/EFIDroid.ini'
+    moduledepsfile = moduledir+'/EFIDroidDependencies.ini'
+    moduledeps = []
+
+    # always include moduleconfig if available
+    if os.path.isfile(moduleconfigfile):
+        if os.path.isfile(moduleefidroidini):
+            raise Exception('both %s and %s were found' % (moduleconfigfile, moduleefidroidini))
+
+        parse_config(moduleconfigfile, moduledir, uefiapp=uefiapp);
+
+    # detect build system
+    parsed = False
+    if os.path.isfile(moduleefidroidini):
+        # parse opts
+        opts = cfg_parse_opts(moduleefidroidini)
+
+        # add moduledeps
+        if ('moduledeps' in opts):
+            moduledeps += opts['moduledeps'].split()
+
+        # parse config normally
+        parse_config(moduleefidroidini, moduledir, moduledeps=moduledeps, uefiapp=uefiapp);
+
+        # check if this is a extension only
+        if ('extend' in opts) and (opts['extend']=='1'):
+            parsed = False
+        else:
+            parsed = True
+
+    if parsed == False:
+        if os.path.isfile(moduledir+'/CMakeLists.txt'):
+            add_cmake_target(moduledir, 'target', moduledeps=moduledeps)
+            add_cmake_target(moduledir, 'host', moduledeps=moduledeps)
+
+        elif uefiapp and os.path.isfile(moduledir+'/'+dirname+'.inf'):
+            add_uefiapp_target(moduledir, moduledeps=moduledeps)
+
+        elif not os.path.isfile(moduleconfigfile):
+            if moduledir.startswith("modules/selinux_"):
+                return
+
+            pr_warning('Unknown make system in '+moduledir+'\nYou can manually specify it in '+moduleconfigfile)
+            return
+
+    if os.path.isfile(moduledepsfile):
+        pr_warning('Deprecated file \''+moduledepsfile+'\'')
 
 def main(argv):
     # get devicename
@@ -877,79 +1031,11 @@ def main(argv):
 
     # add modules
     for moduledir in glob.glob('modules/*'):
-        dirname = os.path.basename(os.path.normpath(moduledir))
-
-        # always include moduleconfig if available
-        moduleconfigfile = 'build/moduleconfigs/'+dirname+'/EFIDroid.ini'
-        if os.path.isfile(moduleconfigfile):
-            parse_config(moduleconfigfile, moduledir);
-
-        # detect build system
-        moduleefidroidini = moduledir+'/EFIDroid.ini'
-        parsed = False
-        if os.path.isfile(moduleefidroidini):
-            parse_config(moduleefidroidini, moduledir);
-            opts = cfg_parse_opts(moduleefidroidini)
-            if ('extend' in opts) and (opts['extend']=='1'):
-                parsed = False
-            else:
-                parsed = True
-
-        if parsed == False:
-            if os.path.isfile(moduledir+'/CMakeLists.txt'):
-                add_cmake_target(moduledir, 'target')
-                add_cmake_target(moduledir, 'host')
-
-            elif not os.path.isfile(moduleconfigfile):
-                if moduledir.startswith("modules/selinux_"):
-                    continue
-
-                pr_warning('Unknown make system in '+moduledir+'\nYou can manually specify it in '+moduleconfigfile)
-                continue
-
-        moduledepsfile = moduledir+'/EFIDroidDependencies.ini'
-        if os.path.isfile(moduledepsfile):
-            parse_deps(moduledepsfile)
+        process_module(moduledir)
 
     # add apps
     for moduledir in glob.glob('uefi/apps/*'):
-        dirname = os.path.basename(os.path.normpath(moduledir))
-        moduleefidroidini = moduledir+'/EFIDroid.ini'
-        appconfigfile = 'build/uefiappconfigs/'+dirname+'/EFIDroid.ini'
-
-        # detect build system
-        parsed = False
-        if os.path.isfile(appconfigfile):
-            parse_config(appconfigfile, moduledir);
-            opts = cfg_parse_opts(moduleefidroidini)
-            if ('extend' in opts) and (opts['extend']=='1'):
-                parsed = False
-            else:
-                parsed = True
-
-        if parsed == False:
-            if os.path.isfile(moduleefidroidini):
-                parse_config(moduleefidroidini, moduledir);
-                opts = cfg_parse_opts(moduleefidroidini)
-                if ('extend' in opts) and (opts['extend']=='1'):
-                    parsed = False
-                else:
-                    parsed = True
-
-            if parsed == False:
-                if os.path.isfile(moduledir+'/CMakeLists.txt'):
-                    add_cmake_target(moduledir, 'target')
-                    add_cmake_target(moduledir, 'host')
-
-                elif os.path.isfile(moduledir+'/'+dirname+'.inf'):
-                    add_uefiapp_target(moduledir)
-
-                elif not os.path.isfile(appconfigfile):
-                    raise Exception('Unknown make system in '+moduledir+'\nYou can manually specify it in '+appconfigfile)
-
-        moduledepsfile = moduledir+'/EFIDroidDependencies.ini'
-        if os.path.isfile(moduledepsfile):
-            parse_deps(moduledepsfile)
+        process_module(moduledir, uefiapp=True)
 
     if cfg.devicename:
         # UEFIRD target
@@ -986,14 +1072,17 @@ def main(argv):
 
     # help target
     cfg.make.comment('HELP')
-    make_add_target(__file__, 'help', 'echo -e \"'+helptext.replace('"', '\\"')+'\"', description='Generating Help')
+    make_add_target(__file__, 'help', 'echo -e \"'+helptext.replace('"', '\\"')+'\"', description='Generating Help', phony=True)
     cfg.make.default(['help'])
     cfg.make.newline()
 
     # help target
     cfg.make.comment('HELP-INTERNAL')
-    make_add_target(__file__, 'help-internal', 'echo -e \"'+helptext_all.replace('"', '\\"')+'\"', description='Generating Help')
+    make_add_target(__file__, 'help-internal', 'echo -e \"'+helptext_all.replace('"', '\\"')+'\"', description='Generating Help', phony=True)
     cfg.make.newline()
+
+    make_add_dependencies()
+    cfg.make.check_dependencies()
 
     # generate make file
     makefile = open(cfg.buildfname, "w")
