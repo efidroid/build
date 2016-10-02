@@ -26,7 +26,7 @@ def main(argv):
         tcontext = gettag(line, 'tcontext=').split(':')[2]
         tclass = gettag(line, 'tclass=')
         perm = gettag(line, '{ ')
-        print('util_sepolicy_inject("%s", "%s", "%s", "%s");' % (scontext, tcontext, tclass, perm))
+        print('sepolicy_inject_add_rule(handle, "%s", "%s", "%s", "%s");' % (scontext, tcontext, tclass, perm))
         
 
 if __name__ == "__main__":
