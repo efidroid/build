@@ -31,7 +31,7 @@ export GCC_COLORS ?= 1
 # add build/tools to path to force python2
 export PATH := $(PWD)/build/tools:$(PATH)
 # add dtc build path to PATH so we don't have to use the full path everywhere
-export PATH := $(PWD)/out/host/host_dtc/dtc:$(PATH)
+export PATH := $(PWD)/out/host/dtc/dtc:$(PATH)
 
 .PHONY: $(MAKECMDGOALS) all
 $(MAKECMDGOALS) all: makeforward
