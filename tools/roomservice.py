@@ -39,6 +39,9 @@ except ImportError:
 
 from xml.etree import ElementTree
 
+sys.path.append(os.path.join(os.path.dirname(__file__), '../core'))
+from utils import *
+
 device = sys.argv[1]
 
 if len(sys.argv) > 2:
@@ -47,7 +50,7 @@ else:
     depsonly = None
 
 if not depsonly:
-    print("Device %s not found. Attempting to retrieve device repository from EFIDroid Github (http://github.com/efiroid)." % device)
+    pr_info("Device %s not found. Attempting to retrieve device repository from EFIDroid Github (http://github.com/efiroid)." % device)
 
 
 #repositories = []
@@ -73,13 +76,13 @@ if not depsonly:
     try:
         result = json.loads(urllib.request.urlopen(githubreq).read().decode())
     except urllib.error.URLError:
-        print("Device %s not found on EFIDroid Github" % device)
+        pr_error("Device %s not found on EFIDroid Github" % device)
         sys.exit()
     except ValueError:
-        print("Failed to parse return data from GitHub")
+        pr_error("Failed to parse return data from GitHub")
         sys.exit()
     if not result.get('name', []):
-        print("Device %s not found on EFIDroid Github" % device)
+        pr_error("Device %s not found on EFIDroid Github" % device)
         sys.exit()
 
 local_manifests = r'.repo/local_manifests'
@@ -171,22 +174,22 @@ def add_to_manifest(repositories, fallback_branch = None):
     for repository in repositories:
         repo_name = repository['repository']
         repo_target = repository['target_path']
-        print('Checking if %s is fetched from %s' % (repo_target, repo_name))
+        pr_info('Checking if %s is fetched from %s' % (repo_target, repo_name))
         if is_in_manifest(repo_target):
-            print('efidroid/%s already fetched to %s' % (repo_name, repo_target))
+            pr_info('efidroid/%s already fetched to %s' % (repo_name, repo_target))
             continue
 
-        print('Adding dependency: efidroid/%s -> %s' % (repo_name, repo_target))
+        pr_info('Adding dependency: efidroid/%s -> %s' % (repo_name, repo_target))
         project = ElementTree.Element("project", attrib = { "path": repo_target,
             "remote": "github", "name": "efidroid/%s" % repo_name })
 
         if 'branch' in repository:
             project.set('revision',repository['branch'])
         elif fallback_branch:
-            print("Using fallback branch %s for %s" % (fallback_branch, repo_name))
+            pr_info("Using fallback branch %s for %s" % (fallback_branch, repo_name))
             project.set('revision', fallback_branch)
         else:
-            print("Using default branch for %s" % repo_name)
+            pr_info("Using default branch for %s" % repo_name)
 
         lm.append(project)
 
@@ -199,7 +202,7 @@ def add_to_manifest(repositories, fallback_branch = None):
     f.close()
 
 def fetch_dependencies(repo_path, fallback_branch = None):
-    print('Looking for dependencies')
+    pr_info('Looking for dependencies')
     dependencies_path = repo_path + '/efidroid.dependencies'
     syncable_repos = []
 
@@ -216,13 +219,13 @@ def fetch_dependencies(repo_path, fallback_branch = None):
         dependencies_file.close()
 
         if len(fetch_list) > 0:
-            print('Adding dependencies to manifest')
+            pr_info('Adding dependencies to manifest')
             add_to_manifest(fetch_list, fallback_branch)
     else:
-        print('Dependencies file not found, bailing out.')
+        pr_info('Dependencies file not found, bailing out.')
 
     if len(syncable_repos) > 0:
-        print('Syncing dependencies')
+        pr_info('Syncing dependencies')
         os.system('repo sync --force-sync %s' % ' '.join(syncable_repos))
 
     for deprepo in syncable_repos:
@@ -236,21 +239,21 @@ if depsonly:
     if repo_path:
         fetch_dependencies(repo_path)
     else:
-        print("Trying dependencies-only mode on a non-existing device tree?")
+        pr_warning("Trying dependencies-only mode on a non-existing device tree?")
 
     sys.exit()
 
 else:
-    print("Found device: %s" % device)
+    pr_info("Found device: %s" % device)
 
     repo_path = "device/%s" % (device)
     adding = {'repository':'device','target_path':repo_path, 'branch':device}
     add_to_manifest([adding])
 
-    print("Syncing repository to retrieve project.")
+    pr_info("Syncing repository to retrieve project.")
     os.system('repo sync --force-sync %s' % repo_path)
-    print("Repository synced!")
+    pr_info("Repository synced!")
 
     fetch_dependencies(repo_path)
-    print("Done")
+    pr_info("Done")
     sys.exit()
