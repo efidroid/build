@@ -274,8 +274,12 @@ def add_ini_target(moduletype, configfile, moduledir, config, section, uefiapp=F
 
     if moduletype=='target':
         targetout = getvar('TARGET_OUT')+'/'+outdir
+    elif moduletype=='uefiapp':
+        targetout = getvar('TARGET_COMMON_OUT')+'/'+outdir
     elif moduletype=='host':
         targetout = getvar('HOST_OUT')+'/'+outdir
+    else:
+        raise Exception('Invalid moduletype \''+moduletype+'\'')
 
     # expand some of the options
     configureflags = expandmodulevars_novars(configureflags, targetout, moduledir)
@@ -407,11 +411,13 @@ def process_target_section(configfile, moduledir, config, section, uefiapp=False
 
     for moduletype in moduletypes:
         # validate moduletype
-        if not moduletype=='target' and not moduletype=='host':
+        if not moduletype=='target' and not moduletype=='host' and not moduletype=='uefiapp':
             raise Exception('Invalid module type \''+moduletype+'\' in '+configfile)
 
         # skip device targets if we're building in host-only mode
         if not cfg.devicename and moduletype=='target':
+            if len(moduletypes)==1:
+                config.ignore_unused_options = True
             continue
 
         add_ini_target(moduletype, configfile, moduledir, config, section, uefiapp=uefiapp)
@@ -421,6 +427,7 @@ class CheckingRawConfigParser(ConfigParser.RawConfigParser):
         ConfigParser.RawConfigParser.__init__(self, *args, **kwargs)
 
         self.used_options = {}
+        self.ignore_unused_options = False;
 
     def get(self, *args, **kwargs):
         section = args[0]
@@ -446,6 +453,8 @@ class CheckingRawConfigParser(ConfigParser.RawConfigParser):
         return arr
 
     def check_unused_options(self, section, configfile):
+        if self.ignore_unused_options:
+            return
         if section == 'variables':
             return
         if section == 'parseopts':
@@ -502,6 +511,9 @@ def parse_config(configfile, moduledir=None, moduledeps=[], uefiapp=False):
             idx = section.split('.', 1)[1]
             source = config.get(section, 'source')
             destination = config.get(section, 'destination')
+
+            if not cfg.devicename:
+                continue
 
             if moduledir:
                 source = source.replace('$(%s)' % 'MODULE_SRC', cfg.top+'/'+moduledir)
@@ -583,6 +595,8 @@ def add_cmake_target(path, projecttype, modulesrc=None, maketargets=None, disabl
         outdir = getvar('TARGET_OUT')+'/'+dirname
     elif projecttype=='host':
         outdir = getvar('HOST_OUT')+'/'+dirname
+    else:
+        raise Exception('Invalid projecttype \''+projecttype+'\'')
 
     # add rule
     make_add_target(path, targetname, [
