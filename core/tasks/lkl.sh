@@ -48,6 +48,7 @@ AddNoConfig() {
 }
 
 Compile() {
+    MODTIME=0
     mkdir -p "$LKL_OUT"
     mkdir -p "$LKL_INSTALL"
 
@@ -93,13 +94,25 @@ Compile() {
         "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$LKL_SRC" silentoldconfig
     fi
 
-    # compile lkl.o and install headers
-    "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$LKL_SRC" install
-    cp "$LKL_SRC/tools/lkl/include/lkl.h" "$LKL_INSTALL/include"
-    cp "$LKL_SRC/tools/lkl/include/lkl_host.h" "$LKL_INSTALL/include"
+    # get modification time
+    if [ -f "$LKL_OUT/lkl.o" ];then
+        MODTIME=$(stat -c %Y "$LKL_INSTALL/lib/lkl.o")
+    fi
 
-    # copy lib for UEFI
-    cp $LKL_INSTALL/lib/lkl.o $LKL_INSTALL/lib/lkl.prebuilt
+    # compile lkl.o
+    "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$LKL_SRC"
+
+    # check if the lib was modified
+    MODTIME_NEW=$(stat -c %Y "$LKL_OUT/lkl.o")
+    if [ "$MODTIME_NEW" -gt "$MODTIME" ];then
+        # install headers
+        "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$LKL_SRC" install
+        cp "$LKL_SRC/tools/lkl/include/lkl.h" "$LKL_INSTALL/include"
+        cp "$LKL_SRC/tools/lkl/include/lkl_host.h" "$LKL_INSTALL/include"
+
+        # copy lib for UEFI
+        cp $LKL_INSTALL/lib/lkl.o $LKL_INSTALL/lib/lkl.prebuilt
+    fi
 }
 
 ########################################
