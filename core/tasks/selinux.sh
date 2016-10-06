@@ -77,6 +77,18 @@ Compile() {
     fi
 }
 
+CompileNative() {
+    SELINUX_SRC="$TOP/modules/selinux_7"
+
+    # link sources
+    if [ ! -d "$MODULE_OUT/libsepol/" ];then
+        "$TOP/build/tools/lns" -rf "$SELINUX_SRC/libsepol/" "$MODULE_OUT"
+    fi
+
+    # make
+    "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$MODULE_OUT/libsepol/src" $SELINUX_MAKE_ARGS libsepol.a
+}
+
 Clean() {
     "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$MODULE_OUT/libsepol" $SELINUX_MAKE_ARGS clean
 }
