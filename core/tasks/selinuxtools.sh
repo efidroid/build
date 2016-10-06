@@ -13,19 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-SELINUX_SRC=""
+SELINUX_SRC="$TOP/modules/selinux_7"
 SELINUX_MAKE_ARGS=""
 
-Compile() {
-    SELINUX_SRC="$TOP/modules/selinux_7"
+export CFLAGS="-I${HOST_PCRE_SRC} -L${HOST_PCRE_OUT} -I$SELINUX_SRC/libsepol/include -L${HOST_LIBSEPOL_OUT}/libsepol/src"
 
+Compile() {
     # link sources
     if [ ! -d "$MODULE_OUT/libselinux/" ];then
         "$TOP/build/tools/lns" -rf "$SELINUX_SRC/libselinux/" "$MODULE_OUT"
     fi
 
     # make
-    "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$MODULE_OUT/libselinux" $SELINUX_MAKE_ARGS all
+    "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$MODULE_OUT/libselinux/src" $SELINUX_MAKE_ARGS libselinux.a
+    "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$MODULE_OUT/libselinux/utils" $SELINUX_MAKE_ARGS sefcontext_compile
 }
 
 Clean() {
