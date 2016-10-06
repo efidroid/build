@@ -138,40 +138,81 @@ GenerateKernelHeader() {
     "$BIN" >> "$HEADER_OUT"
 }
 
+NeedsRecompile() {
+    SOURCEFILE="$1"
+    COMPILEDFILE="$2"
+
+    RECOMPILE=0
+    if [ -f "$COMPILEDFILE" ] && [ -f "${COMPILEDFILE}.modtime" ];then
+        MODTIME_SOURCE=$(stat -c %Y "$SOURCEFILE")
+        MODTIME_BIN=$(cat "${COMPILEDFILE}.modtime")
+
+        if [ "$MODTIME_SOURCE" -gt "$MODTIME_BIN" ];then
+            RECOMPILE=1
+            rm "${COMPILEDFILE}.modtime"
+        fi
+    else
+        RECOMPILE=1
+    fi
+
+    echo $RECOMPILE
+}
+
+CreateModTimeFile() {
+    SOURCEFILE="$1"
+    COMPILEDFILE="$2"
+
+    MODTIME=$(stat -c %Y "$SOURCEFILE")
+
+    echo -n "$MODTIME" > "${COMPILEDFILE}.modtime"
+}
+
 # pre-parse and minify devicetree
 GeneratePatchedDeviceTree() {
     if [ ! -z "$BOOTIMG_DT" ]; then
-        # cleanup
-        rm -Rf "$DTBDIR"
-        mkdir -p "$DTBDIR"
-        rm -Rf "$DTBPATCHEDDIR"
-        mkdir -p "$DTBPATCHEDDIR"
+        RECOMPILE=$(NeedsRecompile "$BOOTIMG_DT" "$DTIMG_PATCHED")
+        if [ "$RECOMPILE" -eq "1" ];then
+            # cleanup
+            rm -Rf "$DTBDIR"
+            mkdir -p "$DTBDIR"
+            rm -Rf "$DTBPATCHEDDIR"
+            mkdir -p "$DTBPATCHEDDIR"
 
-        # extract QCDT
-        "$QCDTEXTRACT" "$BOOTIMG_DT" "$DTBDIR"
+            # extract QCDT
+            "$QCDTEXTRACT" "$BOOTIMG_DT" "$DTBDIR"
 
-        # generate patched dtb's
-        "$DTBEFIDROIDIFY" "$DTBDIR" "$DTBPATCHEDDIR" "$DTBEFIDROIDIFY_REMOVE_NODES" "$DTBEFIDROIDIFY_DT_PARSER"
+            # generate patched dtb's
+            echo "$DTBEFIDROIDIFY" "$DTBDIR" "$DTBPATCHEDDIR" "$DTBEFIDROIDIFY_REMOVE_NODES" "$DTBEFIDROIDIFY_DT_PARSER"
+            "$DTBEFIDROIDIFY" "$DTBDIR" "$DTBPATCHEDDIR" "$DTBEFIDROIDIFY_REMOVE_NODES" "$DTBEFIDROIDIFY_DT_PARSER"
 
-        # generate new dt.img
-        "$DTBTOOL" -o "$DTIMG_PATCHED" "$DTBPATCHEDDIR/"
+            # generate new dt.img
+            "$DTBTOOL" -o "$DTIMG_PATCHED" "$DTBPATCHEDDIR/"
+
+            CreateModTimeFile "$BOOTIMG_DT" "$DTIMG_PATCHED"
+        fi
     fi
 
     if [ ! -z "$BOOTIMG_APPENDED_FDT" ]; then
-        # cleanup
-        rm -Rf "$FDTDIR"
-        mkdir -p "$FDTDIR"
-        rm -Rf "$FDTPATCHEDDIR"
-        mkdir -p "$FDTPATCHEDDIR"
+        RECOMPILE=$(NeedsRecompile "$BOOTIMG_APPENDED_FDT" "$FDT_PATCHED")
+        if [ "$RECOMPILE" -eq "1" ];then
+            # cleanup
+            rm -Rf "$FDTDIR"
+            mkdir -p "$FDTDIR"
+            rm -Rf "$FDTPATCHEDDIR"
+            mkdir -p "$FDTPATCHEDDIR"
 
-        # extract FDT
-        "$FDTEXTRACT" "$BOOTIMG_APPENDED_FDT" "$FDTDIR"
+            # extract FDT
+            "$FDTEXTRACT" "$BOOTIMG_APPENDED_FDT" "$FDTDIR"
 
-        # generate patched dtb's
-        "$DTBEFIDROIDIFY" "$FDTDIR" "$FDTPATCHEDDIR" "$DTBEFIDROIDIFY_REMOVE_NODES" "$DTBEFIDROIDIFY_DT_PARSER"
+            # generate patched dtb's
+            echo "$DTBEFIDROIDIFY" "$FDTDIR" "$FDTPATCHEDDIR" "$DTBEFIDROIDIFY_REMOVE_NODES" "$DTBEFIDROIDIFY_DT_PARSER"
+            "$DTBEFIDROIDIFY" "$FDTDIR" "$FDTPATCHEDDIR" "$DTBEFIDROIDIFY_REMOVE_NODES" "$DTBEFIDROIDIFY_DT_PARSER"
 
-        # create new fdt.img
-        cat "$FDTPATCHEDDIR/"* > "$FDT_PATCHED"
+            # create new fdt.img
+            cat "$FDTPATCHEDDIR/"* > "$FDT_PATCHED"
+
+            CreateModTimeFile "$BOOTIMG_APPENDED_FDT" "$FDT_PATCHED"
+        fi
     fi
 }
 
