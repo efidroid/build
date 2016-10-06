@@ -91,7 +91,7 @@ def main(argv):
     # get available targets
     targets = []
     for filename in os.listdir('bootloader/lk/common/LA.BF64/project'):
-        if not re.match('msm.*\.mk|mdm.*\.mk', filename):
+        if not re.match('msm.*\.mk|mdm.*\.mk|apq.*\.mk', filename):
             continue
 
         name = os.path.basename(filename)
