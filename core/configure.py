@@ -103,7 +103,7 @@ def genvarinc():
         # make
         cfg.makevars.variable(name, value.replace('$', '$$'))
         # shell
-        cfg.configinclude_sh.write('export '+name+'=\"'+value.replace('$', '\$')+'\"\n')
+        cfg.configinclude_sh.write('export '+name+'=\''+value.replace('$', '\$').replace('\'', '\\\'')+'\'\n')
         # python
         cfg.configinclude_py.write(name+'=\''+value+'\'\n')
         # cmake
