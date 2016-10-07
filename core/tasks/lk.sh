@@ -186,7 +186,7 @@ GeneratePatchedDeviceTree() {
             "$DTBEFIDROIDIFY" "$DTBDIR" "$DTBPATCHEDDIR" "$DTBEFIDROIDIFY_REMOVE_NODES" "$DTBEFIDROIDIFY_DT_PARSER"
 
             # generate new dt.img
-            "$DTBTOOL" $BOARD_DTBTOOL_ARGS -o "$DTIMG_PATCHED" "$DTBPATCHEDDIR/"
+            eval "\"$DTBTOOL\" $BOARD_DTBTOOL_ARGS -o \"$DTIMG_PATCHED\" \"$DTBPATCHEDDIR/\""
 
             CreateModTimeFile "$BOOTIMG_DT" "$DTIMG_PATCHED"
         fi
