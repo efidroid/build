@@ -90,8 +90,14 @@ Compile() {
         AddNoConfig CONFIG_NTFS_DEBUG
         AddYesConfig CONFIG_NTFS_RW
 
+        # dmcrypt
+        EnableConfig CONFIG_MD
+        AddYesConfig CONFIG_BLK_DEV_DM
+        AddYesConfig CONFIG_DM_CRYPT
+        AddYesConfig CONFIG_DM_VERITY
+
         # update config
-        "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$LKL_SRC" silentoldconfig
+        "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$LKL_SRC" olddefconfig
     fi
 
     # get modification time
