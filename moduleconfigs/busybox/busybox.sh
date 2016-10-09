@@ -63,6 +63,7 @@ CompileAndroidApp() {
         EnableConfig CONFIG_SHOW_USAGE
         EnableConfig CONFIG_FEATURE_VERBOSE_USAGE
         EnableConfig CONFIG_FEATURE_COMPRESS_USAGE
+        EnableConfig CONFIG_LFS
 
         # misc utils
         EnableConfig CONFIG_ID
