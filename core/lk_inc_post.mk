@@ -15,10 +15,6 @@
 
 include $(EFIDROID_TOP)/build/core/compilescript_inc.mk
 
-# replace dev/keys
-MODULES := $(filter-out dev/keys,$(MODULES))
-MODULES += $(EFIDROID_TOP)/uefi/lkmodules/shared/lib/newkeys
-
 ifeq ($(WITH_KERNEL_UEFIAPI),1)
     # remove all apps
     MODULES := $(filter-out app/aboot,$(MODULES))

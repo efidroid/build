@@ -40,7 +40,8 @@ DEFINES += WITH_LIB_ATAGPARSE=1
 ifeq ($(WITH_KERNEL_UEFIAPI),1)
     # add our modules
     MODULES += \
-        $(EFIDROID_TOP)/uefi/lkmodules/shared/uefiapi
+        $(EFIDROID_TOP)/uefi/lkmodules/shared/uefiapi \
+        $(EFIDROID_TOP)/uefi/lkmodules/shared/lib/newkeys
 
     # enable the UEFIAPI
     DEFINES += WITH_KERNEL_UEFIAPI=1
