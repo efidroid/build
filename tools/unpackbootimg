@@ -20,6 +20,7 @@ from os import rename, makedirs
 from os.path import basename, exists
 from struct import unpack, calcsize
 import zlib
+import subprocess
 
 HAS_ELFTOOLS = True
 try:
@@ -206,6 +207,18 @@ def is_arm64(filename):
 
     return data[8]==0x644D5241
 
+def is_lz4(filename):
+    data = None
+    with open(filename, 'rb') as f:
+        fmt = '>I'
+        size = calcsize(fmt)
+        buf = f.read(size)
+        if(len(buf))!=size:
+            return False
+        data = unpack(fmt, buf)
+
+    return data[0]==0x04224D18 or data[0]==0x02214C18
+
 def write_data(args, header, off):
     file_prefix = args.output
     if file_prefix and file_prefix[-1]!='/':
@@ -279,6 +292,13 @@ def write_data(args, header, off):
                     # write fdt
                     with open(file_prefix+'zImage.fdt', 'wb') as f_out:
                         f_out.write(f_in.read())
+
+    if header.dt_size >= 4:
+        if is_lz4(file_prefix+'dt'):
+            p = subprocess.Popen(['lz4', '-d', '-f', file_prefix+'dt', file_prefix+'dt.unlz4'], stdout=subprocess.PIPE)
+            data = p.communicate()[0]
+            if p.returncode != 0:
+                pr_fatal('can\'t extract LZ4 dt.img')
 
 def main():
     args = parse_cmdline()
