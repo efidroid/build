@@ -177,7 +177,12 @@ def main(argv):
         config.set('variables', 'BOOTIMG_APPENDED_FDT', '$(DEVICE_DIR)/fdt.img');
 
     if os.path.getsize(BOOTIMGPREFIX+'dt')>0:
-        copyfile(BOOTIMGPREFIX+'dt', devicedir+'/dt.img')
+        if os.path.getsize(BOOTIMGPREFIX+'dt.unlz4')>0:
+            copyfile(BOOTIMGPREFIX+'dt.unlz4', devicedir+'/dt.img')
+            config.set('variables', 'BOOTIMG_DT_COMPRESSION', 'lz4');
+        else:
+            copyfile(BOOTIMGPREFIX+'dt', devicedir+'/dt.img')
+
         config.set('variables', 'BOOTIMG_DT', '$(DEVICE_DIR)/dt.img');
 
     # write config
