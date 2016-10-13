@@ -16,6 +16,8 @@
 # useful macros
 FILTER_OUT = $(foreach v,$(2),$(if $(findstring $(1),$(v)),,$(v)))
 
+EFIDROID_COMMON_DIR := $(EFIDROID_TOP)/bootloader/lk/common/shared
+
 # disable all debug features by default
 DEFINES := $(filter-out WITH_DEBUG_DCC=1,$(DEFINES))
 DEFINES := $(filter-out WITH_DEBUG_UART=1,$(DEFINES))
@@ -28,10 +30,10 @@ DEBUG := 1
 
 # add our modules
 MODULES += \
-    $(EFIDROID_TOP)/uefi/lkmodules/shared/fastboot \
-    $(EFIDROID_TOP)/uefi/lkmodules/shared/lib/base64 \
-    $(EFIDROID_TOP)/uefi/lkmodules/shared/lib/hex2unsigned \
-    $(EFIDROID_TOP)/uefi/lkmodules/shared/lib/atagparse
+    $(EFIDROID_COMMON_DIR)/fastboot \
+    $(EFIDROID_COMMON_DIR)/lib/base64 \
+    $(EFIDROID_COMMON_DIR)/lib/hex2unsigned \
+    $(EFIDROID_COMMON_DIR)/lib/atagparse
 
 DEFINES += WITH_FASTBOOT_EXT=1
 DEFINES += WITH_LIB_BASE64=1
@@ -40,8 +42,8 @@ DEFINES += WITH_LIB_ATAGPARSE=1
 ifeq ($(WITH_KERNEL_UEFIAPI),1)
     # add our modules
     MODULES += \
-        $(EFIDROID_TOP)/uefi/lkmodules/shared/uefiapi \
-        $(EFIDROID_TOP)/uefi/lkmodules/shared/lib/newkeys
+        $(EFIDROID_COMMON_DIR)/uefiapi \
+        $(EFIDROID_COMMON_DIR)/lib/newkeys
 
     # enable the UEFIAPI
     DEFINES += WITH_KERNEL_UEFIAPI=1
@@ -57,7 +59,7 @@ ifeq ($(WITH_KERNEL_UEFIAPI),1)
     LIBBOOT_DIR := $(EFIDROID_TOP)/modules/libboot
     INCLUDES += -I$(LIBBOOT_DIR)/include
     INCLUDES += -I$(LIBBOOT_DIR)/include_private
-    INCLUDES += -I$(EFIDROID_TOP)/uefi/lkmodules/shared/lib/boot/include
+    INCLUDES += -I$(EFIDROID_COMMON_DIR)/lib/boot/include
 else
     DEFINES += WITH_DEBUG_LOG_BUF=1
 
@@ -65,7 +67,7 @@ else
     DEFINES += WITH_DEBUG_FBCON=1
 
     # enable libboot
-    MODULES += $(EFIDROID_TOP)/uefi/lkmodules/shared/lib/boot
+    MODULES += $(EFIDROID_COMMON_DIR)/lib/boot
     DEFINES += WITH_LIB_BOOT=1
 
     ifeq ($(EFIDROID_BUILD_TYPE),DEBUG)

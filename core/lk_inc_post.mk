@@ -73,7 +73,7 @@ ifeq ($(DISPLAY_2NDSTAGE),1)
 
     # add our modules
     MODULES += \
-        $(EFIDROID_TOP)/uefi/lkmodules/shared/lib/2ndstage_display
+        $(EFIDROID_COMMON_DIR)/lib/2ndstage_display
 
     DEFINES += WITH_LIB_2NDSTAGE_DISPLAY=1
 endif
@@ -81,7 +81,7 @@ endif
 ifeq ($(DISPLAY_2NDSTAGE_DTB),1)
     # add our modules
     MODULES += \
-        $(EFIDROID_TOP)/uefi/lkmodules/shared/lib/2ndstage_display_dtb
+        $(EFIDROID_COMMON_DIR)/lib/2ndstage_display_dtb
 
     DEFINES += WITH_LIB_2NDSTAGE_DISPLAY_DTB=1
 endif
@@ -116,7 +116,7 @@ ifeq ($(WITH_DEBUG_RAM_CONSOLE),1)
 
     DEFINES += WITH_LIB_PRAM=1
     MODULES += \
-        $(EFIDROID_TOP)/uefi/lkmodules/shared/lib/pram
+        $(EFIDROID_COMMON_DIR)/lib/pram
 endif
 
 ifneq ($(DEVICE_DEFAULT_FDT_PARSER),)
