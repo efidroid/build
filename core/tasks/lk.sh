@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-LK_DIR="$TOP/bootloader/lk/common/LA.BF64"
+LK_DIR="$TOP/bootloader/lk/qcom/LA.BF64"
 LK_OUT="$MODULE_OUT"
 LK_ENV="BOOTLOADER_OUT=$LK_OUT ARCH=arm SUBARCH=arm TOOLCHAIN_PREFIX=$GCC_NONE_TARGET_PREFIX"
 # optionally overwrite MEMBASE
