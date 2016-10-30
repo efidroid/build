@@ -66,6 +66,37 @@ def getbootimgarg(name):
 
     return data
 
+socs = {
+    'qcom/LA.BF64' : [
+        'msm7627a',
+        'apq8084',
+        'msm8226',
+        'msm8610',
+        'msm8660',
+        'msm8960',
+        'msm8974',
+        'msm8994',
+    ],
+
+    'qcom/LA.BR' : [
+        'msm8909',
+        'msm8916',
+        'msm8952',
+    ],
+
+    'qcom/LA.HB' : [
+        'msm8996',
+    ],
+}
+
+def target2branch(target):
+    for branch in socs:
+        for name in socs[branch]:
+            if name==target:
+                return branch
+
+    return None
+
 def main(argv):
     global BOOTIMGPREFIX
 
@@ -90,13 +121,9 @@ def main(argv):
 
     # get available targets
     targets = []
-    for filename in os.listdir('bootloader/lk/qcom/LA.BF64/project'):
-        if not re.match('msm.*\.mk|mdm.*\.mk|apq.*\.mk', filename):
-            continue
-
-        name = os.path.basename(filename)
-        name = os.path.splitext(name)[0]
-        targets.append(name)
+    for branch in socs:
+        for name in socs[branch]:
+            targets.append(name)
 
     # print available targets
     pr_warning('Available targets:')
@@ -119,6 +146,11 @@ def main(argv):
         lktarget = inputex('LK Target: ')
         if not lktarget in targets:
             pr_error(lktarget+' is not a valid target')
+
+    # get branch
+    branch = target2branch(lktarget)
+    if not branch:
+        raise Exception('can\'t find branch for target %s' % (branch))
 
     # create out directory
     try:
@@ -166,6 +198,7 @@ def main(argv):
     config.set('variables', 'DEVICE_NAME', devicedesc);
     config.set('variables', 'LK_TARGET', lktarget);
     config.set('variables', 'LK_BASE', "0x%08x" % (base+kernel_offset));
+    config.set('variables', 'LK_SOURCE', branch);
     config.set('variables', 'BOOTIMG_BASE', '0x%08x' % (base));
     config.set('variables', 'BOOTIMG_PAGESIZE', getbootimgarg('pagesize'));
     if additionalargs != '':
@@ -188,6 +221,16 @@ def main(argv):
     # write config
     with open(devicedir+'/config.ini', 'w') as configfile:
         config.write(configfile)
+
+    # write dependencies
+    with open(devicedir+'/efidroid.dependencies', 'w') as f:
+        f.write('[\n  {\n')
+
+        f.write('    "repository": "bootloader_lk",\n')
+        f.write('    "target_path": "bootloader/lk/%s",\n' % branch)
+        f.write('    "branch": "%s"\n' % branch)
+
+        f.write('  }\n]\n')
 
     copyfile('build/templates/fstab.multiboot_template', devicedir+'/fstab.multiboot')
     copyfile('build/templates/lk_inc.template.mk', devicedir+'/lk_inc.mk')
