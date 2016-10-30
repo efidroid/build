@@ -234,19 +234,16 @@ def fetch_dependencies(repo_path, fallback_branch = None):
 def has_branch(branches, revision):
     return revision in [branch['name'] for branch in branches]
 
+repo_path = "device/%s" % (device)
+
 if depsonly:
-    repo_path = get_from_manifest(device)
-    if repo_path:
-        fetch_dependencies(repo_path)
-    else:
-        pr_warning("Trying dependencies-only mode on a non-existing device tree?")
+    fetch_dependencies(repo_path)
 
     sys.exit()
 
 else:
     pr_info("Found device: %s" % device)
 
-    repo_path = "device/%s" % (device)
     adding = {'repository':'device','target_path':repo_path, 'branch':device}
     add_to_manifest([adding])
 
