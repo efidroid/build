@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-LK_DIR="$TOP/bootloader/lk/qcom/LA.BF64"
+LK_DIR=""
 LK_OUT="$MODULE_OUT"
 LK_ENV="BOOTLOADER_OUT=$LK_OUT ARCH=arm SUBARCH=arm TOOLCHAIN_PREFIX=$GCC_NONE_TARGET_PREFIX"
 # optionally overwrite MEMBASE
@@ -35,6 +35,8 @@ LK_ENV="$LK_ENV DEVICE_NVVARS_PARTITION=\"$DEVICE_NVVARS_PARTITION_LK\""
 # check if lk source exists
 if [ ! -z "$LK_SOURCE" ];then
     LK_DIR="$TOP/bootloader/lk/$LK_SOURCE"
+else
+    pr_fatal "LK_SOURCE is not set"
 fi
 
 # add (default) vram size
