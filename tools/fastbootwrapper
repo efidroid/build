@@ -121,12 +121,20 @@ def fastboot(argv, rawmode=False, suppressstatus=False, bufmode=False, nocolors=
     if not nocolors==True:
         localwrite(txtrst)
 
+    # wiat for fastboot to finish
+    p.communicate()
+
     if bufmode:
-        return pbuf[0]
+        if p.returncode==0:
+            return pbuf[0]
+        else:
+            None
+    else:
+        return p.returncode
 
 def read_b64data(argv, nargs):
     if len(argv)<nargs or len(argv)>nargs+1:
-        fastboot(argv, nocolors=True)
+        return fastboot(argv, nocolors=True)
     else:
         # get filename
         filename = None
@@ -134,14 +142,22 @@ def read_b64data(argv, nargs):
             filename = argv[-1]
             argv = argv[:-1]
 
+        # run fastboot
         data = fastboot(argv, rawmode=True, suppressstatus=True, bufmode=True, nocolors=True)
+        if not data:
+            return 1
+
+        # decode
         data_decoded = base64.b64decode(data)
 
+        # write
         if filename==None:
             stdout.write(data_decoded)
         else:
             with open(filename, 'wb') as f:
                 f.write(data_decoded)
+
+        return 0
 
 def main(argv):
     rawmode = False
@@ -165,18 +181,24 @@ def main(argv):
             return read_b64data(argv, 4)
 
     elif len(argv)>=1 and argv[0]=='boot-unpatched':
-        fastboot(['oem', 'setnvvar', 'fastboot-enable-boot-patch', '0'])
+        rc = fastboot(['oem', 'setnvvar', 'fastboot-enable-boot-patch', '0'])
+        if rc:
+            return rc
         argv = ['boot'] + argv[1:]
 
     elif len(argv)>=1 and argv[0]=='boot-patched':
-        fastboot(['oem', 'setnvvar', 'fastboot-enable-boot-patch', '1'])
+        rc = fastboot(['oem', 'setnvvar', 'fastboot-enable-boot-patch', '1'])
+        if rc:
+            return rc
         argv = ['boot'] + argv[1:]
 
-    fastboot(argv, rawmode)
+    return fastboot(argv, rawmode)
 
 if __name__ == '__main__':
     try:
-        main(sys.argv[1:])
+        rc = main(sys.argv[1:])
+        if rc:
+            sys.exit(rc)
     except:
         exc_info = sys.exc_info()
 
