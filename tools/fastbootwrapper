@@ -143,6 +143,10 @@ def fastboot(argv, rawmode=False, bufmode=False, nocolors=False):
             localstderr(bldgrn)
             localstderr(line)
             localstderr(txtrst)
+        elif bstartswith(line, b'FAILED (remote failure)'):
+            localstderr(bldred)
+            localstderr(line)
+            localstderr(txtrst)
         elif bstartswith(line, b'finished. total time: '):
             localstderr(bldgrn)
             localstderr(line)
