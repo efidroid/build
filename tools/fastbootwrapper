@@ -24,6 +24,8 @@ bldylw=b'\033[1;33m' # Yellow
 bldwht=b'\033[1;37m' # White
 txtrst=b'\033[0m'    # Text Reset
 
+fastboot_process = None
+
 def byte2int(val):
     if type(val) is not int:
         val = ord(val)
@@ -45,14 +47,17 @@ def beq(a, b):
     return byte2int(a)==byte2int(b)
 
 def fastboot(argv, rawmode=False, suppressstatus=False, bufmode=False, nocolors=False):
+    global fastboot_process
     buf = b""
-    p = subprocess.Popen(['fastboot'] + argv, stderr=subprocess.PIPE)
 
     # use raw buffer for stdout
     if hasattr(sys.stdout, 'buffer'):
         stdout = sys.stdout.buffer
     else:
         stdout = sys.stdout
+
+    p = subprocess.Popen(['fastboot'] + argv, stderr=subprocess.PIPE)
+    fastboot_process = p
 
     first = True
     lastlinewasempty = True
@@ -169,5 +174,9 @@ if __name__ == '__main__':
     try:
         main(sys.argv[1:])
     except:
+        # finish the fastboot process so the device doesn't freeze
+        if fastboot_process:
+            fastboot_process.communicate()
+
         print('Error: %s' % sys.exc_info()[1])
         raise
