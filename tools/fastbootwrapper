@@ -79,12 +79,16 @@ def fastboot(argv, rawmode=False, bufmode=False, nocolors=False):
         # supress the initial three points
         if first and bstartswith(line, b'...'):
             first = False
+            localstderr(bldwht)
             localstderr(line)
+            localstderr(txtrst)
             continue
 
         if bstartswith(line, b'(bootloader) '):
             if not rawmode:
+                localstderr(bldylw)
                 localstderr(line[0:13])
+                localstderr(txtrst)
 
             # remove the prefix
             line = line[13:]
@@ -115,9 +119,13 @@ def fastboot(argv, rawmode=False, bufmode=False, nocolors=False):
 
         # suppress status messages
         if bstartswith(line, b'OKAY ['):
+            localstderr(bldgrn)
             localstderr(line)
+            localstderr(txtrst)
         elif bstartswith(line, b'finished. total time: '):
+            localstderr(bldgrn)
             localstderr(line)
+            localstderr(txtrst)
         else:
             # write data
             localwrite(line)
