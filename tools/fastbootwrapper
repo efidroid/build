@@ -24,14 +24,6 @@ bldylw='\033[1;33m' # Yellow
 bldwht='\033[1;37m' # White
 txtrst='\033[0m'    # Text Reset
 
-def inputex(msg):
-    prompt = msg
-
-    try:
-        return raw_input(prompt)
-    except:
-        return input(prompt)
-
 def fastboot(argv, rawmode, suppressstatus=False, bufmode=False, nocolors=False):
     buf = b""
     p = subprocess.Popen(['fastboot'] + argv, stderr=subprocess.PIPE)
@@ -88,11 +80,6 @@ def fastboot(argv, rawmode, suppressstatus=False, bufmode=False, nocolors=False)
     if not nocolors==True:
         print(txtrst)
 
-def run_shell():
-    while True:
-        cmd = inputex(bldylw+'Shell> '+txtrst);
-        fastboot(['oem', 'shell', cmd], True, True)
-
 def read_b64data(argv, nargs):
     if len(argv)<nargs or len(argv)>nargs+1:
         fastboot(argv, False, nocolors=True)
@@ -132,8 +119,6 @@ def main(argv):
         elif argv[1]=='dump-mem':
             # oem dump-mem ADDR LEN
             return read_b64data(argv, 4)
-        elif argv[1]=='shell':
-            return run_shell()
 
     elif len(argv)>=1 and argv[0]=='boot-unpatched':
         fastboot(['oem', 'setnvvar', 'fastboot-enable-boot-patch', '0'], False)
