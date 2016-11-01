@@ -44,7 +44,7 @@ def bstartswith(arr, s):
 def beq(a, b):
     return byte2int(a)==byte2int(b)
 
-def fastboot(argv, rawmode, suppressstatus=False, bufmode=False, nocolors=False):
+def fastboot(argv, rawmode=False, suppressstatus=False, bufmode=False, nocolors=False):
     buf = b""
     p = subprocess.Popen(['fastboot'] + argv, stderr=subprocess.PIPE)
 
@@ -105,7 +105,7 @@ def fastboot(argv, rawmode, suppressstatus=False, bufmode=False, nocolors=False)
 
 def read_b64data(argv, nargs):
     if len(argv)<nargs or len(argv)>nargs+1:
-        fastboot(argv, False, nocolors=True)
+        fastboot(argv, nocolors=True)
     else:
         # get filename
         filename = None
@@ -113,7 +113,7 @@ def read_b64data(argv, nargs):
             filename = argv[-1]
             argv = argv[:-1]
 
-        data = fastboot(argv, True, True, True, True)
+        data = fastboot(argv, rawmode=True, suppressstatus=True, bufmode=True, nocolors=True)
         data_decoded = base64.b64decode(data)
 
         if filename==None:
@@ -144,11 +144,11 @@ def main(argv):
             return read_b64data(argv, 4)
 
     elif len(argv)>=1 and argv[0]=='boot-unpatched':
-        fastboot(['oem', 'setnvvar', 'fastboot-enable-boot-patch', '0'], False)
+        fastboot(['oem', 'setnvvar', 'fastboot-enable-boot-patch', '0'])
         argv = ['boot'] + argv[1:]
 
     elif len(argv)>=1 and argv[0]=='boot-patched':
-        fastboot(['oem', 'setnvvar', 'fastboot-enable-boot-patch', '1'], False)
+        fastboot(['oem', 'setnvvar', 'fastboot-enable-boot-patch', '1'])
         argv = ['boot'] + argv[1:]
 
     fastboot(argv, rawmode)
