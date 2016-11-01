@@ -84,7 +84,7 @@ def fastboot(argv, rawmode=False, suppressstatus=False, bufmode=False, nocolors=
 
         # this is one of the manual newlines in rawmode
         elif rawmode and not bufmode:
-            print('')
+            stdout.write(b'\n')
 
         # suppress status messages
         if suppressstatus:
