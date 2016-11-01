@@ -46,6 +46,15 @@ DEBUG_CACHE=0x00200000    # Memory range cachability changes
 DEBUG_VERBOSE=0x00400000  # Detailed debug messages that may significantly impact boot performance
 DEBUG_ERROR=0x80000000    # Error
 
+# unset conflicting environment variables
+unset WORKSPACE
+unset PACKAGES_PATH
+unset ECP_SOURCE
+unset EDK_SOURCE
+unset EFI_SOURCE
+unset EDK_TOOLS_PATH
+unset CONF_PATH
+
 setflag_printlevel() {
     FLAGS="$1"
 
