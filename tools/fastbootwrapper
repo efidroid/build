@@ -108,6 +108,9 @@ def fastboot(argv, rawmode=False, suppressstatus=False, bufmode=False, nocolors=
     if bufmode:
         return buf
 
+    if rawmode:
+        stdout.write(b'\n')
+
     # reset terminal color
     if not nocolors==True:
         stdout.write(txtrst)
