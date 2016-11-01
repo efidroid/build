@@ -26,6 +26,12 @@ txtrst=b'\033[0m'    # Text Reset
 
 fastboot_process = None
 
+# use raw buffer for stdout
+if hasattr(sys.stdout, 'buffer'):
+    stdout = sys.stdout.buffer
+else:
+    stdout = sys.stdout
+
 def byte2int(val):
     if type(val) is not int:
         val = ord(val)
@@ -48,13 +54,13 @@ def beq(a, b):
 
 def fastboot(argv, rawmode=False, suppressstatus=False, bufmode=False, nocolors=False):
     global fastboot_process
-    buf = b""
+    pbuf = [b'']
 
-    # use raw buffer for stdout
-    if hasattr(sys.stdout, 'buffer'):
-        stdout = sys.stdout.buffer
-    else:
-        stdout = sys.stdout
+    def localwrite(data):
+        if bufmode:
+            pbuf[0] += data
+        else:
+            stdout.write(data)
 
     p = subprocess.Popen(['fastboot'] + argv, stderr=subprocess.PIPE)
     fastboot_process = p
@@ -72,24 +78,24 @@ def fastboot(argv, rawmode=False, suppressstatus=False, bufmode=False, nocolors=
             line = line[13:]
 
             # apply log colors
-            if not bufmode and not nocolors==True and (len(line)>=2 and beq(line[1], b'/')) and lastlinewasempty:
+            if not nocolors==True and (len(line)>=2 and beq(line[1], b'/')) and lastlinewasempty:
                 level = line[0]
 
                 if beq(level, b'A'): # ALWAYS
-                    stdout.write(bldwht)
+                    localwrite(bldwht)
                 elif beq(level, b'E'): # CRITICAL
-                    stdout.write(bldred)
+                    localwrite(bldred)
                 elif beq(level, b'I'): # INFO
-                    stdout.write(bldylw)
+                    localwrite(bldylw)
                 elif beq(level, b'D'): # SPEW
-                    stdout.write(bldgrn)
+                    localwrite(bldgrn)
 
                 else:
-                    stdout.write(bldwht)
+                    localwrite(bldwht)
 
         # this is one of the manual newlines in rawmode
-        elif rawmode and not bufmode:
-            stdout.write(b'\n')
+        elif rawmode:
+            localwrite(b'\n')
 
         # suppress status messages
         if suppressstatus:
@@ -98,27 +104,25 @@ def fastboot(argv, rawmode=False, suppressstatus=False, bufmode=False, nocolors=
             if bstartswith(line, b'finished. total time: '):
                 continue
 
-        # write data to buffer and continue
-        if bufmode:
-            buf+=rawline[13:-1]
-            continue
-
         # remove the newline
         if rawmode:
             line = line[:-1]
 
+        # write data
+        localwrite(line)
+
         lastlinewasempty = len(line)==0
-        stdout.write(line)
 
-    if bufmode:
-        return buf
-
-    if rawmode:
-        stdout.write(b'\n')
+    # finish status line
+    if rawmode and not suppressstatus:
+        localwrite(b'\n')
 
     # reset terminal color
     if not nocolors==True:
-        stdout.write(txtrst)
+        localwrite(txtrst)
+
+    if bufmode:
+        return pbuf[0]
 
 def read_b64data(argv, nargs):
     if len(argv)<nargs or len(argv)>nargs+1:
@@ -134,7 +138,7 @@ def read_b64data(argv, nargs):
         data_decoded = base64.b64decode(data)
 
         if filename==None:
-            sys.stdout.write(data_decoded)
+            stdout.write(data_decoded)
         else:
             with open(filename, 'wb') as f:
                 f.write(data_decoded)
