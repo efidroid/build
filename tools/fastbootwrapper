@@ -18,11 +18,32 @@ import sys
 import subprocess
 import base64
 
-bldred=b'\033[1;31m' # Red
-bldgrn=b'\033[1;32m' # Green
-bldylw=b'\033[1;33m' # Yellow
-bldwht=b'\033[1;37m' # White
-txtrst=b'\033[0m'    # Text Reset
+def supports_color():
+    """
+    Returns True if the running system's terminal supports color, and False
+    otherwise.
+    """
+    plat = sys.platform
+    supported_platform = plat != 'Pocket PC' and (plat != 'win32' or
+                                                  'ANSICON' in os.environ)
+    # isatty is not always implemented, #6223.
+    is_a_tty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
+    if not supported_platform or not is_a_tty:
+        return False
+    return True
+
+if supports_color():
+    bldred=b'\033[1;31m' # Red
+    bldgrn=b'\033[1;32m' # Green
+    bldylw=b'\033[1;33m' # Yellow
+    bldwht=b'\033[1;37m' # White
+    txtrst=b'\033[0m'    # Text Reset
+else:
+    bldred=b''
+    bldgrn=b''
+    bldylw=b''
+    bldwht=b''
+    txtrst=b''
 
 fastboot_process = None
 
