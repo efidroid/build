@@ -48,6 +48,7 @@ def fastboot(argv, rawmode=False, suppressstatus=False, bufmode=False, nocolors=
     buf = b""
     p = subprocess.Popen(['fastboot'] + argv, stderr=subprocess.PIPE)
 
+    # use raw buffer for stdout
     if hasattr(sys.stdout, 'buffer'):
         stdout = sys.stdout.buffer
     else:
@@ -56,13 +57,16 @@ def fastboot(argv, rawmode=False, suppressstatus=False, bufmode=False, nocolors=
     first = True
     lastlinewasempty = True
     for line in p.stderr:
+        # supress the initial three points
         if first and bstartswith(line, b'...'):
             first = False
             continue
 
         if bstartswith(line, b'(bootloader) '):
+            # remove the prefix
             line = line[13:]
 
+            # apply log colors
             if not bufmode and not nocolors==True and (len(line)>=2 and beq(line[1], b'/')) and lastlinewasempty:
                 level = line[0]
 
@@ -78,19 +82,23 @@ def fastboot(argv, rawmode=False, suppressstatus=False, bufmode=False, nocolors=
                 else:
                     stdout.write(bldwht)
 
+        # this is one of the manual newlines in rawmode
         elif rawmode and not bufmode:
             print('')
 
+        # suppress status messages
         if suppressstatus:
             if bstartswith(line, b'OKAY ['):
                 continue
             if bstartswith(line, b'finished. total time: '):
                 continue
 
+        # write data to buffer and continue
         if bufmode:
             buf+=rawline[13:-1]
             continue
 
+        # remove the newline
         if rawmode:
             line = line[:-1]
 
@@ -100,6 +108,7 @@ def fastboot(argv, rawmode=False, suppressstatus=False, bufmode=False, nocolors=
     if bufmode:
         return buf
 
+    # reset terminal color
     if not nocolors==True:
         stdout.write(txtrst)
 
