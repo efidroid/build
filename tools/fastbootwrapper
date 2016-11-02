@@ -86,10 +86,12 @@ def fastboot(argv, rawmode=False, bufmode=False, nocolors=False):
             pbuf[0] += data
         else:
             stdout.write(data)
+            stdout.flush()
 
     def localstderr(data):
         if not bufmode:
             stderr.write(data)
+            stderr.flush()
 
     p = subprocess.Popen(['fastboot'] + argv, stderr=subprocess.PIPE)
     fastboot_process = p
