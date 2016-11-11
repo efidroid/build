@@ -356,28 +356,6 @@ CompileUEFIBootImage() {
 
 
 ########################################
-#                 OTA                  #
-########################################
-
-BuildOtaPackage() {
-    # cleanup
-    rm -Rf "$MODULE_OUT/*"
-
-    # copy UEFI partition images
-    for part in $DEVICE_UEFI_PARTITIONS; do
-        cp "$TARGET_OUT/uefi_$part.img" "$MODULE_OUT/$part.img"
-    done
-
-    # create zip
-    ZIPNAME="$TARGET_OUT/otapackage-$(date +'%Y%m%d')-${DEVICE/\//_}.zip"
-    cd "$MODULE_OUT" &&
-        zip -r "$ZIPNAME" .
-
-    pr_alert "Installing: $ZIPNAME"
-}
-
-
-########################################
 #              CLEANUP                 #
 ########################################
 
