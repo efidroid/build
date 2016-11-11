@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+ZIPNAME="$TARGET_OUT/otapackage-$(date +'%Y%m%d')-${DEVICE/\//_}.zip"
+
 BuildOtaPackage() {
     Clean
 
@@ -22,11 +24,19 @@ BuildOtaPackage() {
     done
 
     # create zip
-    ZIPNAME="$TARGET_OUT/otapackage-$(date +'%Y%m%d')-${DEVICE/\//_}.zip"
+
     cd "$MODULE_OUT" &&
         zip -r "$ZIPNAME" .
 
     pr_alert "Installing: $ZIPNAME"
+}
+
+PublishRelease() {
+    RELEASEDIR="$TOP/ota/$DEVICE"
+
+    mkdir -p "$RELEASEDIR"
+
+    "$TOP/build/tools/publish_release" "$RELEASEDIR" "$ZIPNAME"
 }
 
 
