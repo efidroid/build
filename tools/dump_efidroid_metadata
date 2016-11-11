@@ -20,6 +20,7 @@ import os
 import struct
 import time
 import subprocess
+from argparse import ArgumentParser, Action
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../core'))
 from utils import *
@@ -44,15 +45,66 @@ def getEFIDroidReleaseVersionString(version):
 
     return s;
 
-def main(argv):
-    # check arguments
-    if not len(argv) == 1:
-        raise Exception('Invalid number of arguments')
+class CustomStoreConstAction(Action):
+    def __init__(self,
+                 option_strings,
+                 dest,
+                 const,
+                 default=None,
+                 required=False,
+                 help=None,
+                 metavar=None):
+        super(CustomStoreConstAction, self).__init__(
+            option_strings=option_strings,
+            dest=dest,
+            nargs=0,
+            const=const,
+            default=default,
+            required=required,
+            help=help)
 
-    filename = argv[0]
+    def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, 'printall', False)
+        setattr(namespace, self.dest, self.const)
+
+class CustomStoreTrueAction(CustomStoreConstAction):
+
+    def __init__(self,
+                 option_strings,
+                 dest,
+                 default=False,
+                 required=False,
+                 help=None):
+        super(CustomStoreTrueAction, self).__init__(
+            option_strings=option_strings,
+            dest=dest,
+            const=True,
+            default=default,
+            required=required,
+            help=help)
+
+def parse_cmdline():
+    parser = ArgumentParser()
+    parser.add_argument('--rawheader', help='print raw header', action=CustomStoreTrueAction)
+    parser.add_argument('--metadata_version', help='print metdata version', action=CustomStoreTrueAction)
+    parser.add_argument('--efidroid_version', help='print EFIDroid version', action=CustomStoreTrueAction)
+    parser.add_argument('--timestamp', help='print timestamp', action=CustomStoreTrueAction)
+    parser.add_argument('--efispec', help='print UEFI specification version', action=CustomStoreTrueAction)
+    parser.add_argument('--devicename', help='print device name', action=CustomStoreTrueAction)
+    parser.add_argument('--manifest', help='print repo manifest', action=CustomStoreTrueAction)
+    parser.add_argument('--minimal', help='don\t print descriptions or converted data', action='store_true')
+    parser.add_argument('bootimg', help='EFIDroid boot image')
+    args = parser.parse_args()
+    if not hasattr(args, 'printall'):
+        setattr(args, 'printall', True)
+
+    return args
+
+def main(argv):
+    args = parse_cmdline()
 
     # oepn file
-    f = open(filename, 'rb')
+    f = open(args.bootimg, 'rb')
 
     # read header
     fmt = '<ccccccccLLLLLLLLL'
@@ -92,7 +144,8 @@ def main(argv):
     header = f.read(fmtsz)
     data = struct.unpack(fmt, header[0:fmtsz])
     magic = ''.join(data[0:8])
-    print(data)
+    if args.printall or args.rawheader:
+        print(data)
 
     # check magic
     if magic != 'EFIDroid':
@@ -108,28 +161,53 @@ def main(argv):
     manifest_size = data[14]
     manifest_off = data[15]
 
-    print('Metadata version: %u' % (ff_version))
-    print('EFIDroid version: %s' % getEFIDroidReleaseVersionString(efidroid_version))
-    print('Build time: %s (%u)' % (time.ctime(timestamp), timestamp))
-    print('EFI Specification: %u.%u' % ((efispec_version>>16)&0xffff, efispec_version&0xffff))
+    if args.printall or args.metadata_version:
+        if args.minimal:
+            print('%u' % (ff_version))
+        else:
+            print('Metadata version: %u' % (ff_version))
+    if args.printall or args.efidroid_version:
+        if args.minimal:
+            print('%s' % getEFIDroidReleaseVersionString(efidroid_version))
+        else:
+            print('EFIDroid version: %s' % getEFIDroidReleaseVersionString(efidroid_version))
+    if args.printall or args.timestamp:
+        if args.minimal:
+            print('%u' % timestamp)
+        else:
+            print('Build time: %s (%u)' % (time.ctime(timestamp), timestamp))
+    if args.printall or args.efispec:
+        if args.minimal:
+            print('%u.%u' % ((efispec_version>>16)&0xffff, efispec_version&0xffff))
+        else:
+            print('EFI Specification: %u.%u' % ((efispec_version>>16)&0xffff, efispec_version&0xffff))
 
     # get devicename
     f.seek(off_meta+devicename_off)
     devicename = f.read(devicename_size)
-    print('Device: %s' % (devicename))
+    if args.printall or args.devicename:
+        if args.minimal:
+            print('%s' % (devicename))
+        else:
+            print('Device: %s' % (devicename))
 
     # get manifest
     f.seek(off_meta+manifest_off)
     manifest = f.read(manifest_size)
-    print('')
-    print('========== Manifest ==========')
-    print(manifest)
+    if args.printall or args.manifest:
+        print('')
+        print('========== Manifest ==========')
+        print(manifest)
     
     f.close()
 
 if __name__ == '__main__':
     try:
         main(sys.argv[1:])
+    except SystemExit as e:
+        if e.code:
+            pr_error('Error: %s' % e.code)
+        raise
     except:
         pr_error('Error: %s' % sys.exc_info()[1])
         raise
