@@ -31,13 +31,13 @@ Compile() {
     rm -Rf "$MODULE_OUT/grubrd"
     rm -f "$MODULE_OUT/grubboot.img"
 
-    qemu-arm "$TARGET_GRUB_KERNEL_OUT/grub-mkimage" \
+    qemu-arm "$GRUB_KERNEL_OUT/grub-mkimage" \
         -O arm-efi \
-        -c "$GRUB_CONFIG_DIR/load.cfg" \
+        -c "$UEFIAPP_GRUB_CONFIG_DIR/load.cfg" \
         -o "$MODULE_OUT/grub.efi" \
-        -d "$TARGET_GRUB_KERNEL_OUT/grub-core" \
+        -d "$GRUB_KERNEL_OUT/grub-core" \
         -p "" \
-        $(cd $TARGET_GRUB_KERNEL_OUT/grub-core && find *.mod | xargs -I {} basename {} .mod | xargs)
+        $(cd $GRUB_KERNEL_OUT/grub-core && find *.mod | xargs -I {} basename {} .mod | xargs)
 
     # directories
     mkdir "$MODULE_OUT/grubrd"
@@ -46,14 +46,14 @@ Compile() {
     mkdir "$MODULE_OUT/grubrd/arm-efi"
 
     # font
-    grub-mkfont -s $(inch2px "0.11") -o "$MODULE_OUT/unicode_uncompressed.pf2" "$GRUB_CONFIG_DIR/unifont.ttf"
+    grub-mkfont -s $(inch2px "0.11") -o "$MODULE_OUT/unicode_uncompressed.pf2" "$UEFIAPP_GRUB_CONFIG_DIR/unifont.ttf"
     cat "$MODULE_OUT/unicode_uncompressed.pf2" | gzip >"$MODULE_OUT/grubrd/fonts/unicode.pf2"
 
     # env
-    qemu-arm "$TARGET_GRUB_KERNEL_OUT/grub-editenv" "$MODULE_OUT/grubrd/grubenv" create
+    qemu-arm "$GRUB_KERNEL_OUT/grub-editenv" "$MODULE_OUT/grubrd/grubenv" create
 
     # config
-    cp "$GRUB_CONFIG_DIR/grub.cfg" "$MODULE_OUT/grubrd/grub.cfg"
+    cp "$UEFIAPP_GRUB_CONFIG_DIR/grub.cfg" "$MODULE_OUT/grubrd/grub.cfg"
 
     # all modules are builtin
 
