@@ -642,6 +642,7 @@ def add_uefiapp_target(path, moduledeps=[]):
     # add build target
     make_add_target(path, targetname, command+' '+targetcompilefn, deps=targetdeps,\
                     description='Compiling target \''+targetname+'\'', moduletype='target')
+    cfg.make.dependencies(targetname, 'edk2_basetools')
     addhelp(targetname, 'UEFIApp target')
 
     # add clean target

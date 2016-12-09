@@ -114,9 +114,12 @@ EDK2_ENV="$EDK2_ENV PACKAGES_PATH=${EDK2_OUT}:${EDK2_DIR}:$TOP/uefi/edk2packages
 EDK2Setup() {
     # copy base files (if changed)
     mkdir -p "$EDK2_OUT"
-    cp -Rpu "$EDK2_DIR/BaseTools" "$EDK2_OUT/"
     cp -Rpu "$EDK2_DIR/Conf" "$EDK2_OUT/"
     ln -fs "$EDK2_DIR/edksetup.sh" "$EDK2_OUT/"
+
+    # symlink BaseTools
+    rm -f "$EDK2_OUT/BaseTools"
+    ln -s "$EDK2_BASETOOLS_OUT" "$EDK2_OUT/BaseTools"
 
     # symlink uefi/apps
     rm -f "$EDK2_OUT/EFIDroidUEFIApps"
@@ -132,13 +135,6 @@ EDK2Setup() {
 
     rm -f "$EDK2_OUT/EFIDroidLKLPriv"
     ln -s "$TOP/uefi/lkl/tools/lkl" "$EDK2_OUT/EFIDroidLKLPriv"
-
-    # (re)compile BaseTools
-    "$EFIDROID_SHELL" -c "\
-        unset ARCH && \
-        unset MAKEFLAGS && \
-        \"$EFIDROID_MAKE\" -C \"$EDK2_OUT/BaseTools\" \
-    "
 }
 
 CompileEDK2() {
