@@ -113,6 +113,7 @@ def main(argv):
                 if not codename in devices:
                     devices += [codename]
 
+        devices.sort()
         devices += ['CUSTOM']
 
         # device
