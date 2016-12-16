@@ -279,9 +279,12 @@ def add_ini_target(moduletype, configfile, moduledir, config, section):
         if not os.path.isfile(targetscriptfile_abs):
             raise Exception('%s: \'%s\' doesn\'t exist' % (configfile, targetscriptfile_abs))
 
-        command = 'build/tools/runscript "'+\
-                   cfg.out+'" "'+cfg.configinclude_name+'" "'+targetscriptfile_abs+'"'+\
-                   ' "'+moduletype+'" "'+targetname+'" "'+targetout+'" "'+moduledir+'"'
+        command  = ''
+        command += ' MODULE_TYPE="'+moduletype+'"'
+        command += ' MODULE_NAME="'+targetname+'"'
+        command += ' MODULE_OUT="'+targetout+'"'
+        command += ' MODULE_DIR="'+moduledir+'"'
+        command += ' build/tools/runscript "'+cfg.configinclude_name+'" "'+targetscriptfile_abs+'"'
 
         # add build target
         make_add_target(configfile, targetname, command+' '+targetcompilefn, deps=targetdeps,\
@@ -619,9 +622,14 @@ def add_uefiapp_target(path, moduledeps=[]):
     targetout  = os.path.abspath(getvar('TARGET_OUT')+'/'+targetname)
     moduledir = os.path.abspath('build/core/tasks')
     targetcompilefn = 'CompileApp'
-    command = 'UEFIAPP="'+cfg.top+'/'+path+'" build/tools/runscript "'+\
-               cfg.out+'" "'+cfg.configinclude_name+'" "'+scriptfile+'"'+\
-               ' "host" "edk2_appbase" "'+targetout+'" "'+moduledir+'"'
+
+    command  = ''
+    command += ' MODULE_TYPE="host"'
+    command += ' MODULE_NAME="edk2_appbase"'
+    command += ' MODULE_OUT="'+targetout+'"'
+    command += ' MODULE_DIR="'+moduledir+'"'
+    command += ' UEFIAPP="'+cfg.top+'/'+path+'"'
+    command += ' build/tools/runscript "'+cfg.configinclude_name+'" "'+scriptfile+'"'
 
     # add build target
     make_add_target(path, targetname, command+' '+targetcompilefn, deps=targetdeps,\
