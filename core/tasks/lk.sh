@@ -261,25 +261,25 @@ CompileLKKernel() {
 }
 
 CompileLKBootImage() {
-    pr_alert "Installing: $TARGET_OUT/lk.img"
+    pr_alert "Installing: $DEVICE_OUT/lk.img"
     set -x
     "$TOP/build/tools/mkbootimg" \
         --kernel "$LK_BINARY_FINAL" \
         --ramdisk /dev/null \
         --base "$BOOTIMG_BASE" \
         $LK_MKBOOTIMG_ADDITIONAL_FLAGS \
-        -o "$TARGET_OUT/lk.img"
+        -o "$DEVICE_OUT/lk.img"
     set +x
 
     if [ ! -z "$BOOTIMG_DT" ] || [ ! -z "$BOOTIMG_APPENDED_FDT" ]; then
-        pr_alert "Installing: $TARGET_OUT/lk_origdtb.img"
+        pr_alert "Installing: $DEVICE_OUT/lk_origdtb.img"
         set -x
         "$TOP/build/tools/mkbootimg" \
             --kernel "$LK_BINARY_FINAL_ORIGDTB" \
             --ramdisk /dev/null \
             --base "$BOOTIMG_BASE" \
             $LK_MKBOOTIMG_ADDITIONAL_FLAGS_ORIGDTB \
-            -o "$TARGET_OUT/lk_origdtb.img"
+            -o "$DEVICE_OUT/lk_origdtb.img"
         set +x
     fi
 }
@@ -342,10 +342,10 @@ CompileLKUEFIKernelFinal() {
 
 CompileUEFIBootImage() {
     # generate meta data
-    "$TOP/build/tools/create_efidroid_metadata" "$DEVICE" > "$TARGET_OUT/efidroid_meta.bin"
+    "$TOP/build/tools/create_efidroid_metadata" "$DEVICE" > "$DEVICE_OUT/efidroid_meta.bin"
 
     for part in $DEVICE_UEFI_PARTITIONS; do
-        pr_alert "Installing: $TARGET_OUT/uefi_$part.img"
+        pr_alert "Installing: $DEVICE_OUT/uefi_$part.img"
         set -x
         "$TOP/build/tools/mkbootimg" \
             --kernel "$LK_BINARY_FINAL" \
@@ -353,9 +353,9 @@ CompileUEFIBootImage() {
             --base "$BOOTIMG_BASE" \
             --cmdline "uefi.bootpart=$part" \
             $LK_MKBOOTIMG_ADDITIONAL_FLAGS \
-            -o "$TARGET_OUT/uefi_$part.img"
+            -o "$DEVICE_OUT/uefi_$part.img"
         set +x
-        cat "$TARGET_OUT/efidroid_meta.bin" >> "$TARGET_OUT/uefi_$part.img"
+        cat "$DEVICE_OUT/efidroid_meta.bin" >> "$DEVICE_OUT/uefi_$part.img"
     done
 }
 

@@ -80,7 +80,7 @@ def main(argv):
     upload_url = get_upload_url()
 
     # get timestamp
-    p = subprocess.Popen([SCRIPTDIR+'/dump_efidroid_metadata', '--minimal', '--timestamp', os.getenv('TARGET_OUT')+'/uefi_boot.img'], stdout=subprocess.PIPE)
+    p = subprocess.Popen([SCRIPTDIR+'/dump_efidroid_metadata', '--minimal', '--timestamp', os.getenv('DEVICE_OUT')+'/uefi_boot.img'], stdout=subprocess.PIPE)
     timestamp = int(p.stdout.read().strip())
 
     # read info.jsom

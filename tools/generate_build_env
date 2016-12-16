@@ -135,9 +135,9 @@ def main(argv):
             f.write('export EFIDROID_TARGET_ARCH='+architecture+'\n')
 
         if not deviceid == None:
-            f.write('export DEVICEID='+deviceid+'\n')
+            f.write('export EFIDROID_DEVICEID='+deviceid+'\n')
         if not buildtype == None:
-            f.write('export BUILDTYPE='+buildtype+'\n')
+            f.write('export EFIDROID_BUILDTYPE='+buildtype+'\n')
 
 if __name__ == '__main__':
     try:

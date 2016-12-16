@@ -13,6 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+if [ -z "$LCD_DENSITY" ];then
+    LCD_DENSITY="160"
+fi
+
 inch2px() {
     INCH="$1"
     PIXEL=$(bc -l <<< "$INCH*$LCD_DENSITY" | awk '{print int($1+0.5)}')
@@ -33,7 +37,7 @@ Compile() {
 
     qemu-arm "$GRUB_KERNEL_OUT/grub-mkimage" \
         -O arm-efi \
-        -c "$UEFIAPP_GRUB_CONFIG_DIR/load.cfg" \
+        -c "$GRUB_CONFIG_DIR/load.cfg" \
         -o "$MODULE_OUT/grub.efi" \
         -d "$GRUB_KERNEL_OUT/grub-core" \
         -p "" \
@@ -46,14 +50,14 @@ Compile() {
     mkdir "$MODULE_OUT/grubrd/arm-efi"
 
     # font
-    grub-mkfont -s $(inch2px "0.11") -o "$MODULE_OUT/unicode_uncompressed.pf2" "$UEFIAPP_GRUB_CONFIG_DIR/unifont.ttf"
+    grub-mkfont -s $(inch2px "0.11") -o "$MODULE_OUT/unicode_uncompressed.pf2" "$GRUB_CONFIG_DIR/unifont.ttf"
     cat "$MODULE_OUT/unicode_uncompressed.pf2" | gzip >"$MODULE_OUT/grubrd/fonts/unicode.pf2"
 
     # env
     qemu-arm "$GRUB_KERNEL_OUT/grub-editenv" "$MODULE_OUT/grubrd/grubenv" create
 
     # config
-    cp "$UEFIAPP_GRUB_CONFIG_DIR/grub.cfg" "$MODULE_OUT/grubrd/grub.cfg"
+    cp "$GRUB_CONFIG_DIR/grub.cfg" "$MODULE_OUT/grubrd/grub.cfg"
 
     # all modules are builtin
 

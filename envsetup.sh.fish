@@ -45,7 +45,7 @@ function lunch
             functions -c fish_prompt _old_fish_prompt # copy current prompt to backup
             
             function fish_prompt # declare new prompt
-                echo -ne "[$DEVICEID|$BUILDTYPE] "(_old_fish_prompt) # just prepend deviceid&buildtype
+                echo -ne "[$EFIDROID_DEVICEID|$EFIDROID_BUILDTYPE] "(_old_fish_prompt) # just prepend deviceid&buildtype
             end
             
             function restore_prompt # create function to restore old prompt

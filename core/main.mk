@@ -44,11 +44,7 @@ $(MAKECMDGOALS) all: makeforward
 	@start_time=$$(date +"%s"); \
 	\
 	# run build \
-	if [ "$(DEVICEID)" == "" ];then \
-		$(MAKE) -f out/host/build.mk $(MAKECMDGOALS); \
-	else \
-		$(MAKE) -f out/target/$(DEVICEID)/build.mk $(MAKECMDGOALS); \
-	fi; \
+	$(MAKE) -f out/build.mk $(MAKECMDGOALS); \
 	\
 	# compute and show build time \
 	ret=$$?; \

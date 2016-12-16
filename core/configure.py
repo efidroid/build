@@ -142,68 +142,60 @@ def toolchain_write_header(f):
 def toolchain_write_footer(f):
     f.write('# prevent multiple inclusion\n')
     f.write('set(CMAKE_TOOLCHAIN_READY TRUE)\n')
+
+def toolchain_write_library(f, o, projecttype):
+    linkage = 'STATIC'
+    if not o.static:
+        linkage = 'SHARED'
+
+    inlcudesstr = ''
+    for include in o.includes:
+        inlcudesstr += ' \"'+include+'\"'
+
+    inc_expanded = expandmodulevars(expandvars(inlcudesstr), o.target, projecttype)
+    file_expanded = expandmodulevars(expandvars(o.filename), o.target, projecttype)
+    if not inc_expanded==None and not file_expanded==None:
+        f.write('if(NOT "${EFIDROID_TARGET}" STREQUAL "'+o.target+'")\n')
+        f.write('add_library("'+o.name+'" '+linkage+' IMPORTED)\n')
+        f.write('set_target_properties('+o.name+' PROPERTIES IMPORTED_LOCATION '+ expandvars(file_expanded)+')\n')
+        if inc_expanded:
+            f.write('include_directories('+inc_expanded+')\n')
+        f.write('endif()\n\n')
+        f.write('\n')
+        return True
+
+    return False
+
+def toolchain_open_file(outdir):
+    if not os.path.isdir(outdir):
+        os.makedirs(outdir)
+    return open(outdir+'/toolchain.cmake', 'w')
     
 def gen_toolchains():
-    if not os.path.isdir(getvar('HOST_OUT')):
-        os.makedirs(getvar('HOST_OUT'))
-    fHost   = open(getvar('HOST_OUT')+'/toolchain.cmake', 'w')
-    toolchain_write_header(fHost)
-
-    if cfg.devicename:
-        if not os.path.isdir(getvar('TARGET_OUT')):
-            os.makedirs(getvar('TARGET_OUT'))
-
-        fTarget = open(getvar('TARGET_OUT')+'/toolchain.cmake', 'w')
-        toolchain_write_header(fTarget)
+    files = {}
+    for t in cfg.moduletypes:
+        files[t] = toolchain_open_file(getvar(t.upper()+'_OUT'))
+        toolchain_write_header(files[t])
 
     for o in cfg.libs:
-        linkage = 'STATIC'
-        if not o.static:
-            linkage = 'SHARED'
-
-        inlcudesstr = ''
-        for include in o.includes:
-            inlcudesstr += ' \"'+include+'\"'
-
         success = False;
-        inc_expanded = expandmodulevars(expandvars(inlcudesstr), o.target, 'host')
-        file_expanded = expandmodulevars(expandvars(o.filename), o.target, 'host')
-        if not inc_expanded==None and not file_expanded==None:
-            f = fHost
-            f.write('if(NOT "${EFIDROID_TARGET}" STREQUAL "'+o.target+'")\n')
-            f.write('add_library("'+o.name+'" '+linkage+' IMPORTED)\n')
-            f.write('set_target_properties('+o.name+' PROPERTIES IMPORTED_LOCATION '+ expandvars(file_expanded)+')\n')
-            if inc_expanded:
-                f.write('include_directories('+inc_expanded+')\n')
-            f.write('endif()\n\n')
-            f.write('\n')
-            success = True
-
-        if cfg.devicename:
-            inc_expanded = expandmodulevars(expandvars(inlcudesstr), o.target, 'target')
-            file_expanded = expandmodulevars(expandvars(o.filename), o.target, 'target')
-            if not inc_expanded==None and not file_expanded==None:
-                f = fTarget
-                f.write('if(NOT "${EFIDROID_TARGET}" STREQUAL "'+o.target+'")\n')
-                f.write('add_library("'+o.name+'" '+linkage+' IMPORTED)\n')
-                f.write('set_target_properties('+o.name+' PROPERTIES IMPORTED_LOCATION '+ expandvars(file_expanded)+')\n')
-                if inc_expanded:
-                    f.write('include_directories('+inc_expanded+')\n')
-                f.write('endif()\n\n')
-                f.write('\n')
+        
+        for t in cfg.moduletypes:
+            if toolchain_write_library(files[t], o, t)==True:
                 success = True
+
+            if t=='device':
+                if toolchain_write_library(files[t], o, 'target')==True:
+                    success = True
 
         if not success:
             raise Exception('library %s depends on non-existend target %s' % (o.name, o.target))
 
-    if cfg.devicename:
-        toolchain_write_footer(fTarget)
-        fTarget.close()
+    for t in cfg.moduletypes:
+        toolchain_write_footer(files[t])
+        files[t].close()
 
-    toolchain_write_footer(fHost)
-    fHost.close()
-
-def add_ini_target(moduletype, configfile, moduledir, config, section, uefiapp=False):
+def add_ini_target(moduletype, configfile, moduledir, config, section):
     targetname = section.split('.', 1)[1]
     targetname_id = targetname.upper()
     targettype = config.get(section, 'type')
@@ -245,20 +237,8 @@ def add_ini_target(moduletype, configfile, moduledir, config, section, uefiapp=F
         linksource = config.get(section, 'linksource')=='1'
     if config.has_option(section, 'group'):
         internalTarget = config.get(section, 'group')=='internal'
-
-    if uefiapp:
-        noprefix = True
-    else:
-        if config.has_option(section, 'noprefix'):
-            noprefix = config.get(section, 'noprefix')=='1'
-
-    # validate target name
-    if targetname.startswith(moduletype+'_'):
-        pr_fatal('invalid prefix in target name %s' % targetname)
-
-    # add moduletype prefix to target name
-    if not noprefix:
-        targetname = moduletype+'_'+targetname
+    if config.has_option(section, 'noprefix'):
+        noprefix = config.get(section, 'noprefix')=='1'
 
     # get moduledir
     if not moduledir:
@@ -272,14 +252,20 @@ def add_ini_target(moduletype, configfile, moduledir, config, section, uefiapp=F
     if config.has_option(section, 'outdir'):
         outdir = config.get(section, 'outdir')
 
-    if moduletype=='target':
-        targetout = getvar('TARGET_OUT')+'/'+outdir
-    elif moduletype=='uefiapp':
-        targetout = getvar('TARGET_COMMON_OUT')+'/'+outdir
-    elif moduletype=='host':
-        targetout = getvar('HOST_OUT')+'/'+outdir
-    else:
-        raise Exception('Invalid moduletype \''+moduletype+'\'')
+    if moduletype=='uefiapp':
+        moduletype = 'target'
+        noprefix = 1
+        targetname = 'uefiapp_'+targetname
+
+    targetout = getvar(moduletype.upper()+'_OUT')+'/'+outdir
+
+    # validate target name
+    if targetname.startswith(moduletype+'_'):
+        pr_fatal('invalid prefix in target name %s' % targetname)
+
+    # add moduletype prefix to target name
+    if not noprefix:
+        targetname = moduletype+'_'+targetname
 
     # expand some of the options
     configureflags = expandmodulevars_novars(configureflags, targetout, moduledir)
@@ -397,30 +383,40 @@ def add_ini_target(moduletype, configfile, moduledir, config, section, uefiapp=F
     setvar(targetname.upper()+'_OUT', targetout)
     setvar(targetname.upper()+'_SRC', moduledir)
 
-def process_target_section(configfile, moduledir, config, section, uefiapp=False):
+def process_target_section(configfile, moduledir, config, section):
     moduletypes = []
+    valid_moduletypes = [
+        'target',
+        'device',
+        'host',
+        'uefiapp',
+    ]
 
-    if uefiapp:
-        moduletypes.append('target')
-    else:
-        moduletypes.append('target')
-        moduletypes.append('host')
+    enabled_moduletypes = [] + cfg.moduletypes
+    if 'target' in enabled_moduletypes:
+        enabled_moduletypes.append('uefiapp')
 
-        if config.has_option(section, 'moduletypes'):
-            moduletypes = config.get(section, 'moduletypes').split()
+    moduletypes.append('target')
+    moduletypes.append('host')
+    if config.has_option(section, 'moduletypes'):
+        moduletypes = config.get(section, 'moduletypes').split()
 
     for moduletype in moduletypes:
         # validate moduletype
-        if not moduletype=='target' and not moduletype=='host' and not moduletype=='uefiapp':
+        if not moduletype in valid_moduletypes:
             raise Exception('Invalid module type \''+moduletype+'\' in '+configfile)
 
         # skip device targets if we're building in host-only mode
-        if not cfg.devicename and moduletype=='target':
+        if not moduletype in enabled_moduletypes:
             if len(moduletypes)==1:
                 config.ignore_unused_options = True
             continue
 
-        add_ini_target(moduletype, configfile, moduledir, config, section, uefiapp=uefiapp)
+        # verify uefiapp usage
+        if moduletype=='uefiapp' and len(moduletypes)!=1:
+            raise Exception('the moduletype \'uefiapp\' must be used exclusively: '+configfile)
+
+        add_ini_target(moduletype, configfile, moduledir, config, section)
 
 class CheckingRawConfigParser(ConfigParser.RawConfigParser):
     def __init__(self, *args, **kwargs):
@@ -469,7 +465,7 @@ class CheckingRawConfigParser(ConfigParser.RawConfigParser):
         if len(unused_options)>0:
             raise Exception('')
 
-def parse_config(configfile, moduledir=None, moduledeps=[], uefiapp=False):
+def parse_config(configfile, moduledir=None, moduledeps=[]):
     cfg.make.comment(configfile)
 
     config = CheckingRawConfigParser(allow_no_value=True)
@@ -492,7 +488,7 @@ def parse_config(configfile, moduledir=None, moduledeps=[], uefiapp=False):
                 cfg.toolchains[identifier][name] = value
 
         elif section.startswith('target.'):
-            process_target_section(configfile, moduledir, config, section, uefiapp=uefiapp)
+            process_target_section(configfile, moduledir, config, section)
 
         elif section.startswith('library.'):
             libname = section.split('.', 1)[1]
@@ -568,35 +564,23 @@ def add_cmake_target(path, projecttype, modulesrc=None, maketargets=None, disabl
         targetname = projecttype+'_'+dirname
     targetdeps = ['FORCE'] + moduledeps
     cmakeargs = ''
+    moduletypeoutdir = getvar(projecttype.upper()+'_OUT')
+    outdir = moduletypeoutdir+'/'+dirname
 
-    if projecttype == 'target':
-        # skip if we're in host mode
-        if not cfg.devicename:
-            return
-
+    # use target compiler
+    if projecttype == 'target' or projecttype == 'device':
         prefix = getvar('GCC_LINUX_TARGET_PREFIX')
         cmakeargs += ' -DCMAKE_C_COMPILER='+prefix+'gcc'
         cmakeargs += ' -DCMAKE_CXX_COMPILER='+prefix+'g++'
         cmakeargs += ' -DCMAKE_LINKER='+prefix+'ld'
         cmakeargs += ' -DCMAKE_OBJCOPY='+prefix+'objcopy'
         cmakeargs += ' -DCMAKE_EXE_LINKER_FLAGS=\"-static\"'
-        cmakeargs += ' -DCMAKE_TOOLCHAIN_FILE='+getvar('TARGET_OUT')+'/toolchain.cmake'
-    elif projecttype == 'host':
-        cmakeargs += ' -DCMAKE_TOOLCHAIN_FILE='+getvar('HOST_OUT')+'/toolchain.cmake'
-    else:
-        raise Exception('Invalid projecttype \''+projecttype+'\'')
 
+    cmakeargs += ' -DCMAKE_TOOLCHAIN_FILE='+moduletypeoutdir+'/toolchain.cmake'
     cmakeargs += ' -DEFIDROID_TARGET='+dirname
 
     if modulesrc:
         cmakeargs += ' -DMODULE_SRC='+os.path.abspath(modulesrc)
-
-    if projecttype=='target':
-        outdir = getvar('TARGET_OUT')+'/'+dirname
-    elif projecttype=='host':
-        outdir = getvar('HOST_OUT')+'/'+dirname
-    else:
-        raise Exception('Invalid projecttype \''+projecttype+'\'')
 
     # add rule
     make_add_target(path, targetname, [
@@ -632,7 +616,7 @@ def add_uefiapp_target(path, moduledeps=[]):
     targetdeps = ['FORCE'] + moduledeps
 
     scriptfile  = os.path.abspath('build/core/tasks/edk2-appbase.sh')
-    targetout  = os.path.abspath(getvar('TARGET_COMMON_OUT')+'/'+targetname)
+    targetout  = os.path.abspath(getvar('TARGET_OUT')+'/'+targetname)
     moduledir = os.path.abspath('build/core/tasks')
     targetcompilefn = 'CompileApp'
     command = 'UEFIAPP="'+cfg.top+'/'+path+'" build/tools/runscript "'+\
@@ -680,7 +664,7 @@ def make_add_dependencies():
 
         for dep in info['deps']:
             # ignore explicit deps
-            if dep.startswith('target_') or dep.startswith('host_') or dep=='FORCE' or info['moduletype']==None:
+            if dep.startswith('target_') or dep.startswith('host_') or dep.startswith('device_') or dep=='FORCE' or info['moduletype']==None:
                 deps.append(dep)
                 continue
 
@@ -692,8 +676,16 @@ def make_add_dependencies():
             # this should be an error, but since make_syntax checks this anyway, we add it as is
             newdepname = info['moduletype'] + '_' + dep
             if not newdepname in cfg.targets:
-                deps.append(dep)
-                continue
+                skip = True
+
+                if info['moduletype'] == 'device':
+                    newdepname = 'target_' + dep
+                    if newdepname in cfg.targets:
+                        skip = False
+
+                if skip:
+                    deps.append(dep)
+                    continue
 
             # add the new depname
             depinfo = cfg.targets[newdepname]
@@ -798,13 +790,14 @@ def process_module(moduledir, uefiapp=False):
     moduleefidroidini = moduledir+'/EFIDroid.ini'
     moduledepsfile = moduledir+'/EFIDroidDependencies.ini'
     moduledeps = []
+    moduletypes = ['host', 'target']
 
     # always include moduleconfig if available
     if os.path.isfile(moduleconfigfile):
         if os.path.isfile(moduleefidroidini):
             raise Exception('both %s and %s were found' % (moduleconfigfile, moduleefidroidini))
 
-        parse_config(moduleconfigfile, moduledir, uefiapp=uefiapp);
+        parse_config(moduleconfigfile, moduledir);
 
     # detect build system
     parsed = False
@@ -817,7 +810,7 @@ def process_module(moduledir, uefiapp=False):
             moduledeps += opts['moduledeps'].split()
 
         # parse config normally
-        parse_config(moduleefidroidini, moduledir, moduledeps=moduledeps, uefiapp=uefiapp);
+        parse_config(moduleefidroidini, moduledir, moduledeps=moduledeps);
 
         # check if this is a extension only
         if ('extend' in opts) and (opts['extend']=='1'):
@@ -825,13 +818,17 @@ def process_module(moduledir, uefiapp=False):
         else:
             parsed = True
 
+        if 'moduletypes' in opts:
+            moduletypes = opts['moduletypes']
+
     if parsed == False:
         if os.path.isfile(moduledir+'/CMakeLists.txt'):
-            add_cmake_target(moduledir, 'target', moduledeps=moduledeps)
-            add_cmake_target(moduledir, 'host', moduledeps=moduledeps)
+            for projecttype in moduletypes:
+                add_cmake_target(moduledir, projecttype, moduledeps=moduledeps)
 
         elif uefiapp and os.path.isfile(moduledir+'/'+dirname+'.inf'):
-            add_uefiapp_target(moduledir, moduledeps=moduledeps)
+            if cfg.arch:
+                add_uefiapp_target(moduledir, moduledeps=moduledeps)
 
         elif not os.path.isfile(moduleconfigfile):
             if moduledir.startswith("modules/selinux_"):
@@ -844,23 +841,6 @@ def process_module(moduledir, uefiapp=False):
         pr_warning('Deprecated file \''+moduledepsfile+'\'')
 
 def main(argv):
-    # get devicename
-    if 'DEVICEID' in os.environ:
-        cfg.devicename = os.environ['DEVICEID']
-        pr_alert('Configuring for %s' % cfg.devicename)
-    else:
-        cfg.devicename = None
-        pr_alert('Configuring for HOST')
-
-    # get build type
-    if 'BUILDTYPE' in os.environ:
-        cfg.buildtype = os.environ['BUILDTYPE']
-    else:
-        cfg.buildtype = 'USERDEBUG'
-    if not (cfg.buildtype=='DEBUG' or cfg.buildtype=='USERDEBUG' or cfg.buildtype=='RELEASE'):
-        raise Exception('Invalid build type \''+cfg.buildtype+'\'')
-    pr_alert('Buildtype: '+cfg.buildtype)
-
     # initialize make
     makeout = StringIO()
     makeoutvars = StringIO()
@@ -874,12 +854,26 @@ def main(argv):
     cfg.top = os.path.abspath('')
     cfg.uefird_deps = []
     cfg.toolchains = {}
+    cfg.moduletypes = ['host']
+    cfg.arch = None
+    cfg.devicename = None
+    cfg.configinclude_name = cfg.out+'/config'
+    cfg.buildfname = cfg.out+'/build.mk'
 
     # create out directory
     try:
         os.makedirs(cfg.out)
     except:
         pass
+
+    # get build type
+    if 'EFIDROID_BUILDTYPE' in os.environ:
+        cfg.buildtype = os.environ['EFIDROID_BUILDTYPE']
+    else:
+        cfg.buildtype = 'USERDEBUG'
+    if not (cfg.buildtype=='DEBUG' or cfg.buildtype=='USERDEBUG' or cfg.buildtype=='RELEASE'):
+        raise Exception('Invalid build type \''+cfg.buildtype+'\'')
+    pr_alert('Buildtype: '+cfg.buildtype)
 
     # basic variables
     setvar('OUT', cfg.out)
@@ -888,48 +882,40 @@ def main(argv):
     setvar('MAKEFORWARD', getvar('HOST_OUT')+'/makeforward')
     setvar('BUILDTYPE', cfg.buildtype)
 
-    # get target arch
-    if 'EFIDROID_TARGET_ARCH' in os.environ:
-        setvar('EFIDROID_TARGET_ARCH', os.environ['EFIDROID_TARGET_ARCH'])
-    else:
-        setvar('EFIDROID_TARGET_ARCH', 'arm')
-    pr_alert('Architecture: %s' % getvar('EFIDROID_TARGET_ARCH'))
-
-    setvar('TARGET_COMMON_OUT', cfg.out+'/target/common/'+getvar('EFIDROID_TARGET_ARCH'))
-
     # load device config
-    if cfg.devicename:
+    if 'EFIDROID_DEVICEID' in os.environ:
+        cfg.devicename = os.environ['EFIDROID_DEVICEID']
+        cfg.moduletypes.append('device')
+        pr_alert('Device: %s' % cfg.devicename)
+
+
         tmp = cfg.devicename.split('/')
         if len(tmp) != 2:
             raise Exception('Invalid device name: '+cfg.devicename)
 
-        # check if device exists
+        # run roomservice
         roomservicerc = 0
-        if cfg.devicename:
-            # run roomservice
-            if not os.path.isfile('device/'+cfg.devicename+'/config.ini'):
-                roomservicerc = subprocess.call([cfg.top+'/build/tools/roomservice.py', cfg.devicename])
-            else:
-                roomservicerc = subprocess.call([cfg.top+'/build/tools/roomservice.py', cfg.devicename, 'true'])
+        if not os.path.isfile('device/'+cfg.devicename+'/config.ini'):
+            roomservicerc = subprocess.call([cfg.top+'/build/tools/roomservice.py', cfg.devicename])
+        else:
+            roomservicerc = subprocess.call([cfg.top+'/build/tools/roomservice.py', cfg.devicename, 'true'])
 
-            # check return code
-            if roomservicerc != 0:
-                raise Exception('roomservice error: %d' % (roomservicerc))
+        # check return code
+        if roomservicerc != 0:
+            raise Exception('roomservice error: %d' % (roomservicerc))
 
-            # check if we finally have a device dir now
-            if not os.path.isfile('device/'+cfg.devicename+'/config.ini'):
-                raise Exception('Device \''+cfg.devicename+'\' does not exist')
+        # check if we finally have a device dir now
+        if not os.path.isfile('device/'+cfg.devicename+'/config.ini'):
+            raise Exception('Device \''+cfg.devicename+'\' does not exist')
 
         setvar('DEVICE', cfg.devicename)
         setvar('DEVICEVENDOR', tmp[0])
         setvar('DEVICENAME', tmp[1])
-        setvar('TARGET_OUT', cfg.out+'/target/'+cfg.devicename)
-        setvar('UEFIRD_DIR', getvar('TARGET_OUT')+'/uefird')
+        setvar('DEVICE_OUT', cfg.out+'/device/'+cfg.devicename)
+        setvar('UEFIRD_DIR', getvar('DEVICE_OUT')+'/uefird')
         setvar('UEFIRD_CPIO', getvar('UEFIRD_DIR')+'.cpio')
 
         cfg.devicenamenice = cfg.devicename.replace('/','-')
-        cfg.configinclude_name = getvar('TARGET_OUT')+'/config'
-        cfg.buildfname = getvar('TARGET_OUT')+'/build.mk'
 
         # parse fstab
         setvar('DEVICE_FSTAB', cfg.top+'/device/'+cfg.devicename+'/fstab.multiboot')
@@ -956,12 +942,9 @@ def main(argv):
             raise Exception('fstab doesn\'t have any uefi partitions')
         setvar('DEVICE_UEFI_PARTITIONS', ' '.join(uefiparts))
 
-        # create target dir
-        if not os.path.isdir(getvar('TARGET_OUT')):
-            os.makedirs(getvar('TARGET_OUT'))
-    else:
-        cfg.configinclude_name = getvar('HOST_OUT')+'/config'
-        cfg.buildfname = getvar('HOST_OUT')+'/build.mk'
+        # create device dir
+        if not os.path.isdir(getvar('DEVICE_OUT')):
+            os.makedirs(getvar('DEVICE_OUT'))
 
     # create host dir
     if not os.path.isdir(getvar('HOST_OUT')):
@@ -994,51 +977,75 @@ def main(argv):
     # add build config
     parse_config('build/config.ini')
 
-    # get selected toolchain name
-    toolchain_name_gcc_linux = 'gcc6'
-    if 'EFIDROID_TOOLCHAIN_NAME_GCC_LINUX' in os.environ:
-       toolchain_name_gcc_linux = os.environ['EFIDROID_TOOLCHAIN_NAME_GCC_LINUX']
-    pr_alert('Toolchain-LINUX: '+toolchain_name_gcc_linux)
-
-    toolchain_name_gcc_none = 'gcc6'
-    if 'EFIDROID_TOOLCHAIN_NAME_GCC_NONE' in os.environ:
-       toolchain_name_gcc_none = os.environ['EFIDROID_TOOLCHAIN_NAME_GCC_NONE']
-    pr_alert('Toolchain-NONE: '+toolchain_name_gcc_none)
-
-    if toolchain_name_gcc_linux == 'native':
-        cfg.toolchain_gcc_linux = cfg.toolchains['native']
-    else:
-        toolchain_id_linux = 'gcc_linux_'+getvar('EFIDROID_TARGET_ARCH')+'_'+toolchain_name_gcc_linux
-        if not toolchain_id_linux in cfg.toolchains:
-            raise Exception(getvar('EFIDROID_TARGET_ARCH')+' Toolchain \''+toolchain_name_gcc_linux+'\' doesn\'t support gcc_linux')
-
-        cfg.toolchain_gcc_linux = cfg.toolchains[toolchain_id_linux]
-
-    if toolchain_name_gcc_none == 'native':
-        cfg.toolchain_gcc_none = cfg.toolchains['native']
-    else:
-        toolchain_id_none  = 'gcc_none_' +getvar('EFIDROID_TARGET_ARCH')+'_'+toolchain_name_gcc_none
-        if not toolchain_id_none  in cfg.toolchains:
-            raise Exception(getvar('EFIDROID_TARGET_ARCH')+' Toolchain \''+toolchain_name_gcc_none+'\' doesn\'t support gcc_none')
-
-        cfg.toolchain_gcc_none  = cfg.toolchains[toolchain_id_none]
-
-    # setup variables needed by our modules
-    setup_toolchain_variables('GCC_LINUX_TARGET', cfg.toolchain_gcc_linux)
-    setup_toolchain_variables('GCC_NONE_TARGET',  cfg.toolchain_gcc_none)
-
-    # we need the toolchain vars
-    evaluatevars()
-
-    # set PATH
-    if getvar('GCC_LINUX_TARGET_PATH'):
-        cfg.make._line('export PATH := '+getvar('GCC_LINUX_TARGET_PATH')+':$(PATH)')
-    if getvar('GCC_NONE_TARGET_PATH'):
-        cfg.make._line('export PATH := '+getvar('GCC_NONE_TARGET_PATH')+':$(PATH)')
-
     # add device config
     if cfg.devicename:
         parse_config('device/'+cfg.devicename+'/config.ini')
+
+    # get target arch
+    if getvar('EFIDROID_TARGET_ARCH'):
+        cfg.arch = getvar('EFIDROID_TARGET_ARCH')
+    elif 'EFIDROID_TARGET_ARCH' in os.environ:
+        cfg.arch = os.environ['EFIDROID_TARGET_ARCH']
+        setvar('EFIDROID_TARGET_ARCH', cfg.arch)
+    else:
+        cfg.arch = 'arm'
+        setvar('EFIDROID_TARGET_ARCH', cfg.arch)
+
+    if cfg.devicename and not cfg.arch:
+        raise Exception('no architecture defined for selected device')
+
+    if cfg.arch:
+        setvar('TARGET_OUT', cfg.out+'/target/'+cfg.arch)
+        cfg.moduletypes.append('target')
+        pr_alert('Architecture: %s' % cfg.arch)
+
+        # create target dir
+        if not os.path.isdir(getvar('TARGET_OUT')):
+            os.makedirs(getvar('TARGET_OUT'))
+
+        # get selected toolchain name
+        toolchain_name_gcc_linux = 'gcc6'
+        if 'EFIDROID_TOOLCHAIN_NAME_GCC_LINUX' in os.environ:
+           toolchain_name_gcc_linux = os.environ['EFIDROID_TOOLCHAIN_NAME_GCC_LINUX']
+        pr_alert('Toolchain-LINUX: '+toolchain_name_gcc_linux)
+
+        toolchain_name_gcc_none = 'gcc6'
+        if 'EFIDROID_TOOLCHAIN_NAME_GCC_NONE' in os.environ:
+           toolchain_name_gcc_none = os.environ['EFIDROID_TOOLCHAIN_NAME_GCC_NONE']
+        pr_alert('Toolchain-NONE: '+toolchain_name_gcc_none)
+
+        if toolchain_name_gcc_linux == 'native':
+            cfg.toolchain_gcc_linux = cfg.toolchains['native']
+        else:
+            toolchain_id_linux = 'gcc_linux_'+getvar('EFIDROID_TARGET_ARCH')+'_'+toolchain_name_gcc_linux
+            if not toolchain_id_linux in cfg.toolchains:
+                raise Exception(getvar('EFIDROID_TARGET_ARCH')+' Toolchain \''+toolchain_name_gcc_linux+'\' doesn\'t support gcc_linux')
+
+            cfg.toolchain_gcc_linux = cfg.toolchains[toolchain_id_linux]
+
+        if toolchain_name_gcc_none == 'native':
+            cfg.toolchain_gcc_none = cfg.toolchains['native']
+        else:
+            toolchain_id_none  = 'gcc_none_' +getvar('EFIDROID_TARGET_ARCH')+'_'+toolchain_name_gcc_none
+            if not toolchain_id_none  in cfg.toolchains:
+                raise Exception(getvar('EFIDROID_TARGET_ARCH')+' Toolchain \''+toolchain_name_gcc_none+'\' doesn\'t support gcc_none')
+
+            cfg.toolchain_gcc_none  = cfg.toolchains[toolchain_id_none]
+
+        # setup variables needed by our modules
+        setup_toolchain_variables('GCC_LINUX_TARGET', cfg.toolchain_gcc_linux)
+        setup_toolchain_variables('GCC_NONE_TARGET',  cfg.toolchain_gcc_none)
+
+        # we need the toolchain vars
+        evaluatevars()
+
+        # set PATH
+        if getvar('GCC_LINUX_TARGET_PATH'):
+            cfg.make._line('export PATH := '+getvar('GCC_LINUX_TARGET_PATH')+':$(PATH)')
+        if getvar('GCC_NONE_TARGET_PATH'):
+            cfg.make._line('export PATH := '+getvar('GCC_NONE_TARGET_PATH')+':$(PATH)')
+
+    pr_alert('Configuring for %s' % (', '.join(cfg.moduletypes)))
 
     # add build tasks
     for configfile in glob.glob('build/core/tasks/*.ini'):
@@ -1070,7 +1077,7 @@ def main(argv):
     cfg.make.newline()
     addhelp('distclean', 'Remove the entire build directory (out)')
 
-    # add help for 'help
+    # add help for 'help'
     addhelp('help', 'Show available targets')
     addhelp('help-internal', 'Show available targets including internal ones')
 
@@ -1091,7 +1098,7 @@ def main(argv):
     cfg.make.default(['help'])
     cfg.make.newline()
 
-    # help target
+    # help-internal target
     cfg.make.comment('HELP-INTERNAL')
     make_add_target(__file__, 'help-internal', 'echo -e \"'+helptext_all.replace('"', '\\"')+'\"', description='Generating Help', phony=True)
     cfg.make.newline()
@@ -1119,8 +1126,9 @@ def main(argv):
     cfg.configinclude_py.close()
     cfg.configinclude_cmake.close()
 
-    setup_toolchain(cfg.toolchain_gcc_linux)
-    setup_toolchain(cfg.toolchain_gcc_none)
+    if cfg.arch:
+        setup_toolchain(cfg.toolchain_gcc_linux)
+        setup_toolchain(cfg.toolchain_gcc_none)
 
 if __name__ == "__main__":
     try:

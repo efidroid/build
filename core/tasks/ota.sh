@@ -13,14 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ZIPNAME="$TARGET_OUT/otapackage-$(date +'%Y%m%d')-${DEVICE/\//_}.zip"
+ZIPNAME="$DEVICE_OUT/otapackage-$(date +'%Y%m%d')-${DEVICE/\//_}.zip"
 
 BuildOtaPackage() {
     Clean
 
     # copy UEFI partition images
     for part in $DEVICE_UEFI_PARTITIONS; do
-        cp "$TARGET_OUT/uefi_$part.img" "$MODULE_OUT/$part.img"
+        cp "$DEVICE_OUT/uefi_$part.img" "$MODULE_OUT/$part.img"
     done
 
     # create zip

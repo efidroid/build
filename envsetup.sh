@@ -39,6 +39,6 @@ lunch() {
 
     # set window title
     if [ "$STAY_OFF_MY_LAWN" = "" ]; then
-        export PROMPT_COMMAND="echo -ne \"\033]0;[$DEVICEID|$BUILDTYPE] ${USER}@${HOSTNAME}: ${PWD}\007\""
+        export PROMPT_COMMAND="echo -ne \"\033]0;[$EFIDROID_DEVICEID|$EFIDROID_BUILDTYPE] ${USER}@${HOSTNAME}: ${PWD}\007\""
     fi
 }
