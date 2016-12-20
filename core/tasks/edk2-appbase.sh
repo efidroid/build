@@ -67,7 +67,7 @@ Compile() {
 
 CompileApp() {
     # get app info
-    APPNAME="${UEFIAPP##*/}"
+    APPNAME="${MODULE_DIR##*/}"
 
     # setup
     EDK2Setup
@@ -91,14 +91,14 @@ CompileApp() {
     CompileEDK2 "$APPCONFIG_REL" "$EDK2_DEFINES"
 
     # print binary path
-    BASENAME=$(awk -F "=" '/BASE_NAME/ {print $2}' "$UEFIAPP/$APPNAME.inf" | tr -d '[[:space:]]')
+    BASENAME=$(awk -F "=" '/BASE_NAME/ {print $2}' "$MODULE_DIR/$APPNAME.inf" | tr -d '[[:space:]]')
     pr_alert "Installing: $EDK2_OUT/Build/EFIDroidUEFIApps/${EDK2_BUILD_TYPE}_${EDK2_COMPILER}/$EDK2_ARCH/$BASENAME.efi"
 }
 
 Clean() {
     # get app info
-    APPNAME="${UEFIAPP##*/}"
-    BASENAME=$(awk -F "=" '/BASE_NAME/ {print $2}' "$UEFIAPP/$APPNAME.inf" | tr -d '[[:space:]]')
+    APPNAME="${MODULE_DIR##*/}"
+    BASENAME=$(awk -F "=" '/BASE_NAME/ {print $2}' "$MODULE_DIR/$APPNAME.inf" | tr -d '[[:space:]]')
     EFIPATH="$EDK2_OUT/Build/EFIDroidUEFIApps/${EDK2_BUILD_TYPE}_${EDK2_COMPILER}/$EDK2_ARCH/$BASENAME.efi"
 
     # remove build files

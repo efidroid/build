@@ -15,7 +15,7 @@
 
 BB_ARGS="O=$MODULE_OUT"
 
-if [ "$MODULE_TYPE" == "target" ];then
+if [ ! -z "$MODULE_ARCH" ];then
     BB_ARGS="$BB_ARGS ARCH=arm CROSS_COMPILE=$GCC_LINUX_TARGET_PREFIX"
     GCC_PREFIX="${GCC_LINUX_TARGET_PREFIX}"
 else

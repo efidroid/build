@@ -5,8 +5,8 @@ set(CMAKE_BUILD_TYPE Release)
 
 # main
 add_library(inih STATIC
-    ${MODULE_SRC}/ini.c
+    $ENV{MODULE_DIR}/ini.c
 )
 set_property(TARGET inih PROPERTY INCLUDE_DIRECTORIES
-    ${MODULE_SRC}
+    $ENV{MODULE_DIR}
 )

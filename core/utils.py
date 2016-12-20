@@ -54,6 +54,12 @@ txtrst='\033[0m'    # Text Reset
 class Bunch:
     def __init__(self, **kwds):
         self.__dict__.update(kwds)
+    def __iter__(self):
+        return self.__dict__.iteritems()
+    def __str__(self):
+        return self.__dict__.__str__()
+    def __repr__(self):
+        return self.__dict__.__repr__()
 cfg = Bunch()
 
 def pr_error(*args):

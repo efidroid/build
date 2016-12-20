@@ -16,7 +16,7 @@
 SELINUX_SRC="$TOP/modules/selinux_7"
 SELINUX_MAKE_ARGS=""
 
-export CFLAGS="-I${HOST_PCRE_SRC} -L${HOST_PCRE_OUT} -I$SELINUX_SRC/libsepol/include -L${HOST_LIBSEPOL_OUT}/libsepol/src"
+export CFLAGS="-I${HOST_PCRE_DIR} -L${HOST_PCRE_OUT} -I$SELINUX_SRC/libsepol/include -L${HOST_LIBSEPOL_OUT}/libsepol/src"
 
 Compile() {
     # link sources

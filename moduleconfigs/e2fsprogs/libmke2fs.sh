@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if [ "$MODULE_TYPE" == "target" ];then
+if [ ! -z "$MODULE_ARCH" ];then
     GCC_PREFIX="${GCC_LINUX_TARGET_PREFIX}"
     E2FSPROGS_OUT="$TARGET_E2FSPROGS_OUT"
 else

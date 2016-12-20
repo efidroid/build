@@ -65,9 +65,9 @@ Configure() {
     # link apps
     mkdir -p "$EDK2_EFIDROID_OUT"
     rm -f "$EDK2_OUT/Build/uefiapp_EFIDroidUi"
-    ln -s "$TARGET_OUT/uefiapp_EFIDroidUi/Build/EFIDroidUEFIApps" "$EDK2_OUT/Build/uefiapp_EFIDroidUi"
+    ln -s "$UEFIAPP_EFIDROIDUI_OUT/Build/EFIDroidUEFIApps" "$EDK2_OUT/Build/uefiapp_EFIDroidUi"
     rm -f "$EDK2_OUT/Build/uefiapp_LKL"
-    ln -s "$TARGET_OUT/uefiapp_LKL/Build/EFIDroidUEFIApps" "$EDK2_OUT/Build/uefiapp_LKL"
+    ln -s "$UEFIAPP_LKL_OUT/Build/EFIDroidUEFIApps" "$EDK2_OUT/Build/uefiapp_LKL"
 
     # generate FDF include file
     echo -e "DEFINE FD_BASE = $EDK2_FD_BASE\n" >  "$EDK2_FDF_INC"

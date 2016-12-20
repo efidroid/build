@@ -16,7 +16,7 @@
 SELINUX_MAKE_ARGS=""
 SELINUX_MAKE_ARGS="$SELINUX_MAKE_ARGS CFLAGS=\"-Wno-sign-compare\""
 
-if [ "$MODULE_TYPE" == "target" ];then
+if [ ! -z "$MODULE_ARCH" ];then
     SELINUX_MAKE_ARGS="$SELINUX_MAKE_ARGS AR=${GCC_LINUX_TARGET_PREFIX}ar"
     SELINUX_MAKE_ARGS="$SELINUX_MAKE_ARGS AS=${GCC_LINUX_TARGET_PREFIX}as"
     SELINUX_MAKE_ARGS="$SELINUX_MAKE_ARGS CC=${GCC_LINUX_TARGET_PREFIX}gcc"
@@ -30,10 +30,10 @@ SELINUX_SRC=""
 LIB_SUFFIX=""
 
 Compile() {
-    if [ "$MODULE_NAME" == "target_libsepol6" ] || [ "$MODULE_NAME" == "host_libsepol6" ];then
+    if [ "$MODULE_NAME" == "libsepol6" ];then
         SELINUX_SRC="$TOP/modules/selinux_6"
         LIB_SUFFIX="6"
-    elif [ "$MODULE_NAME" == "target_libsepol7" ] || [ "$MODULE_NAME" == "host_libsepol7" ];then
+    elif [ "$MODULE_NAME" == "libsepol7" ];then
         SELINUX_SRC="$TOP/modules/selinux_7"
         LIB_SUFFIX="7"
     else

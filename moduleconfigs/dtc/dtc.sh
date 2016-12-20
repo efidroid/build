@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if [ "$MODULE_TYPE" == "target" ];then
+if [ ! -z "$MODULE_ARCH" ];then
     DTC_MAKE_ARGS="$DTC_MAKE_ARGS AR=${GCC_LINUX_TARGET_PREFIX}ar"
     DTC_MAKE_ARGS="$DTC_MAKE_ARGS AS=${GCC_LINUX_TARGET_PREFIX}as"
     DTC_MAKE_ARGS="$DTC_MAKE_ARGS CC=${GCC_LINUX_TARGET_PREFIX}gcc"
@@ -24,7 +24,7 @@ fi
 Compile() {
     "$TOP/build/tools/lns" -rf "$MODULE_DIR/" "$MODULE_OUT"
 
-    if [ "$MODULE_TYPE" == "target" ];then
+    if [ ! -z "$MODULE_ARCH" ];then
         # compile supported targets only
         "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$MODULE_OUT/dtc" $DTC_MAKE_ARGS libfdt
         "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$MODULE_OUT/dtc" $DTC_MAKE_ARGS $DTC_MAKE_ARGS_STATIC convert-dtsv0 dtc fdtdump fdtget fdtput

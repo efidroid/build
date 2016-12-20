@@ -99,13 +99,13 @@ EDK2_ENV="MAKEFLAGS="
 EDK2_PRINT_ERROR_LEVEL="0"
 EDK2_PROPERTY_MASK="0"
 
-if [ "$EFIDROID_TARGET_ARCH" == "arm" ];then
+if [ "$MODULE_ARCH" == "arm" ];then
     EDK2_ARCH="ARM"
-elif [ "$EFIDROID_TARGET_ARCH" == "x86" ];then
+elif [ "$MODULE_ARCH" == "x86" ];then
     EDK2_ARCH="IA32"
-elif [ "$EFIDROID_TARGET_ARCH" == "x86_64" ];then
+elif [ "$MODULE_ARCH" == "x86_64" ];then
     EDK2_ARCH="X64"
-elif [ "$EFIDROID_TARGET_ARCH" == "aarch64" ];then
+elif [ "$MODULE_ARCH" == "arm64" ];then
     EDK2_ARCH="AArch64"
 fi
 EDK2_ENV="$EDK2_ENV ${EDK2_COMPILER}_${EDK2_ARCH}_PREFIX=$GCC_NONE_TARGET_PREFIX"

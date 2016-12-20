@@ -19,16 +19,18 @@
 
 import re
 import textwrap
+from utils import *
 
 class Writer(object):
-    def __init__(self, output, width=78, hidecommands=True):
+    def __init__(self, output, width=78, hidecommands=True, nodefaulttarget=False):
         self.output = output
         self.width = width
         self.hidecommands = hidecommands
         self.dependencies_list = {}
         self.targets_list = []
-        self.target('default', phony=True)
-        self.newline()
+        if not nodefaulttarget:
+            self.target('default', phony=True)
+            self.newline()
 
     def newline(self):
         self.output.write('\n')
@@ -98,13 +100,19 @@ class Writer(object):
         self.output.write(leading_space + text + '\n')
 
     def check_dependencies(self):
+        error = False
         for target in self.dependencies_list:
             if not target in self.targets_list:
-                raise Exception('defined dependencies for non-existend target \''+target+'\'')
+                pr_error('defined dependencies for non-existend target \''+target+'\'')
+                error = True
 
             for dep in self.dependencies_list[target]:
                 if not dep in self.targets_list:
-                    raise Exception('target \''+target+'\' depends on non-existend target \''+dep+'\'')
+                    pr_error('target \''+target+'\' depends on non-existend target \''+dep+'\'')
+                    error = True
+
+        if error:
+            pr_fatal('Dependency errors.')
 
     def close(self):
         self.output.close()

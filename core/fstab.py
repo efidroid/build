@@ -120,3 +120,10 @@ class FSTab:
                 rc.append(entry.mount_point[1:])
 
         return rc
+
+    def partitionpath2name(self, part):
+        tmp = part.split('/by-name/')
+        if len(tmp) !=2:
+            raise Exception('Invalid partition path: %s'  % (part))
+
+        return tmp[1]
