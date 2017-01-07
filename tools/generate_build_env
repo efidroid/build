@@ -30,9 +30,20 @@ def inputchoice(msg, choices):
     for idx,choice in enumerate(choices):
         print('%u) %s' % (idx+1, choice))
 
-    num = inputex('> ')
+    again = True
+    while again:
+        strnum = inputex('> ')
+        try:
+            num = int(strnum)
+            if num>0 and num<=len(choices):
+                again = False
+        except:
+            pass
 
-    return choices[int(num)-1]
+        if again:
+            print(bldred+'Invalid choice: '+strnum+txtrst)
+
+    return choices[num-1]
 
 def get_gcc_archs():
     archs = []
