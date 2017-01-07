@@ -43,14 +43,6 @@ OUT = 'out/tmp/'
 UNPACKBOOTIMG = 'build/tools/unpackbootimg'
 BOOTIMGPREFIX = None
 
-def inputex(msg):
-    prompt = bldylw+msg+txtrst
-
-    try:
-        return raw_input(prompt)
-    except:
-        return input(prompt)
-
 def file2str(filename):
     data = None
     with open(filename, 'r') as f:
@@ -237,8 +229,4 @@ def main(argv):
     
 
 if __name__ == "__main__":
-    try:
-        main(sys.argv[1:])
-    except:
-        pr_error('Error: %s' % sys.exc_info()[1])
-        raise
+    runmain(main)

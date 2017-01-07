@@ -201,13 +201,5 @@ def main(argv):
     
     f.close()
 
-if __name__ == '__main__':
-    try:
-        main(sys.argv[1:])
-    except SystemExit as e:
-        if e.code:
-            pr_error('Error: %s' % e.code)
-        raise
-    except:
-        pr_error('Error: %s' % sys.exc_info()[1])
-        raise
+if __name__ == "__main__":
+    runmain(main)

@@ -24,14 +24,6 @@ import subprocess
 sys.path.append(os.path.join(os.path.dirname(__file__), '../core'))
 from utils import *
 
-def inputex(msg):
-    prompt = bldylw+msg+txtrst
-
-    try:
-        return raw_input(prompt)
-    except:
-        return input(prompt)
-
 def inputchoice(msg, choices):
     print(bldylw+msg+txtrst)
 
@@ -139,11 +131,5 @@ def main(argv):
         if not buildtype == None:
             f.write('export EFIDROID_BUILDTYPE='+buildtype+'\n')
 
-if __name__ == '__main__':
-    try:
-        main(sys.argv[1:])
-    except SystemExit:
-        sys.exit(sys.exc_info()[1])
-    except:
-        pr_error('Error: %s' % sys.exc_info()[1])
-        raise
+if __name__ == "__main__":
+    runmain(main)

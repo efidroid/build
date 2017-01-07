@@ -694,8 +694,4 @@ def main(argv):
         setup_toolchain(context, toolchain)
 
 if __name__ == "__main__":
-    try:
-        main(sys.argv[1:])
-    except:
-        pr_error('Error: %s' % sys.exc_info()[1])
-        raise
+    runmain(main)

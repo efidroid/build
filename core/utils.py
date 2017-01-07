@@ -75,3 +75,27 @@ def pr_notice(*args):
     print(bldcyn+" ".join(map(str,args))+txtrst)
 def pr_alert(*args):
     print(bldgrn+" ".join(map(str,args))+txtrst)
+
+def inputex(msg):
+    prompt = bldylw+msg+txtrst
+
+    try:
+        return raw_input(prompt)
+    except KeyboardInterrupt:
+        raise
+    except:
+        return input(prompt)
+
+def runmain(main):
+    try:
+        sys.exit(main(sys.argv[1:]))
+    except KeyboardInterrupt:
+        print('\n'+bldred+'Aborted by user.'+txtrst)
+        sys.exit(1)
+    except SystemExit as e:
+        if e.code:
+            pr_error('Error: %s' % e.code)
+        raise
+    except:
+        pr_error('Error: %s' % sys.exc_info()[1])
+        raise
