@@ -687,6 +687,10 @@ def main(argv):
             spaces.append(context.clazzvars['host'])
         spaces.append(context.globalvars)
 
+        localspace = VariableSpace()
+        localspace.set('EFIDROID_CONFIG_PATH', dirname+'/config')
+        spaces.append(localspace)
+
         genvarinc(dirname+'/config', spaces, spaces)
 
     # generate toolchains
