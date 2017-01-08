@@ -652,6 +652,12 @@ def main(argv):
     pr_alert('Architectures: %s' % (', '.join(context.architectures)))
     pr_alert('Configuring for %s' % (', '.join(context.clazzes)))
 
+    for arch in context.architectures:
+        toolchains = context.findToolchains(arch);
+        for toolchain in toolchains:
+            for name in toolchain.toolchainvars.vars:
+                context.globalvars.set('TOOLCHAIN_'+arch.upper()+'_'+name, toolchain.toolchainvars.vars[name])
+
     # create out directory
     try:
         os.makedirs(path_out)
