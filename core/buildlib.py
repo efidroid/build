@@ -332,7 +332,9 @@ class Context:
         for t in self.toolchains:
             localname = name
             if not localname:
-                localname = self.globalvars.get('EFIDROID_TOOLCHAIN_NAME_'+t.type.upper(), throw=False)
+                envvarname = 'EFIDROID_TOOLCHAIN_NAME_'+t.type.upper()
+                if envvarname in os.environ:
+                    localname = os.environ[envvarname]
             if not localname:
                 localname = 'gcc6'
 
