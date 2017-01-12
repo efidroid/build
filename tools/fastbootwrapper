@@ -78,7 +78,6 @@ def beq(a, b):
     return byte2int(a)==byte2int(b)
 
 def fastboot(argv, rawmode=False, bufmode=False, nocolors=False):
-    global fastboot_process
     pbuf = [b'']
 
     def localwrite(data):
@@ -94,89 +93,93 @@ def fastboot(argv, rawmode=False, bufmode=False, nocolors=False):
             stderr.flush()
 
     p = subprocess.Popen(['fastboot'] + argv, stderr=subprocess.PIPE)
-    fastboot_process = p
 
-    first = True
-    lastlinewasempty = True
-    for line in p.stderr:
-        # supress the initial three points
-        if first and bstartswith(line, b'...'):
-            first = False
-            localstderr(bldwht)
-            localstderr(line)
-            localstderr(txtrst)
-            continue
-
-        if bstartswith(line, b'(bootloader) '):
-            if not rawmode:
-                localstderr(bldylw)
-                localstderr(line[0:13])
+    try:
+        first = True
+        lastlinewasempty = True
+        for line in p.stderr:
+            # supress the initial three points
+            if first and bstartswith(line, b'...'):
+                first = False
+                localstderr(bldwht)
+                localstderr(line)
                 localstderr(txtrst)
+                continue
 
-            # remove the prefix
-            line = line[13:]
+            if bstartswith(line, b'(bootloader) '):
+                if not rawmode:
+                    localstderr(bldylw)
+                    localstderr(line[0:13])
+                    localstderr(txtrst)
 
-            # apply log colors
-            if not nocolors==True and (len(line)>=2 and beq(line[1], b'/')) and lastlinewasempty:
-                level = line[0]
+                # remove the prefix
+                line = line[13:]
 
-                if beq(level, b'A'): # ALWAYS
-                    localwrite(bldwht)
-                elif beq(level, b'E'): # CRITICAL
-                    localwrite(bldred)
-                elif beq(level, b'I'): # INFO
-                    localwrite(bldylw)
-                elif beq(level, b'D'): # SPEW
-                    localwrite(bldgrn)
+                # apply log colors
+                if not nocolors==True and (len(line)>=2 and beq(line[1], b'/')) and lastlinewasempty:
+                    level = line[0]
 
-                else:
-                    localwrite(bldwht)
+                    if beq(level, b'A'): # ALWAYS
+                        localwrite(bldwht)
+                    elif beq(level, b'E'): # CRITICAL
+                        localwrite(bldred)
+                    elif beq(level, b'I'): # INFO
+                        localwrite(bldylw)
+                    elif beq(level, b'D'): # SPEW
+                        localwrite(bldgrn)
 
-        # this is one of the manual newlines in rawmode
-        elif rawmode:
+                    else:
+                        localwrite(bldwht)
+
+            # this is one of the manual newlines in rawmode
+            elif rawmode:
+                localwrite(b'\n')
+
+            # remove the newline
+            if rawmode:
+                line = line[:-1]
+
+            # suppress status messages
+            if bstartswith(line, b'OKAY ['):
+                localstderr(bldgrn)
+                localstderr(line)
+                localstderr(txtrst)
+            elif bstartswith(line, b'FAILED (remote failure)'):
+                localstderr(bldred)
+                localstderr(line)
+                localstderr(txtrst)
+            elif bstartswith(line, b'finished. total time: '):
+                localstderr(bldgrn)
+                localstderr(line)
+                localstderr(txtrst)
+            else:
+                # write data
+                localwrite(line)
+
+            lastlinewasempty = len(line)==0
+
+        # finish status line
+        if rawmode:
             localwrite(b'\n')
 
-        # remove the newline
-        if rawmode:
-            line = line[:-1]
+        # reset terminal color
+        if not nocolors==True:
+            localwrite(txtrst)
 
-        # suppress status messages
-        if bstartswith(line, b'OKAY ['):
-            localstderr(bldgrn)
-            localstderr(line)
-            localstderr(txtrst)
-        elif bstartswith(line, b'FAILED (remote failure)'):
-            localstderr(bldred)
-            localstderr(line)
-            localstderr(txtrst)
-        elif bstartswith(line, b'finished. total time: '):
-            localstderr(bldgrn)
-            localstderr(line)
-            localstderr(txtrst)
+        # wait for fastboot to finish
+        p.communicate()
+
+        if bufmode:
+            if p.returncode==0:
+                return pbuf[0]
+            else:
+                None
         else:
-            # write data
-            localwrite(line)
+            return p.returncode
 
-        lastlinewasempty = len(line)==0
-
-    # finish status line
-    if rawmode:
-        localwrite(b'\n')
-
-    # reset terminal color
-    if not nocolors==True:
-        localwrite(txtrst)
-
-    # wiat for fastboot to finish
-    p.communicate()
-
-    if bufmode:
-        if p.returncode==0:
-            return pbuf[0]
-        else:
-            None
-    else:
-        return p.returncode
+    except:
+        p.communicate()
+        raise
 
 def read_b64data(argv, nargs):
     if len(argv)<nargs or len(argv)>nargs+1:
@@ -244,21 +247,14 @@ def main(argv):
 
 if __name__ == '__main__':
     try:
-        rc = main(sys.argv[1:])
-        if rc:
-            sys.exit(rc)
+        sys.exit(main(sys.argv[1:]))
+    except KeyboardInterrupt:
+        print('\n'+bldred.decode()+'Aborted by user.'+txtrst.decode())
+        sys.exit(1)
+    except SystemExit as e:
+        if e.code:
+            print((bldred.decode()+'Error: %s'+txtrst.decode()) % e.code)
+        raise
     except:
-        exc_info = sys.exc_info()
-
-        # finish the fastboot process so the device doesn't freeze
-        if fastboot_process:
-            try:
-                fastboot_process.communicate()
-            except:
-                pass
-
-        print('Error: %s' % exc_info[1])
-        if sys.version_info < (3, 0):
-            exec('raise exc_info[0], exc_info[1], exc_info[2]')
-        else:
-            exec('raise exc_info[0].with_traceback(exc_info[1], exc_info[2])')
+        print((bldred.decode()+'Error: %s'+txtrst.decode()) % sys.exc_info()[1])
+        raise
