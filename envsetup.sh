@@ -34,11 +34,13 @@ lunch() {
     # generate and include config
     mkdir -p "$TOP/out"
     "$TOP/build/tools/generate_build_env" "$TOP/out/build_env.sh" "$@"
-    source "$TOP/out/build_env.sh"
-    rm "$TOP/out/build_env.sh"
+    if [ $? -eq 0 ];then
+        source "$TOP/out/build_env.sh"
+        rm "$TOP/out/build_env.sh"
 
-    # set window title
-    if [ "$STAY_OFF_MY_LAWN" = "" ]; then
-        export PROMPT_COMMAND="echo -ne \"\033]0;[$EFIDROID_DEVICEID|$EFIDROID_BUILDTYPE] ${USER}@${HOSTNAME}: ${PWD}\007\""
+        # set window title
+        if [ "$STAY_OFF_MY_LAWN" = "" ]; then
+            export PROMPT_COMMAND="echo -ne \"\033]0;[$EFIDROID_DEVICEID|$EFIDROID_BUILDTYPE] ${USER}@${HOSTNAME}: ${PWD}\007\""
+        fi
     fi
 }
