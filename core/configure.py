@@ -211,6 +211,8 @@ def parseModuleAutoconf(args):
         generic_env.append('CC="$(GCC_LINUX_TARGET_PREFIX)gcc"')
         generic_env.append('CXX="$(GCC_LINUX_TARGET_PREFIX)g++"')
         configureflags += ' --host $(GCC_LINUX_TARGET_NAME)'
+        configureenv += ' PATH="$(GCC_LINUX_TARGET_PATH):$$PATH"'
+        makeenv += ' PATH="$(GCC_LINUX_TARGET_PATH):$$PATH"'
 
         # remove host directories
         generic_env.append('PKG_CONFIG_DIR=')
