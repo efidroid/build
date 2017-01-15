@@ -37,7 +37,7 @@ Compile() {
 
     qemu-arm "$GRUB_KERNEL_OUT/grub-mkimage" \
         -O arm-efi \
-        -c "$GRUB_CONFIG_DIR/load.cfg" \
+        -c "$MODULE_CONFIG_DIR/load.cfg" \
         -o "$MODULE_OUT/grub.efi" \
         -d "$GRUB_KERNEL_OUT/grub-core" \
         -p "" \
@@ -48,16 +48,16 @@ Compile() {
     mkdir "$MODULE_OUT/grubrd/fonts"
     mkdir "$MODULE_OUT/grubrd/locale"
     mkdir "$MODULE_OUT/grubrd/arm-efi"
-
+    pr_info $(inch2px "0.11")
     # font
-    grub-mkfont -s $(inch2px "0.11") -o "$MODULE_OUT/unicode_uncompressed.pf2" "$GRUB_CONFIG_DIR/unifont.ttf"
+    grub-mkfont -s $(inch2px "0.11") -o "$MODULE_OUT/unicode_uncompressed.pf2" "$MODULE_CONFIG_DIR/unifont.ttf"
     cat "$MODULE_OUT/unicode_uncompressed.pf2" | gzip >"$MODULE_OUT/grubrd/fonts/unicode.pf2"
 
     # env
     qemu-arm "$GRUB_KERNEL_OUT/grub-editenv" "$MODULE_OUT/grubrd/grubenv" create
 
     # config
-    cp "$GRUB_CONFIG_DIR/grub.cfg" "$MODULE_OUT/grubrd/grub.cfg"
+    cp "$MODULE_CONFIG_DIR/grub.cfg" "$MODULE_OUT/grubrd/grub.cfg"
 
     # all modules are builtin
 
