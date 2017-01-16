@@ -232,6 +232,12 @@ def parseModuleAutoconf(args):
             ['rm', '-Rf', '$(MODULE_OUT)'],
             ['$(TOP)/build/tools/lns', '-rf', '$(MODULE_DIR)', '$(MODULE_OUT)'],
         ]
+
+        if 'postlinkscript' in args.opts:
+            target.commands += [
+                [Target.COMMAND_ENV, '$(TOP)/build/tools/runscript', '$(CLASS_OUT)/config', '$(MODULE_CONFIG_DIR)/'+args.opts['postlinkscript'], 'PostLink'],
+            ]
+
         args.context.addTarget(target)
     
 
