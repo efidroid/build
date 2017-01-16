@@ -55,6 +55,14 @@ setvar() {
     export "$NAME"="$VALUE"
 }
 
+link2file() {
+    OUTFILE="$1"
+
+    SRCFILE="$(readlink -f $1)"
+    rm "$OUTFILE"
+    cp "$SRCFILE" "$OUTFILE"
+}
+
 pr_error() {
     echo -e "${bldred}$@${txtrst}"
 }
