@@ -221,6 +221,8 @@ def main(argv):
             rawmode = True
         elif argv[1]=='shell':
             rawmode = True
+        elif argv[1]=='dump_panelheader':
+            rawmode = True
         elif argv[1]=='screenshot':
             # oem screenshot ID
             return read_b64data(argv, 3)
