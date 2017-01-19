@@ -64,11 +64,6 @@ def get_gcc_archs():
 
 def main(argv):
     top = os.environ['TOP']
-    toolchain_none = None
-    toolchain_linux = None
-    deviceid = None
-    buildtype = None
-    architecture = None
 
     # check arguments
     if not len(argv) >= 1:
@@ -76,71 +71,110 @@ def main(argv):
     outfile = argv[0]
 
     # parse args
-    parser = argparse.ArgumentParser(prog='lunch')
-    parser.add_argument('--toolchain', dest='toolchain', action='store_const', const=True,
-                        help='select toolchain')
-    parser.add_argument('--arch', dest='arch', action='store_const', const=True,
-                        help='select architecture')
+    parser = argparse.ArgumentParser(prog='lunch', formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument('--reset', dest='reset', action='store_const', const=True,
+                        help='reset all previously set lunch variables')
+    parser.add_argument('--select', dest='select', type=str, default="device,buildtype",
+                        help='\n'.join([
+                            'comma-separated list of configs to change.',
+                            'Default value: device,buildtype',
+                            'Possible values:',
+                            '  arch',
+                            '  toolchain_none',
+                            '  toolchain_linux',
+                            '  device',
+                            '  buildtype',
+                            '\n',
+                        ]))
     parser.add_argument('--online', dest='online', action='store_const', const=True,
                         help='include devices from EFIDroid repository')
+    parser.add_argument('--arch', dest='arch', type=str, help='architecture value')
+    parser.add_argument('--toolchain_none', dest='toolchain_none', type=str, help='toolchain_none value')
+    parser.add_argument('--toolchain_linux', dest='toolchain_linux', type=str, help='toolchain_linux value')
+    parser.add_argument('--device', dest='device', type=str, help='device value')
+    parser.add_argument('--buildtype', dest='buildtype', type=str, help='buildtype value')
     args = parser.parse_args(argv[1:])
 
-    # toolchain
-
-    if args.toolchain:
-        toolchain_none = inputex('gcc-none toolchain: ')
-        toolchain_linux = inputex('gcc-linux toolchain: ')
-
-    elif args.arch:
-        archs = ['arm']
-        archs += get_gcc_archs()
-
-        architecture = inputchoice('Architecture: ', archs)
-
+    select = args.select.strip()
+    if len(select)==0:
+        select = []
     else:
-        # get device list
-        devices = []
-        if os.path.exists(top+'/device'):
-            for vendor in os.listdir(top+'/device'):
-                for device in os.listdir(top+'/device/'+vendor):
-                    devices += [vendor+'/'+device]
+        select = args.select.split(',')
+    for config in select:
+        if config=='arch':
+            if not args.arch:
+                archs = ['arm']
+                archs += get_gcc_archs()
 
-        if args.online:
-            p = subprocess.Popen(['git', 'ls-remote', '--heads', 'https://github.com/efidroid/device.git'], stdout=subprocess.PIPE)
-            data = p.communicate()[0]
-            if p.returncode != 0:
-                pr_fatal('can\'t get online devices')
+                args.arch = inputchoice('Architecture: ', archs)
 
-            for head in data.splitlines():
-                codename = head.split('refs/heads/')[1]
-                if not codename in devices:
-                    devices += [codename]
+        elif config=='toolchain_none':
+            if not args.toolchain_none:
+                args.toolchain_none = inputex('gcc-none toolchain: ')
 
-        devices.sort()
-        devices += ['CUSTOM']
+        elif config=='toolchain_linux':
+            if not args.toolchain_linux:
+                args.toolchain_linux = inputex('gcc-linux toolchain: ')
 
-        # device
-        deviceid = inputchoice('Device name: ', devices)
-        if deviceid==devices[-1]:
-            deviceid = inputex('Device name (vendor/codename): ')
-        
-        # build type
-        buildtype = inputchoice('build type: ', ['RELEASE', 'DEBUG', 'USERDEBUG'])
+        elif config=='device':
+            if not args.device:
+                # get device list
+                devices = []
+                if os.path.exists(top+'/device'):
+                    for vendor in os.listdir(top+'/device'):
+                        for device in os.listdir(top+'/device/'+vendor):
+                            devices += [vendor+'/'+device]
+
+                if args.online:
+                    p = subprocess.Popen(['git', 'ls-remote', '--heads', 'https://github.com/efidroid/device.git'], stdout=subprocess.PIPE)
+                    data = p.communicate()[0]
+                    if p.returncode != 0:
+                        pr_fatal('can\'t get online devices')
+
+                    for head in data.splitlines():
+                        codename = head.split('refs/heads/')[1]
+                        if not codename in devices:
+                            devices += [codename]
+
+                devices.sort()
+                devices.append('CUSTOM')
+
+                # device
+                deviceid = inputchoice('Device name: ', devices)
+                if deviceid==devices[-1]:
+                    deviceid = inputex('Device name (vendor/codename): ')
+
+                args.device = deviceid
+
+        elif config=='buildtype':
+            if not args.buildtype:
+                # build type
+                args.buildtype = inputchoice('build type: ', ['RELEASE', 'DEBUG', 'USERDEBUG'])
+
+        else:
+            raise Exception('unsupported config \'%s\'' % config)
 
     # write config
     with open(outfile, 'w') as f:
-        if not toolchain_none == None:
-            f.write('export EFIDROID_TOOLCHAIN_NAME_GCC_NONE='+toolchain_none+'\n')
-        if not toolchain_linux == None:
-            f.write('export EFIDROID_TOOLCHAIN_NAME_GCC_LINUX='+toolchain_linux+'\n')
+        if args.reset:
+            f.write('unset EFIDROID_TOOLCHAIN_NAME_GCC_NONE\n')
+            f.write('unset EFIDROID_TOOLCHAIN_NAME_GCC_LINUX\n')
+            f.write('unset EFIDROID_TARGET_ARCH\n')
+            f.write('unset EFIDROID_DEVICEID\n')
+            f.write('unset EFIDROID_BUILDTYPE\n')
 
-        if not architecture == None:
-            f.write('export EFIDROID_TARGET_ARCH='+architecture+'\n')
+        if args.toolchain_none:
+            f.write('export EFIDROID_TOOLCHAIN_NAME_GCC_NONE='+args.toolchain_none+'\n')
+        if args.toolchain_linux:
+            f.write('export EFIDROID_TOOLCHAIN_NAME_GCC_LINUX='+args.toolchain_linux+'\n')
 
-        if not deviceid == None:
-            f.write('export EFIDROID_DEVICEID='+deviceid+'\n')
-        if not buildtype == None:
-            f.write('export EFIDROID_BUILDTYPE='+buildtype+'\n')
+        if args.arch:
+            f.write('export EFIDROID_TARGET_ARCH='+args.arch+'\n')
 
-if __name__ == "__main__":
+        if args.device:
+            f.write('export EFIDROID_DEVICEID='+args.device+'\n')
+        if args.buildtype:
+            f.write('export EFIDROID_BUILDTYPE='+args.buildtype+'\n')
+
+if __name__ == '__main__':
     runmain(main)
