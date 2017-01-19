@@ -16,11 +16,17 @@
 
 export TOP="$PWD"
 
-export PATH="$TOP/build/tools:$PATH"
+if [[ "$PATH" != ?(*:)"$TOP/build/tools"?(:*) ]]; then
+    export PATH="$TOP/build/tools:$PATH"
+fi
 
 # add some common out directories
-export PATH="$TOP/out/host/dtbtools:$PATH"
-export PATH="$TOP/out/host/dtc/dtc:$PATH"
+if [[ "$PATH" != ?(*:)"$TOP/out/host/dtbtools"?(:*) ]]; then
+    export PATH="$TOP/out/host/dtbtools:$PATH"
+fi
+if [[ "$PATH" != ?(*:)"$TOP/out/host/dtc/dtc"?(:*) ]]; then
+    export PATH="$TOP/out/host/dtc/dtc:$PATH"
+fi
 
 croot() {
     cd "$TOP"
