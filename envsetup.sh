@@ -37,12 +37,18 @@ mkefidroid() {
 }
 
 lunch() {
-    # generate and include config
+    # cleanup
     mkdir -p "$TOP/out"
+    rm -f "$TOP/out/build_env.sh"
+
+    # generate
     "$TOP/build/tools/generate_build_env" "$TOP/out/build_env.sh" "$@"
-    if [ $? -eq 0 ];then
+
+    # source
+    if [ $? -eq 0 ] && [ -f "$TOP/out/build_env.sh" ];then
         source "$TOP/out/build_env.sh"
         rm "$TOP/out/build_env.sh"
+    fi
 
         # set window title
         if [ "$STAY_OFF_MY_LAWN" = "" ]; then
