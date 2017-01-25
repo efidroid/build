@@ -271,8 +271,9 @@ def write_data(args, header, off):
                     f_out.write(decomp.decompress(f_in.read()))
 
                 # write fdt
-                with open(file_prefix+'zImage.fdt', 'wb') as f_out:
-                    f_out.write(decomp.unused_data[8:])
+                if len(decomp.unused_data)>8:
+                    with open(file_prefix+'zImage.fdt', 'wb') as f_out:
+                        f_out.write(decomp.unused_data[8:])
 
         elif not is_arm64(file_prefix+'zImage'):
             with open(file_prefix+'zImage', 'rb') as f_in:
