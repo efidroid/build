@@ -53,11 +53,9 @@ lunch() {
     # set window title
     if [ "$STAY_OFF_MY_LAWN" = "" ]; then
         if [ -n "$EFIDROID_DEVICEID" ]; then
-            echo "set window title"
             export EFIDROID_PROMPT_COMMAND_BACKUP="$PROMPT_COMMAND"
             export PROMPT_COMMAND="echo -ne \"\033]0;[$EFIDROID_DEVICEID|$EFIDROID_BUILDTYPE] ${USER}@${HOSTNAME}: ${PWD}\007\""
         elif [ -n "$EFIDROID_PROMPT_COMMAND_BACKUP" ];then
-            echo "remove window title"
             export PROMPT_COMMAND="$EFIDROID_PROMPT_COMMAND_BACKUP"
             unset EFIDROID_PROMPT_COMMAND_BACKUP
         fi
