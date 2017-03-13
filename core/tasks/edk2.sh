@@ -53,6 +53,9 @@ EDK2_DEFINES="$EDK2_DEFINES -DFIRMWARE_VER=\"EFIDroid $EDK2_VERSION\""
 EDK2_DEFINES="$EDK2_DEFINES -DDRAM_BASE=$EDK2_BASE"
 EDK2_DEFINES="$EDK2_DEFINES -DDRAM_SIZE=$EDK2_SIZE"
 EDK2_DEFINES="$EDK2_DEFINES -DUEFI_REGION_SIZE=$EDK2_UEFI_REGION_SIZE"
+EDK2_DEFINES="$EDK2_DEFINES -DFD_BASE=$EDK2_FD_BASE"
+EDK2_DEFINES="$EDK2_DEFINES -DFD_SIZE=$EDK2_FD_SIZE"
+EDK2_DEFINES="$EDK2_DEFINES -DEFIDROID_UEFIRD=Build/EFIDROID/uefird.cpio"
 
 # set global variables
 setvar "EDK2_FD_BASE" "$EDK2_FD_BASE"
@@ -68,11 +71,6 @@ Configure() {
     ln -s "$UEFIAPP_EFIDROIDUI_OUT/Build/EFIDroidUEFIApps" "$EDK2_OUT/Build/uefiapp_EFIDroidUi"
     rm -f "$EDK2_OUT/Build/uefiapp_LKL"
     ln -s "$UEFIAPP_LKL_OUT/Build/EFIDroidUEFIApps" "$EDK2_OUT/Build/uefiapp_LKL"
-
-    # generate FDF include file
-    echo -e "DEFINE FD_BASE = $EDK2_FD_BASE\n" >  "$EDK2_FDF_INC"
-    echo -e "DEFINE FD_SIZE = $EDK2_FD_SIZE\n" >> "$EDK2_FDF_INC"
-    echo -e "DEFINE EFIDROID_UEFIRD        = Build/EFIDROID/uefird.cpio\n" >> "$EDK2_FDF_INC"
 
     # get EDK git revision
     tmp=$(cd "$EDK2_DIR" && git rev-parse --verify --short HEAD)
