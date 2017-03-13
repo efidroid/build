@@ -24,11 +24,14 @@ import subprocess
 sys.path.append(os.path.join(os.path.dirname(__file__), '../core'))
 from utils import *
 
-def inputchoice(msg, choices):
+def inputchoice(msg, choices, helptexts=[]):
     print(bldylw+msg+txtrst)
 
     for idx,choice in enumerate(choices):
-        print('%u) %s' % (idx+1, choice))
+        helptext = ''
+        if idx<len(helptexts):
+            helptext = ' ('+helptexts[idx]+')'
+        print('%u) %s%s' % (idx+1, choice, helptext))
 
     again = True
     while again:
@@ -149,7 +152,11 @@ def main(argv):
         elif config=='buildtype':
             if not args.buildtype:
                 # build type
-                args.buildtype = inputchoice('build type: ', ['RELEASE', 'DEBUG', 'USERDEBUG'])
+                args.buildtype = inputchoice('build type: ', ['RELEASE', 'DEBUG', 'USERDEBUG'], [
+                    'debugging disabled - for speed',
+                    'debugging enabled',
+                    'debug UEFI applications only',
+                ])
 
         else:
             raise Exception('unsupported config \'%s\'' % config)
