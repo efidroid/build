@@ -135,7 +135,7 @@ def main(argv):
     off_ramdisk = off_kernel  + ROUNDUP(kernel_size,  page_size);
     off_second  = off_ramdisk + ROUNDUP(ramdisk_size, page_size);
     off_tags    = off_second  + ROUNDUP(second_size,  page_size);
-    off_meta    = off_tags    + dt_size
+    off_meta    = off_tags    + ROUNDUP(dt_size, page_size);
 
     # read EFIDroid header
     f.seek(off_meta)
