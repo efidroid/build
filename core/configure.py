@@ -48,15 +48,20 @@ def loadArgs2Target(target, args, nodeps=False, nohelp=False):
             target.description = args.opts['help']
 
 def parseSectionVariables(args):
+    if len(args.attributes)>0:
+        if args.attributes[0]=='uefi':
+            space = args.context.uefivars
+        else:
+            raise Exception('invalid variable attributes: %s' % str(args.attributes))
+    elif args.context.extdata.use_device_variable_space:
+        space = args.context.clazzvars['device']
+    else:
+        space = args.context.globalvars
+
     for (name, value) in args.items:
         if name=='DEVICE_ARCHITECTURES':
             args.context.defaultarchitectures = value.split()
             continue
-
-        if args.context.extdata.use_device_variable_space:
-            space = args.context.clazzvars['device']
-        else:
-            space = args.context.globalvars
         space.set(name, value)
 
 def parseSectionToolchain(args):
@@ -665,6 +670,15 @@ def main(argv):
         for toolchain in toolchains:
             for name in toolchain.toolchainvars.vars:
                 context.globalvars.set('TOOLCHAIN_'+arch.upper()+'_'+name, toolchain.toolchainvars.vars[name])
+
+    # generate uefi commandline
+    if 'device' in context.clazzes:
+        cmdline = ''
+        for name in context.uefivars.vars:
+            value = context.uefivars.vars[name]
+            cmdline += ' -D'+name+'="'+value+'"'
+
+        context.clazzvars['device'].set('UEFI_VARIABLES_CMDLINE', cmdline)
 
     # create out directory
     try:

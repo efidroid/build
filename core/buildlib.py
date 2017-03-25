@@ -139,6 +139,7 @@ class Context:
         self.cleantargets = []
         self.distcleantargets = []
         self.defaultarchitectures = []
+        self.uefivars = VariableSpace()
 
         self.globalvars.set('TOP', os.path.abspath(''))
 
