@@ -40,6 +40,8 @@ Configure() {
     mkdir -p "$EDK2_OUT/Build"
     rm -f "$EDK2_OUT/Build/uefiapp_EFIDroidUi"
     ln -s "$UEFIAPP_EFIDROIDUI_OUT/Build/EFIDroidUEFIApps" "$EDK2_OUT/Build/uefiapp_EFIDroidUi"
+    rm -f "$EDK2_OUT/Build/uefiapp_LKL"
+    ln -s "$UEFIAPP_LKL_OUT/Build/EFIDroidUEFIApps" "$EDK2_OUT/Build/uefiapp_LKL"
 
     # link uefird
     rm -f "$EDK2_OUT/Build/uefird.cpio"
