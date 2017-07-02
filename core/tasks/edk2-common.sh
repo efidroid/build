@@ -85,7 +85,7 @@ case $gcc_version in
   4.9.*|4.1[0-9].*)
     EDK2_COMPILER=GCC49
     ;;
-  5.*.*|6.*.*)
+  5.*.*|6.*.*|7.*.*)
     EDK2_COMPILER=GCC5
     ;;
   *)
