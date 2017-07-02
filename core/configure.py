@@ -389,7 +389,6 @@ def load_fstab(context, deviceid):
     # set variables
     context.clazzvars['device'].set('DEVICE_FSTAB', 'device/'+deviceid+'/fstab.multiboot')
     context.clazzvars['device'].set('DEVICE_NVVARS_PARTITION', nvvarspart)
-    context.clazzvars['device'].set('DEVICE_NVVARS_PARTITION_LK', fstab.partitionpath2name(nvvarspart))
     context.clazzvars['device'].set('DEVICE_UEFI_PARTITIONS', ' '.join(uefiparts))
 
 def genvarinc(prefix, spaces, evalvars):
