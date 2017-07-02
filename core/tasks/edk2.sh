@@ -24,65 +24,57 @@ elif [ "$BUILDTYPE" == "RELEASE" ];then
     EDK2_BUILD_TYPE="RELEASE"
 fi
 
-# check required variables
-if [ -z "$EDK2_BASE" ];then
-    pr_fatal "EDK2_BASE is not set"
-fi
-if [ -z "$EDK2_SIZE" ];then
-    pr_fatal "EDK2_SIZE is not set"
-fi
+EDK2_BIN="$EDK2_OUT/Build/EFIDroid-${EDK2_ARCH}/${EDK2_BUILD_TYPE}_${EDK2_COMPILER}/FV/EFIDROID_EFI.fd"
+FVMAIN_COMPACT_MAP="$EDK2_OUT/Build/EFIDroid-${EDK2_ARCH}/${EDK2_BUILD_TYPE}_${EDK2_COMPILER}/FV/FVMAIN_COMPACT.Fv.map"
+LOCAL_MKBOOTIMG_ADDITIONAL_FLAGS="$BOOTIMG_ADDITIONAL_ARGS"
 
-# default values
-if [ -z "$EDK2_FD_BASE" ];then
-    # by default, put the FD at EDK2's loading addr
-    EDK2_FD_BASE="$EDK2_BASE"
+if [ ! -z "$BOOTIMG_DT" ];then
+    LOCAL_MKBOOTIMG_ADDITIONAL_FLAGS="$LOCAL_MKBOOTIMG_ADDITIONAL_FLAGS --dt $BOOTIMG_DT"
 fi
-if [ -z "$EDK2_FD_SIZE" ];then
-    # by default, use 4MB
-    EDK2_FD_SIZE="0x00400000"
-fi
-if [ -z "$EDK2_UEFI_REGION_SIZE" ];then
-    # PcdSystemMemorySize - PcdFdSize - EFI_PAGE_SIZE
-    EDK2_UEFI_REGION_SIZE=$(printf "0x%x" $(($EDK2_SIZE - $EDK2_FD_SIZE - (0x1000))) )
-fi
-
-EDK2_BIN="$EDK2_OUT/Build/LittleKernelPkg/${EDK2_BUILD_TYPE}_${EDK2_COMPILER}/FV/FVMAIN_COMPACT.Fv"
-EDK2_EFIDROID_OUT="$EDK2_OUT/Build/EFIDROID"
-EDK2_FDF_INC="$EDK2_EFIDROID_OUT/LittleKernelPkg.fdf.inc"
-EDK2_DEFINES="$EDK2_DEFINES -DFIRMWARE_VER=\"EFIDroid $EDK2_VERSION\""
-EDK2_DEFINES="$EDK2_DEFINES -DDRAM_BASE=$EDK2_BASE"
-EDK2_DEFINES="$EDK2_DEFINES -DDRAM_SIZE=$EDK2_SIZE"
-EDK2_DEFINES="$EDK2_DEFINES -DUEFI_REGION_SIZE=$EDK2_UEFI_REGION_SIZE"
-EDK2_DEFINES="$EDK2_DEFINES -DFD_BASE=$EDK2_FD_BASE"
-EDK2_DEFINES="$EDK2_DEFINES -DFD_SIZE=$EDK2_FD_SIZE"
-EDK2_DEFINES="$EDK2_DEFINES -DEFIDROID_UEFIRD=Build/EFIDROID/uefird.cpio"
-
-# set global variables
-setvar "EDK2_FD_BASE" "$EDK2_FD_BASE"
-setvar "EDK2_BIN" "$EDK2_BIN"
 
 Configure() {
     # setup
     EDK2Setup
 
-    # link apps
-    mkdir -p "$EDK2_EFIDROID_OUT"
-    rm -f "$EDK2_OUT/Build/uefiapp_EFIDroidUi"
-    ln -s "$UEFIAPP_EFIDROIDUI_OUT/Build/EFIDroidUEFIApps" "$EDK2_OUT/Build/uefiapp_EFIDroidUi"
-    rm -f "$EDK2_OUT/Build/uefiapp_LKL"
-    ln -s "$UEFIAPP_LKL_OUT/Build/EFIDroidUEFIApps" "$EDK2_OUT/Build/uefiapp_LKL"
+    # symlink device dir
+    rm -f "$EDK2_OUT/EFIDroidDevicePkg"
+    ln -s "$DEVICE_DIR" "$EDK2_OUT/EFIDroidDevicePkg"
 
-    # get EDK git revision
-    tmp=$(cd "$EDK2_DIR" && git rev-parse --verify --short HEAD)
-    setvar "EDK2_VERSION" "$tmp"
+    # symlink devices
+    rm -f "$EDK2_OUT/EFIDroidDevices"
+    ln -s "$TOP/device" "$EDK2_OUT/EFIDroidDevices"
 }
 
 Compile() {
-    # copy required files to workspace
-    cp "$UEFIRD_CPIO" "$EDK2_EFIDROID_OUT/uefird.cpio"
+    LOCAL_KERNEL="$EDK2_BIN"
 
     # compile
-    CompileEDK2 "LittleKernelPkg/LittleKernelPkg.dsc" "$EDK2_DEFINES"
+    CompileEDK2 "EFIDroidPkg/EFIDroidPkg.dsc" "$UEFI_VARIABLES_CMDLINE"
+
+    # append FDT
+    if [ ! -z "$BOOTIMG_APPENDED_FDT" ];then
+        cp "$LOCAL_KERNEL" "$LOCAL_KERNEL.withfdt"
+        cat "$BOOTIMG_APPENDED_FDT" >> "$LOCAL_KERNEL.withfdt"
+        LOCAL_KERNEL="$LOCAL_KERNEL.withfdt"
+    fi
+
+    # generate meta data
+    "$TOP/build/tools/create_efidroid_metadata" "$DEVICE" > "$DEVICE_OUT/efidroid_meta.bin"
+
+    # generate boot images
+    for part in $DEVICE_UEFI_PARTITIONS; do
+        pr_alert "Installing: $DEVICE_OUT/uefi_$part.img"
+        set -x
+        "$TOP/build/tools/mkbootimg" \
+            --kernel "$LOCAL_KERNEL" \
+            --ramdisk /dev/null \
+            --base "$BOOTIMG_BASE" \
+            --cmdline "uefi.bootpart=$part" \
+            $LOCAL_MKBOOTIMG_ADDITIONAL_FLAGS \
+            -o "$DEVICE_OUT/uefi_$part.img"
+        set +x
+        cat "$DEVICE_OUT/efidroid_meta.bin" >> "$DEVICE_OUT/uefi_$part.img"
+    done
 }
 
 Clean() {
