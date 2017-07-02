@@ -1,0 +1,26 @@
+# CONFIG_KALLSYMS is not set
+# CONFIG_NET is not set
+# CONFIG_BTRFS_FS is not set
+# CONFIG_XFS_FS is not set
+# CONFIG_FAT_FS is not set
+# CONFIG_VFAT_FS is not set
+# CONFIG_PROC_FS is not set
+# CONFIG_KERNFS is not set
+# CONFIG_MISC_FILESYSTEMS is not set
+# CONFIG_HID is not set
+# CONFIG_USB_SUPPORT is not set
+# CONFIG_DEVMEM is not set
+# CONFIG_DEVKMEM is not set
+# CONFIG_INPUT is not set
+
+# CONFIG_FRAME_POINTER is not set
+CONFIG_CC_OPTIMIZE_FOR_SIZE=y
+
+CONFIG_F2FS_FS=y
+CONFIG_NTFS_FS=y
+CONFIG_NTFS_RW=y
+
+CONFIG_MD=y
+CONFIG_BLK_DEV_DM=y
+CONFIG_DM_CRYPT=y
+CONFIG_DM_VERITY=y

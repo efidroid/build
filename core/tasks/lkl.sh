@@ -14,6 +14,7 @@
 # limitations under the License.
 
 LKL_SRC="$TOP/uefi/lkl"
+LKL_SRC_PATCHED="$MODULE_OUT/src"
 LKL_OUT="$MODULE_OUT/out"
 LKL_INSTALL="$MODULE_OUT/install"
 
@@ -32,72 +33,149 @@ export INSTALL_PATH="$LKL_INSTALL"
 export KCFLAGS="$LKL_CFLAGS"
 export CROSS_COMPILE="$GCC_NONE_TARGET_PREFIX"
 
-EnableConfig() {
-    sed -i "s/# $1 is not set/$1=y/g" "$LKL_OUT/.config"
+FileHasChanged() {
+    SRC="$1"
+    DST="$2"
+    MODTIME_SRC=$(stat -c %Y "$SRC")
+    MODTIME_DST=$(stat -c %Y "$DST")
+
+    #return 0
+    if [ "$MODTIME_SRC" -gt "$MODTIME_DST" ];then
+        return 0
+    else
+        return 1
+    fi
 }
 
-DisableConfig() {
-    sed -i "s/$1=y/# $1 is not set/g" "$LKL_OUT/.config"
-}
+LinkAll() {
+    SRCDIR="$1"
+    DSTDIR="$2"
 
-AddYesConfig() {
-    echo "$1=y" >> "$LKL_OUT/.config"
-}
-AddNoConfig() {
-    echo "# $1 is not set" >> "$LKL_OUT/.config"
+    for f in "$SRCDIR/"*;do
+        fname=${f##*/}
+        targetpath="$DSTDIR/$fname"
+
+        if [ ! -e "$targetpath" ];then
+            # remove existing symlink
+            if [ -L "$targetpath" ]; then
+                rm "$targetpath"
+            fi
+
+            # create link if theres no file
+            if [ ! -e "$targetpath" ];then
+                ln -s "$f" "$targetpath"
+            fi
+        fi
+    done
 }
 
 Compile() {
     MODTIME=0
     mkdir -p "$LKL_OUT"
     mkdir -p "$LKL_INSTALL"
+    mkdir -p "$LKL_SRC_PATCHED"
 
-    if [ ! -f "$LKL_OUT/.config" ];then
-        # create default config
-        "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$LKL_SRC" defconfig
+    # create links
+    LinkAll "$LKL_SRC" "$LKL_SRC_PATCHED"
+    if [ -L "$LKL_SRC_PATCHED/drivers" ]; then
+        rm "$LKL_SRC_PATCHED/drivers"
+        mkdir "$LKL_SRC_PATCHED/drivers"
+        LinkAll "$LKL_SRC/drivers" "$LKL_SRC_PATCHED/drivers"
+    fi
+    rm -f "$LKL_SRC_PATCHED/drivers/efidroid"
+    ln -sf "$TOP" "$LKL_SRC_PATCHED/drivers/efidroid"
 
-        # disable unused function
-        DisableConfig CONFIG_KALLSYMS
-        DisableConfig CONFIG_NET
-        DisableConfig CONFIG_BTRFS_FS
-        DisableConfig CONFIG_XFS_FS
-        DisableConfig CONFIG_FAT_FS
-        DisableConfig CONFIG_VFAT_FS
-        DisableConfig CONFIG_PROC_FS
-        DisableConfig CONFIG_KERNFS
-        DisableConfig CONFIG_MISC_FILESYSTEMS
-        DisableConfig CONFIG_HID
-        DisableConfig CONFIG_USB_SUPPORT
-        DisableConfig CONFIG_DEVMEM
-        DisableConfig CONFIG_DEVKMEM
-        DisableConfig CONFIG_INPUT
 
-        # optimizations
-        DisableConfig CONFIG_FRAME_POINTER
-        EnableConfig CONFIG_CC_OPTIMIZE_FOR_SIZE
+    # create list of Kconfigs and Makefiles
+    kconfigs=""
+    makefile_dirs=""
+    kconfig_changed=0
+    makefile_changed=0
+    for d in $LKL_DRIVER_DIRECTORIES ;do
+        # get absolute path
+        if [ "${d:0:1}" != "/" ];then
+            d="$TOP/$d"
+        fi
 
-        # F2FS
-        EnableConfig CONFIG_F2FS_FS
-        AddYesConfig CONFIG_F2FS_FS_XATTR
-        AddYesConfig CONFIG_F2FS_FS_POSIX_ACL
-        AddYesConfig CONFIG_F2FS_FS_SECURITY
-        AddNoConfig CONFIG_F2FS_CHECK_FS
-        AddNoConfig CONFIG_F2FS_FS_ENCRYPTION
-        AddNoConfig CONFIG_F2FS_FAULT_INJECTION
+        # check if dir exists
+        if [ ! -d "$d" ];then
+            continue;
+        fi
 
-        # NTFS
-        EnableConfig CONFIG_NTFS_FS
-        AddNoConfig CONFIG_NTFS_DEBUG
-        AddYesConfig CONFIG_NTFS_RW
+        # get relative path
+        drel=$(realpath --relative-to="$TOP" "$d")
 
-        # dmcrypt
-        EnableConfig CONFIG_MD
-        AddYesConfig CONFIG_BLK_DEV_DM
-        AddYesConfig CONFIG_DM_CRYPT
-        AddYesConfig CONFIG_DM_VERITY
+        if [ -f "$d/Makefile" ];then
+            makefile_dirs="$makefile_dirs $drel"
 
-        # update config
-        "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$LKL_SRC" olddefconfig
+            if FileHasChanged "$d/Makefile" "$LKL_SRC_PATCHED/drivers/Makefile" ;then
+                makefile_changed=1
+            fi
+        fi
+        if [ -f "$d/Kconfig" ];then
+            kconfigs="$kconfigs $drel/Kconfig"
+
+            if FileHasChanged "$d/Kconfig" "$LKL_SRC_PATCHED/drivers/Kconfig" ;then
+                kconfig_changed=1
+            fi
+        fi
+    done
+
+    # extend include path
+    if [ -L "$LKL_SRC_PATCHED/Makefile" ] || FileHasChanged "$LKL_SRC/Makefile" "$LKL_SRC_PATCHED/Makefile";then
+        pr_info "patch makefile"
+        rm "$LKL_SRC_PATCHED/Makefile"
+        cp "$LKL_SRC/Makefile" "$LKL_SRC_PATCHED/Makefile"
+
+        APPEND_STR=""
+        for f in $makefile_dirs ;do
+            APPEND_STR="$APPEND_STR\n\t\t-I\$(srctree)/drivers/efidroid/$f/include \\\\"
+        done
+
+        sed -i "s/^LINUXINCLUDE\s*:\=\s*\\\\\$/\0${APPEND_STR//\//\\/}/g" "$LKL_SRC_PATCHED/Makefile"
+    fi
+
+    # include Kconfigs
+    if [ -L "$LKL_SRC_PATCHED/drivers/Kconfig" ] || [ $kconfig_changed -eq 1 ];then
+        pr_info "patch kconfig"
+        rm "$LKL_SRC_PATCHED/drivers/Kconfig"
+        cp "$LKL_SRC/drivers/Kconfig" "$LKL_SRC_PATCHED/drivers/Kconfig"
+
+        for f in $kconfigs ;do
+            echo "source \"drivers/efidroid/$f\"" >> "$LKL_SRC_PATCHED/drivers/Kconfig"
+        done
+    fi
+
+    # include Makefiles
+    if [ -L "$LKL_SRC_PATCHED/drivers/Makefile" ] || [ $makefile_changed -eq 1 ];then
+        pr_info "patch makefile"
+        rm "$LKL_SRC_PATCHED/drivers/Makefile"
+        cp "$LKL_SRC/drivers/Makefile" "$LKL_SRC_PATCHED/drivers/Makefile"
+
+        for f in $makefile_dirs ;do
+            echo "obj-y += efidroid/$f/" >> "$LKL_SRC_PATCHED/drivers/Makefile"
+        done
+    fi
+
+    # check if any defconfig has changed
+    rebuild_cfg=0
+    if [ -f "$LKL_OUT/.config" ];then
+        if FileHasChanged "$LKL_SRC/arch/lkl/defconfig" "$LKL_OUT/.config";then
+            rebuild_cfg=1
+        fi
+        if FileHasChanged "$TOP/build/core/tasks/efidroid_defconfig" "$LKL_OUT/.config";then
+            rebuild_cfg=1
+        fi
+        if [ "$LKL_CONFIG_OVERLAY" != "" ] && FileHasChanged "$LKL_CONFIG_OVERLAY" "$LKL_OUT/.config";then
+            rebuild_cfg=1
+        fi
+    fi
+
+    # rebuild .config
+    if [ ! -f "$LKL_OUT/.config" ] || [ $rebuild_cfg -eq 1 ]; then
+        pushd "$LKL_SRC_PATCHED"
+        KCONFIG_CONFIG="$LKL_OUT/.config" "scripts/kconfig/merge_config.sh" "arch/lkl/defconfig" "$TOP/build/core/tasks/efidroid_defconfig" "$LKL_CONFIG_OVERLAY"
+        popd
     fi
 
     # get modification time
@@ -106,15 +184,15 @@ Compile() {
     fi
 
     # compile lkl.o
-    "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$LKL_SRC"
+    "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$LKL_SRC_PATCHED"
 
     # check if the lib was modified
     MODTIME_NEW=$(stat -c %Y "$LKL_OUT/lkl.o")
     if [ "$MODTIME_NEW" -gt "$MODTIME" ];then
         # install headers
-        "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$LKL_SRC" install
-        cp "$LKL_SRC/tools/lkl/include/lkl.h" "$LKL_INSTALL/include"
-        cp "$LKL_SRC/tools/lkl/include/lkl_host.h" "$LKL_INSTALL/include"
+        "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$LKL_SRC_PATCHED" install
+        cp "$LKL_SRC_PATCHED/tools/lkl/include/lkl.h" "$LKL_INSTALL/include"
+        cp "$LKL_SRC_PATCHED/tools/lkl/include/lkl_host.h" "$LKL_INSTALL/include"
 
         # copy lib for UEFI
         cp $LKL_INSTALL/lib/lkl.o $LKL_INSTALL/lib/lkl.prebuilt
@@ -126,7 +204,7 @@ Compile() {
 ########################################
 
 Clean() {
-    "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$LKL_SRC" clean
+    "$MAKEFORWARD" "$EFIDROID_MAKE" -C "$LKL_SRC_PATCHED" clean
 }
 
 DistClean() {
