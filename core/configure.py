@@ -15,7 +15,6 @@
 # limitations under the License.
 
 import glob
-import hashlib
 import urllib
 from urlparse import urlparse
 from utils import *
@@ -531,18 +530,10 @@ def gen_toolchains(context):
         f.write('set(CMAKE_TOOLCHAIN_READY TRUE)\n')
         f.close()
 
-def sha1(filepath):
-    sha1lib = hashlib.sha1()
-
-    with open(filepath, 'rb') as f:
-        sha1lib.update(f.read())
-
-    return sha1lib.hexdigest()
-
 def setup_toolchain(context, toolchain):
     toolchain_path = toolchain.localvars.get('path', throw=False)
     toolchain_src = toolchain.localvars.get('src', throw=False)
-    toolchain_sha1 = toolchain.localvars.get('sha1', throw=False)
+    toolchain_cksum_verifier = toolchain.get_cksum_verifier()
 
     # this toolchain doesn't provide a directory(it's native)
     if toolchain_path:
@@ -570,7 +561,7 @@ def setup_toolchain(context, toolchain):
     # download toolchain
     filename = urllib.unquote(os.path.basename(urlparse(toolchain_src).path))
     downloadfile = cachedir+'/'+filename
-    if not os.path.isfile(downloadfile) or not sha1(downloadfile)==toolchain_sha1:
+    if not os.path.isfile(downloadfile) or not toolchain_cksum_verifier.verify(downloadfile):
         pr_alert('Downloading toolchain \'%s\' ...' % filename)
         p = subprocess.Popen(['curl', '-L', '-o', downloadfile, toolchain_src])
         p.communicate()
@@ -578,8 +569,8 @@ def setup_toolchain(context, toolchain):
             pr_fatal('Can\'t download toolchain')
 
         # verify checksum
-        if not sha1(downloadfile)==toolchain_sha1:
-            pr_fatal('sha1sum doesn\'t match')
+        if not toolchain_cksum_verifier.verify(downloadfile):
+            pr_fatal('checksum doesn\'t match')
 
     # make toolchain dir
     gcc_target_dir = context.getfname('$(GCC_DIR)/'+toolchain.arch, absolute=True)
