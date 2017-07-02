@@ -20,10 +20,6 @@ set -x TOP (pwd)
 
 set -x PATH "$TOP/build/tools" $PATH
 
-# add some common out directories
-set -x PATH "$TOP/out/host/dtbtools" $PATH
-set -x PATH "$TOP/out/host/dtc/dtc" $PATH
-
 function croot
     cd "$TOP"
 end
