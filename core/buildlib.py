@@ -18,6 +18,7 @@ import make_syntax
 import subprocess
 import copy
 import re
+import hashlib
 from utils import *
 from fstab import *
 
@@ -911,6 +912,28 @@ class Target:
     def __repr__(self):
         return self.__dict__.__repr__()
 
+class ChecksumVerifier:
+    def __init__(self, vars):
+        if vars.has('sha256'):
+            self.sum = vars.get('sha256')
+            self.alg = 'sha256'
+        elif vars.has('sha1'):
+            self.sum = vars.get('sha1')
+            self.alg = 'sha1'
+        else:
+            raise Exception()
+
+    def calculate(self, filepath):
+        h = hashlib.new(self.alg)
+
+        with open(filepath, 'rb') as f:
+            h.update(f.read())
+
+        return h.hexdigest()
+
+    def verify(self, filepath):
+        return self.sum == self.calculate(filepath)
+
 class Toolchain:
     def __init__(self, attributes, items):
         self.localvars = VariableSpace()
@@ -934,6 +957,12 @@ class Toolchain:
         self.toolchainvars.set(self.variable_prefix+'_PATH', var_path)
         self.toolchainvars.set(self.variable_prefix+'_NAME', var_name)
         self.toolchainvars.set(self.variable_prefix+'_PREFIX', var_prefix)
+
+    def get_cksum_verifier(self):
+        try:
+            return ChecksumVerifier(self.localvars)
+        except e:
+            raise Exception('toolchain \'%s\' doesn\'t have a checksum' % str(self))
 
     def __str__(self):
         return '%s.%s.%s' % (self.type, self.arch, self.name)
