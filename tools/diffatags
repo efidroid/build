@@ -15,9 +15,9 @@
 # limitations under the License.
 
 DTSOUT="$1"
-DTBPATCHOUT="$TOP/out/target/$EFIDROID_DEVICEID/lk_kernel/dtbpatched_out"
+DTBPATCHOUT="$TOP/out/device/$EFIDROID_DEVICEID/lk_kernel/dtbpatched_out"
 if [ -f "$DTBPATCHOUT" ];then
-    DTBPATCHOUT="$TOP/out/target/$EFIDROID_DEVICEID/lk_kernel/fdtpatched_out"
+    DTBPATCHOUT="$TOP/out/device/$EFIDROID_DEVICEID/lk_kernel/fdtpatched_out"
 fi
 
 set -e
