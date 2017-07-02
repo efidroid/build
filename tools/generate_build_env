@@ -126,7 +126,8 @@ def main(argv):
                 if os.path.exists(top+'/device'):
                     for vendor in os.listdir(top+'/device'):
                         for device in os.listdir(top+'/device/'+vendor):
-                            devices += [vendor+'/'+device]
+                            if os.path.exists(top+'/device/'+vendor+'/'+device+'/config.ini'):
+                                devices += [vendor+'/'+device]
 
                 if args.online:
                     p = subprocess.Popen(['git', 'ls-remote', '--heads', 'https://github.com/efidroid/device.git'], stdout=subprocess.PIPE)
