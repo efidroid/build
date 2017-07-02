@@ -343,7 +343,7 @@ class Context:
                 if envvarname in os.environ:
                     localname = os.environ[envvarname]
             if not localname:
-                localname = 'gcc6'
+                localname = 'gcc7'
 
             if t.arch==arch and t.name==localname:
                 r.append(t)
