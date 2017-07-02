@@ -38,6 +38,12 @@ class VariableSpace:
     def __init__(self):
         self.vars = {}
 
+    def has(self, name):
+        if not name:
+            raise Exception('Invalid variable name')
+
+        return name in self.vars
+
     def get(self, name, throw=True):
         if not name in self.vars:
             if throw:
