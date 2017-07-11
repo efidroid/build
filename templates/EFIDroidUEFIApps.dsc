@@ -63,7 +63,6 @@
 
 [LibraryClasses.common.UEFI_APPLICATION]
   DxeServicesLib|MdePkg/Library/DxeServicesLib/DxeServicesLib.inf
-  LKApiLib|LittleKernelPkg/Library/LKApiLib/LKApiLib.inf
 
 [LibraryClasses.ARM]
   CacheMaintenanceLib|ArmPkg/Library/ArmCacheMaintenanceLib/ArmCacheMaintenanceLib.inf
