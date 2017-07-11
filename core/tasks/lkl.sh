@@ -32,6 +32,16 @@ export KBUILD_OUTPUT="$LKL_OUT"
 export INSTALL_PATH="$LKL_INSTALL"
 export KCFLAGS="$LKL_CFLAGS"
 export CROSS_COMPILE="$GCC_NONE_TARGET_PREFIX"
+export LKL_INSTALL_ADDITIONAL_HEADERS="$MODULE_OUT/additional_headers.txt"
+
+#
+# generate additional_headers.txt
+#
+echo "" > "$LKL_INSTALL_ADDITIONAL_HEADERS"
+# for LKLFS
+echo "include/uapi/linux/dm-ioctl.h" >> "$LKL_INSTALL_ADDITIONAL_HEADERS"
+# for LKLTS
+echo "include/uapi/linux/input.h" >> "$LKL_INSTALL_ADDITIONAL_HEADERS"
 
 FileHasChanged() {
     SRC="$1"
