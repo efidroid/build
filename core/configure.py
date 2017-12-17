@@ -187,8 +187,7 @@ def parseModuleAutoconf(args):
     configureflags = ''
     generatorflags = ''
     maketargets = []
-    linksource = False
-    preparedir = args.moduledir
+    preparedir = '$(MODULE_OUT)'
     generatorname = os.path.basename(os.path.normpath(args.filename))
     has_configure = generatorname=='configure'
     targetname = getTargetName(args)
@@ -204,9 +203,6 @@ def parseModuleAutoconf(args):
         configureflags = args.opts['configureflags']
     if 'generatorflags' in args.opts:
         generatorflags = args.opts['generatorflags']
-    if 'linksource' in args.opts:
-        linksource = args.opts['linksource']=='1'
-        preparedir = '$(MODULE_OUT)'
 
     # generate arguments
     generic_env = []
@@ -226,24 +222,20 @@ def parseModuleAutoconf(args):
     makeenv += ' '+(' '.join(generic_env))
 
     # lns target
-    if linksource:
-        target = Target()
-        target.name = '$(MODULE_OUT)/'+generatorname
-        loadArgs2Target(target, args, nohelp=True, nodeps=True)
-        target.internal = True
-        target.compilationmessage = 'running lns on target \''+targetname+'\''
-        target.commands = [
-            ['rm', '-Rf', '$(MODULE_OUT)'],
-            ['$(TOP)/build/tools/lns', '-rf', '$(MODULE_DIR)', '$(MODULE_OUT)'],
+    target = Target()
+    target.name = '$(MODULE_OUT)/'+generatorname
+    loadArgs2Target(target, args, nohelp=True, nodeps=True)
+    target.internal = True
+    target.compilationmessage = 'running lns on target \''+targetname+'\''
+    target.commands = [
+        ['rm', '-Rf', '$(MODULE_OUT)'],
+        ['$(TOP)/build/tools/lns', '-rf', '$(MODULE_DIR)', '$(MODULE_OUT)'],
+    ]
+    if 'postlinkscript' in args.opts:
+        target.commands += [
+            [Target.COMMAND_ENV, '$(TOP)/build/tools/runscript', '$(CLASS_OUT)/config', '$(MODULE_CONFIG_DIR)/'+args.opts['postlinkscript'], 'PostLink'],
         ]
-
-        if 'postlinkscript' in args.opts:
-            target.commands += [
-                [Target.COMMAND_ENV, '$(TOP)/build/tools/runscript', '$(CLASS_OUT)/config', '$(MODULE_CONFIG_DIR)/'+args.opts['postlinkscript'], 'PostLink'],
-            ]
-
-        args.context.addTarget(target)
-    
+    args.context.addTarget(target)
 
     # generator target
     if not has_configure:
