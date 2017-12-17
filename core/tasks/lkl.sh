@@ -42,6 +42,7 @@ echo "" > "$LKL_INSTALL_ADDITIONAL_HEADERS"
 echo "include/uapi/linux/dm-ioctl.h" >> "$LKL_INSTALL_ADDITIONAL_HEADERS"
 # for LKLTS
 echo "include/uapi/linux/input.h" >> "$LKL_INSTALL_ADDITIONAL_HEADERS"
+echo "include/uapi/linux/input-event-codes.h" >> "$LKL_INSTALL_ADDITIONAL_HEADERS"
 
 FileHasChanged() {
     SRC="$1"
