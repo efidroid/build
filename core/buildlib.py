@@ -669,6 +669,9 @@ class Context:
                     ndep = dep
                 elif self.getTarget(target.clazz+'_'+dep):
                     ndep = target.clazz+'_'+dep
+                elif os.path.exists(dep):
+                    ndeps.append(ndep)
+                    continue
                 else:
                     raise Exception('Can\'t resolve dependeny %s for target %s with arch %s' % (dep, target.name, target.vars.get('MODULE_ARCH', throw=False)))
                 deptarget = self.getTarget(ndep)
