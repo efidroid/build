@@ -106,7 +106,7 @@ elif [ "$MODULE_ARCH" == "x86" ];then
 elif [ "$MODULE_ARCH" == "x86_64" ];then
     EDK2_ARCH="X64"
 elif [ "$MODULE_ARCH" == "arm64" ];then
-    EDK2_ARCH="AArch64"
+    EDK2_ARCH="AARCH64"
 fi
 EDK2_ENV="$EDK2_ENV ${EDK2_COMPILER}_${EDK2_ARCH}_PREFIX=$GCC_NONE_TARGET_PREFIX"
 EDK2_ENV="$EDK2_ENV PACKAGES_PATH=${EDK2_OUT}:${EDK2_DIR}:$TOP/uefi/edk2packages"
