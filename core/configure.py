@@ -656,6 +656,26 @@ def main(argv):
     # generate uefi commandline
     if 'device' in context.clazzes:
         cmdline = ''
+
+        # get edk2 fd size
+        edk2_fd_size = 0x00800000
+        if context.clazzvars['device'].has('EDK2_FD_SIZE'):
+            edk2_fd_size = int(context.clazzvars['device'].get('EDK2_FD_SIZE'), 0)
+
+        # create array version
+        edk2_fd_size_array = bytearray.fromhex('{:08x}'.format(edk2_fd_size))
+        edk2_fd_size_array_s = ''
+        for i,v in enumerate(edk2_fd_size_array):
+            if i != 0:
+                edk2_fd_size_array_s = ', ' + edk2_fd_size_array_s
+            edk2_fd_size_array_s = ('0x%02x' % v) + edk2_fd_size_array_s
+
+        # set uefivars
+        context.uefivars.vars['FD_BLOCK_SIZE'] = ('0x%0.8x' % edk2_fd_size)
+        context.uefivars.vars['FD_BLOCK_SIZE_ARRAY'] = edk2_fd_size_array_s
+        context.uefivars.vars['FD_NUM_BLOCKS'] = ('0x%0.8x' % (edk2_fd_size / 0x1000))
+        context.uefivars.vars['FVMAIN_SIZE']   = ('0x%0.8x' % (edk2_fd_size - 0x2000))
+
         for name in context.uefivars.vars:
             value = context.uefivars.vars[name]
             cmdline += ' -D'+name+'="'+value+'"'
