@@ -290,9 +290,14 @@ def write_data(args, header, off):
                     with open(file_prefix+'zImage.real', 'wb') as f_out:
                         f_out.write(f_in.read(zimage_size))
 
+                    trailername = 'zImage.trailer'
+                    trailerdata = f_in.read()
+                    if len(trailerdata)>4 and trailerdata[0:4]=='\xd0\x0d\xfe\xed':
+                        trailername = 'zImage.fdt'
+
                     # write fdt
-                    with open(file_prefix+'zImage.fdt', 'wb') as f_out:
-                        f_out.write(f_in.read())
+                    with open(file_prefix+trailername, 'wb') as f_out:
+                        f_out.write(trailerdata)
 
     if header.dt_size >= 4:
         if is_lz4(file_prefix+'dt'):
